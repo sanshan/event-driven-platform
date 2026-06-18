@@ -1,61 +1,94 @@
 # Intent
 
-Intent represents a deterministic business intention to execute an Operation.
+Intent represents a deterministic business intention.
 
 Intent is not an Operation.
 
-Intent identifies why an Operation is being executed.
+Intent is not a Command.
+
+Intent is not an Execution Log.
+
+Intent is the identity of one business intention across retries, replays and execution attempts.
 
 Intent is the basis for idempotency.
 
+## Purpose
+
+Intent answers:
+
+```txt
+Which exact business intention is being executed?
+```
+
+Intent does not answer:
+
+```txt
+How is it executed?
+Where did it come from?
+How many attempts were made?
+```
+
 ## Responsibilities
 
-Intent is responsible for:
+Intent is responsible for carrying:
 
-* identifying business intention
-* providing deterministic execution identity
-* preventing duplicate execution
-* connecting retries to the same business action
+* deterministic intent id
+* explainable business key
+* correlation id
 
-## Intent ID
+Intent is identity, not execution.
 
-Every intent has intentId.
+## Abstract Interface
 
-intentId must be deterministic.
+```ts
+export interface IIntent {
+  readonly id: IntentId;
 
-The same business intention must produce the same intentId.
+  readonly key: IntentKey;
 
-Different business intentions must produce different intentIds.
+  readonly correlationId: CorrelationId;
+}
+```
 
-## Examples
+## Fields
+
+### id
+
+`id` is the deterministic identifier of the Intent.
+
+It must be derived from stable business inputs.
+
+It must be used as the idempotency key.
+
+The same business intention must always produce the same `id`.
+
+Different business intentions must produce different `id` values.
+
+### key
+
+`key` is the explainable business key used to derive `id`.
+
+It exists for readability, debugging, logs and traceability.
 
 Examples:
 
-* register-user:{tenantId}:{email}
-* approve-withdrawal:{tenantId}:{withdrawalId}:{approvalStep}
-* lock-user:{tenantId}:{userId}:{reason}
-* create-deposit:{tenantId}:{paymentId}
-* process-webhook:{provider}:{externalEventId}
+```txt
+register-user:{tenantId}:{email}
+approve-withdrawal:{tenantId}:{withdrawalId}:{approvalStep}
+lock-user:{tenantId}:{userId}:{reason}
+create-deposit:{tenantId}:{paymentId}
+process-webhook:{provider}:{externalEventId}
+```
 
-## Intent vs Operation
+The exact key format is defined by the domain or application scenario.
 
-Intent identifies the business intention.
+### correlationId
 
-Operation performs the business action.
+`correlationId` connects multiple intents within the same trace or workflow.
 
-Command transports the Operation.
+The same `correlationId` may include many intents.
 
-Runner executes the Command.
-
-## Intent vs Correlation
-
-intentId is used for idempotency.
-
-correlationId is used for tracing.
-
-The same correlationId may include multiple intents.
-
-The same intentId must always represent one business intention.
+The same `intentId` must represent only one business intention.
 
 ## Determinism
 
@@ -66,48 +99,116 @@ Intent generation must not depend on:
 * process memory
 * retry attempt number
 * transport-specific metadata
+* message offset
+* request id
 
 Intent generation must depend only on stable business inputs.
 
-## Scope
+## Ownership
 
-Intent may be created by:
+Intent is created before Operation execution.
 
-* REST endpoint
-* gRPC endpoint
-* message consumer
-* webhook handler
-* cron job
-* use case
+Intent travels with Operation.
 
-The source does not change the meaning of intent.
+Intent must remain unchanged during the entire execution lifecycle.
 
-## Reuse
+Use Case may create Intent.
 
-Retrying the same request must reuse the same intentId.
+Transport adapters may create Intent.
 
-Replaying the same external event must reuse the same intentId.
+Message consumers may create Intent.
 
-Manual re-execution of the same business action must reuse the same intentId only when it is truly the same intention.
+Webhook handlers may create Intent.
 
-## Forbidden responsibilities
+Cron jobs may create Intent.
+
+Runner must not modify Intent.
+
+Command Handler must not modify Intent.
+
+Operation must not modify Intent.
+
+## Intent vs Operation
+
+Intent identifies the business intention.
+
+Operation describes the domain action over an Aggregate.
+
+Example:
+
+```txt
+Intent:
+profile.activate:{tenantId}:{profileId}:by-platform
+
+Operation:
+ActivateProfile
+```
+
+## Intent vs Command
+
+Intent is business identity.
+
+Command transports Operation through the execution pipeline.
+
+Command may contain execution options.
+
+Intent must not contain execution options.
+
+## Intent vs Correlation
+
+Intent is used for idempotency.
+
+Correlation is used for tracing.
+
+Example:
+
+```txt
+correlationId = register-user-flow-123
+
+intent 1 = create-user:{tenantId}:{email}
+intent 2 = create-profile:{tenantId}:{userId}
+intent 3 = create-wallet:{tenantId}:{userId}:{currency}
+```
+
+## Forbidden
+
+Intent must not contain:
+
+* retry options
+* timeout options
+* rate limit options
+* transport metadata
+* message metadata
+* execution attempt number
+* outbox metadata
+* cache metadata
+* Operation payload
+* Actor
+* Aggregate data
 
 Intent must not:
 
 * execute logic
-* contain retry behavior
-* contain transport logic
-* contain infrastructure logic
 * replace Operation
+* replace Command
+* replace Execution Log
 
-Intent is identity, not execution.
+## Design Rules
 
-## Design rules
+Intent should be:
 
-Intent should:
+* deterministic
+* stable
+* explainable
+* traceable
+* derived from business identifiers
+* safe to persist
+* safe to log
 
-* be deterministic
-* be stable
-* be explainable
-* be traceable
-* be derived from business identifiers
+## Core Principle
+
+Intent is only:
+
+```txt
+Deterministic identity of one business intention.
+```

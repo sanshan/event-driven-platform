@@ -1,73 +1,133 @@
 # Use Case
 
-Use Case orchestrates business execution flows.
+A Use Case is an application-layer workflow.
 
-Use Case coordinates Operations.
+A Use Case exists only inside a microservice application layer.
 
-Use Case is the entry point for business workflows.
+A Use Case represents a business scenario that coordinates one or more domain Operations.
+
+Use Cases are scenario-oriented.
+
+Operations are domain-action-oriented.
+
+## Purpose
+
+A Use Case answers:
+
+```txt
+Why should this business action be executed?
+```
+
+Examples:
+
+```txt
+ActivateMyProfile
+ActivateProfileByPlatform
+CreateMyNewWallet
+ApproveWithdrawalByAdmin
+```
+
+Different Use Cases may execute the same Operation.
+
+Example:
+
+```txt
+ActivateMyProfile
+  -> ActivateProfile Operation
+
+ActivateProfileByPlatform
+  -> ActivateProfile Operation
+```
 
 ## Responsibilities
 
-Use Case is responsible for:
+A Use Case is responsible for:
 
-* executing Operations
-* sequencing Operations
-* coordinating Operations
+* receiving application input
+* resolving actor context
+* resolving subject context
+* preparing Operation payload
+* creating Commands
+* executing Commands through Runner
+* coordinating multiple Commands
 * combining Results
-* handling workflow logic
+* implementing workflow orchestration
 
-Use Case may execute one or many Operations.
+## Allowed
 
-## Execution patterns
+A Use Case may:
 
-Use Cases may execute Operations:
-
-* sequentially
-* in parallel
-* conditionally
-
-Use Cases may use results from previous Operations.
-
-## Allowed responsibilities
-
-Use Cases may:
-
+* create Operations
+* create Commands
 * call Runner
-* coordinate workflows
-* aggregate results
-* manage execution flow
+* execute Commands sequentially
+* execute Commands conditionally
+* execute Commands in parallel
+* use Results from previous Commands
+* call application-layer services
+* access infrastructure through ports when domain participation is not required
 
-## Forbidden responsibilities
+## Forbidden
 
-Use Cases must not:
+A Use Case must not:
 
-* contain infrastructure logic
+* execute Operations directly
+* call other Use Cases
+* contain domain rules
+* validate domain invariants
+* mutate Aggregates
+* persist Aggregates
+* own Aggregate lifecycle
 * publish messages
 * access Kafka directly
 * access Redpanda directly
+* access Debezium directly
+* implement retries
 * implement idempotency
-* implement retry logic
+* implement rate limiting
+* write execution logs
+* write outbox records
 * bypass Runner
 
-## Example
+## Aggregate Rule
 
-Example workflow:
+A Use Case does not own Aggregates.
 
-Register User
+A Use Case may read data only for workflow orchestration.
 
-* Create User Operation
-* Create Wallet Operation
-* Create Profile Operation
+A Use Case must not load Aggregates for domain decision making.
 
-Use Case orchestrates execution.
+A Use Case must not pass Aggregate instances into Operations.
 
-Operations remain reusable and independent.
+Use Cases pass only:
 
-## Design rules
+* intent
+* actor
+* aggregate identifier
+* payload
+
+## Design Principles
 
 Use Cases should:
 
-* represent business workflows
 * remain thin
-* delegate business decisions to Operations
+* coordinate workflows
+* delegate domain decisions to Operations
 * delegate execution concerns to Runner
+* remain application-specific
+* remain independent from infrastructure implementation details
+
+## Architecture Rule
+
+Use Case belongs only to:
+
+```txt
+application/
+```
+
+Use Cases must never exist in:
+
+```txt
+domain/
+infrastructure/
+```
