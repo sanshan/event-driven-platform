@@ -21,34 +21,30 @@ Actor may also carry observable information about where the Operation was initia
 ## Public API
 
 ```ts
-export type ActorType =
-  | 'user'
-  | 'service'
-  | 'system'
-  | 'scheduler';
+export type ActorType = 'user' | 'service' | 'system' | 'scheduler';
 
 export interface Actor {
-  readonly type: ActorType;
+    readonly type: ActorType;
 
-  readonly id: string;
+    readonly id: string;
 
-  readonly origin: ActorOrigin;
+    readonly origin: ActorOrigin;
 }
 
 export interface ActorOrigin {
-  readonly ipAddress?: string;
+    readonly ipAddress?: string;
 
-  readonly countryCode?: string;
-  readonly region?: string;
-  readonly city?: string;
+    readonly countryCode?: string;
+    readonly region?: string;
+    readonly city?: string;
 
-  readonly latitude?: number;
-  readonly longitude?: number;
-  readonly timezone?: string;
+    readonly latitude?: number;
+    readonly longitude?: number;
+    readonly timezone?: string;
 
-  readonly environment?: string;
-  readonly host?: string;
-  readonly instance?: string;
+    readonly environment?: string;
+    readonly host?: string;
+    readonly instance?: string;
 }
 ```
 
@@ -107,11 +103,11 @@ Actor is created from ActorDescriptor.
 
 ```ts
 export interface ActorDescriptor {
-  readonly type: ActorType;
+    readonly type: ActorType;
 
-  readonly id: string;
+    readonly id: string;
 
-  readonly origin?: ActorOrigin;
+    readonly origin?: ActorOrigin;
 }
 ```
 
@@ -125,17 +121,17 @@ ActorFactory creates Actor from ActorDescriptor.
 
 ```ts
 export interface ActorFactory {
-  create(descriptor: ActorDescriptor): Actor;
+    create(descriptor: ActorDescriptor): Actor;
 }
 ```
 
 ActorFactory is responsible for:
 
-* validation
-* normalization
-* defensive copying
-* deep immutability
-* JSON-safe output
+- validation
+- normalization
+- defensive copying
+- deep immutability
+- JSON-safe output
 
 ActorFactory does not resolve users, inspect requests, determine IP addresses or collect runtime metadata.
 
@@ -147,15 +143,15 @@ Operation contains the finalized Actor.
 
 ```ts
 export interface Operation<TData> {
-  readonly intent: Intent;
+    readonly intent: Intent;
 
-  readonly correlationId: string;
+    readonly correlationId: string;
 
-  readonly actor: Actor;
+    readonly actor: Actor;
 
-  readonly subject: Subject;
+    readonly subject: Subject;
 
-  readonly data: TData;
+    readonly data: TData;
 }
 ```
 
@@ -167,14 +163,14 @@ Runner does not reconstruct or enrich Actor.
 
 Actor must not contain:
 
-* roles or permissions
-* tokens or sessions
-* HTTP request objects
-* Command options
-* retry information
-* correlationId
-* Intent
-* subject
-* execution attempt data
+- roles or permissions
+- tokens or sessions
+- HTTP request objects
+- Command options
+- retry information
+- correlationId
+- Intent
+- subject
+- execution attempt data
 
 Actor must be immutable and JSON-serializable.

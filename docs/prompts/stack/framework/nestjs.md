@@ -4,17 +4,17 @@ NestJS is used as the main backend framework for Node.js services.
 
 Use NestJS for:
 
-* HTTP APIs
-* gRPC APIs
-* message consumers
-* cron jobs
-* application modules
-* dependency injection
-* validation
-* configuration
-* lifecycle hooks
-* observability integration
-* testing modules
+- HTTP APIs
+- gRPC APIs
+- message consumers
+- cron jobs
+- application modules
+- dependency injection
+- validation
+- configuration
+- lifecycle hooks
+- observability integration
+- testing modules
 
 NestJS must be treated as an application framework, not as a domain model.
 
@@ -24,24 +24,24 @@ Prefer explicit, modular and testable NestJS code.
 
 Use:
 
-* modules
-* providers
-* controllers
-* guards
-* interceptors
-* pipes
-* filters
-* lifecycle hooks
-* dependency injection
+- modules
+- providers
+- controllers
+- guards
+- interceptors
+- pipes
+- filters
+- lifecycle hooks
+- dependency injection
 
 Avoid:
 
-* global mutable state
-* hidden dependencies
-* business logic inside controllers
-* infrastructure logic inside domain code
-* large god services
-* circular module dependencies
+- global mutable state
+- hidden dependencies
+- business logic inside controllers
+- infrastructure logic inside domain code
+- large god services
+- circular module dependencies
 
 ## Modules
 
@@ -73,20 +73,20 @@ Controllers should be thin.
 
 Controllers may:
 
-* receive requests
-* validate input
-* map request DTOs
-* call application services
-* return response DTOs
+- receive requests
+- validate input
+- map request DTOs
+- call application services
+- return response DTOs
 
 Controllers must not contain:
 
-* business rules
-* transaction orchestration
-* database queries
-* message publishing logic
-* retry logic
-* cache orchestration
+- business rules
+- transaction orchestration
+- database queries
+- message publishing logic
+- retry logic
+- cache orchestration
 
 ## DTOs
 
@@ -106,9 +106,9 @@ Validate external input at boundaries.
 
 Use:
 
-* pipes
-* DTO validation
-* explicit transformation where needed
+- pipes
+- DTO validation
+- explicit transformation where needed
 
 Do not trust incoming HTTP, gRPC or message payloads.
 
@@ -144,11 +144,11 @@ Use interceptors for cross-cutting concerns.
 
 Good use cases:
 
-* logging
-* tracing
-* metrics
-* response mapping
-* timeout handling
+- logging
+- tracing
+- metrics
+- response mapping
+- timeout handling
 
 Do not put business logic into interceptors.
 
@@ -172,10 +172,10 @@ Use lifecycle hooks for infrastructure startup and shutdown behavior.
 
 Examples:
 
-* connecting consumers
-* closing connections
-* flushing telemetry
-* graceful shutdown
+- connecting consumers
+- closing connections
+- flushing telemetry
+- graceful shutdown
 
 Keep lifecycle behavior deterministic and observable.
 
@@ -205,10 +205,10 @@ NestJS message consumers should be treated as application entry points.
 
 Consumers may:
 
-* receive messages
-* validate message payloads
-* map messages to application calls
-* handle acknowledgements according to transport rules
+- receive messages
+- validate message payloads
+- map messages to application calls
+- handle acknowledgements according to transport rules
 
 Consumers must not contain core business logic.
 
@@ -218,13 +218,13 @@ NestJS services should expose useful observability.
 
 Prefer:
 
-* structured logging
-* request correlation
-* tracing
-* metrics
-* health checks
-* readiness checks
-* graceful shutdown logs
+- structured logging
+- request correlation
+- tracing
+- metrics
+- health checks
+- readiness checks
+- graceful shutdown logs
 
 Do not use console logging in production code.
 
@@ -234,10 +234,10 @@ Use NestJS testing utilities for module-level tests.
 
 Prefer:
 
-* unit tests for providers
-* integration tests for module boundaries
-* e2e tests for APIs when needed
-* test doubles for external dependencies
+- unit tests for providers
+- integration tests for module boundaries
+- e2e tests for APIs when needed
+- test doubles for external dependencies
 
 Avoid tests that require full infrastructure unless they are integration or e2e tests.
 
@@ -245,32 +245,32 @@ Avoid tests that require full infrastructure unless they are integration or e2e 
 
 For high-load services:
 
-* keep controllers thin
-* avoid blocking the event loop
-* avoid unbounded in-memory queues
-* avoid loading large datasets into memory
-* use pagination for list endpoints
-* validate payload sizes
-* apply timeouts for external calls
-* expose health and readiness checks
-* handle graceful shutdown
-* avoid request-scoped providers unless necessary
+- keep controllers thin
+- avoid blocking the event loop
+- avoid unbounded in-memory queues
+- avoid loading large datasets into memory
+- use pagination for list endpoints
+- validate payload sizes
+- apply timeouts for external calls
+- expose health and readiness checks
+- handle graceful shutdown
+- avoid request-scoped providers unless necessary
 
 ## Agent rules
 
 When generating NestJS code:
 
-* use modules, providers and dependency injection
-* keep controllers thin
-* keep DTOs explicit
-* validate external input
-* do not expose database models directly
-* do not put business logic in controllers, guards, pipes or interceptors
-* avoid circular dependencies
-* avoid `forwardRef` unless there is no better option
-* validate environment configuration at startup
-* keep transaction boundaries explicit
-* do not perform external calls inside transactions
-* use structured logging
-* add tests for public provider behavior
-* keep framework concerns outside domain code
+- use modules, providers and dependency injection
+- keep controllers thin
+- keep DTOs explicit
+- validate external input
+- do not expose database models directly
+- do not put business logic in controllers, guards, pipes or interceptors
+- avoid circular dependencies
+- avoid `forwardRef` unless there is no better option
+- validate environment configuration at startup
+- keep transaction boundaries explicit
+- do not perform external calls inside transactions
+- use structured logging
+- add tests for public provider behavior
+- keep framework concerns outside domain code

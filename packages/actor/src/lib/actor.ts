@@ -1,8 +1,4 @@
-export type ActorType =
-    | 'user'
-    | 'service'
-    | 'system'
-    | 'scheduler';
+export type ActorType = 'user' | 'service' | 'system' | 'scheduler';
 
 export interface ActorOrigin {
     readonly ipAddress?: string;

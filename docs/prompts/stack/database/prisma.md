@@ -4,15 +4,14 @@ Prisma ORM is used as the TypeScript database access layer for PostgreSQL.
 
 Use Prisma for:
 
-* type-safe database access
-* Prisma schema modeling
-* migrations
-* generated Prisma Client
-* transactional database operations
-* explicit PostgreSQL type mapping
+- type-safe database access
+- Prisma schema modeling
+- migrations
+- generated Prisma Client
+- transactional database operations
+- explicit PostgreSQL type mapping
 
 Prisma must be treated as a database access tool, not as a place for business logic.
-
 
 ## Schema design
 
@@ -22,19 +21,19 @@ Prefer explicit native PostgreSQL mappings.
 
 Use:
 
-* `String @db.Uuid` for UUID fields
-* `DateTime @db.Timestamptz(...)` for timestamps
-* `Decimal @db.Decimal(precision, scale)` for precise decimal values
-* `BigInt` for large integer identifiers
-* `Json` only when relational modeling is not suitable
+- `String @db.Uuid` for UUID fields
+- `DateTime @db.Timestamptz(...)` for timestamps
+- `Decimal @db.Decimal(precision, scale)` for precise decimal values
+- `BigInt` for large integer identifiers
+- `Json` only when relational modeling is not suitable
 
 Avoid:
 
-* implicit database types for important fields
-* floats for money or exact decimal values
-* unnecessary `String @db.VarChar(255)`
-* storing timestamps as strings
-* overusing `Json`
+- implicit database types for important fields
+- floats for money or exact decimal values
+- unnecessary `String @db.VarChar(255)`
+- storing timestamps as strings
+- overusing `Json`
 
 ## Decimal values
 
@@ -42,15 +41,15 @@ Use Prisma `Decimal` for precise monetary and decimal values.
 
 Prefer explicit PostgreSQL mapping:
 
-```prisma
+```text
 amount Decimal @db.Decimal(38, 18)
 ```
 
 Do not use:
 
-* `Float` for money
-* JavaScript `number` for exact decimal calculations
-* implicit decimal precision for important financial fields
+- `Float` for money
+- JavaScript `number` for exact decimal calculations
+- implicit decimal precision for important financial fields
 
 Keep decimal handling explicit in application code.
 
@@ -60,7 +59,7 @@ Prefer UUIDs for distributed entity identifiers.
 
 Example:
 
-```prisma
+```text
 id String @id @default(uuid()) @db.Uuid
 ```
 
@@ -74,12 +73,12 @@ Use database constraints for correctness.
 
 Prefer:
 
-* `@id`
-* `@unique`
-* `@@unique`
-* required fields
-* relations with foreign keys
-* explicit relation names when needed
+- `@id`
+- `@unique`
+- `@@unique`
+- required fields
+- relations with foreign keys
+- explicit relation names when needed
 
 Do not rely only on application checks for invariants that must never be violated.
 
@@ -89,27 +88,27 @@ Indexes must follow real query patterns.
 
 Use:
 
-* `@@index`
-* `@@unique`
-* compound indexes
-* explicit index names when useful
+- `@@index`
+- `@@unique`
+- compound indexes
+- explicit index names when useful
 
 Add indexes for:
 
-* foreign keys used in joins
-* tenant-scoped queries
-* status + createdAt queries
-* idempotency keys
-* outbox polling fields
-* external identifiers
-* pagination fields
+- foreign keys used in joins
+- tenant-scoped queries
+- status + createdAt queries
+- idempotency keys
+- outbox polling fields
+- external identifiers
+- pagination fields
 
 Avoid:
 
-* unused indexes
-* duplicate indexes
-* low-cardinality single-column indexes
-* over-indexing write-heavy tables
+- unused indexes
+- duplicate indexes
+- low-cardinality single-column indexes
+- over-indexing write-heavy tables
 
 Column order matters in compound indexes.
 
@@ -119,14 +118,14 @@ Do not generate Prisma queries without thinking about SQL behavior.
 
 For high-load paths, consider:
 
-* expected table size
-* index usage
-* join shape
-* selected fields
-* pagination strategy
-* transaction boundaries
-* lock behavior
-* N+1 queries
+- expected table size
+- index usage
+- join shape
+- selected fields
+- pagination strategy
+- transaction boundaries
+- lock behavior
+- N+1 queries
 
 Prefer `select` over loading entire records when only a few fields are needed.
 
@@ -134,10 +133,10 @@ Avoid unbounded `findMany`.
 
 Always use:
 
-* `where`
-* `take`
-* stable ordering
-* cursor/keyset pagination when data can grow large
+- `where`
+- `take`
+- stable ordering
+- cursor/keyset pagination when data can grow large
 
 ## Pagination
 
@@ -149,9 +148,9 @@ Use stable unique ordering.
 
 Common ordering:
 
-* `createdAt`
-* `id`
-* `(createdAt, id)`
+- `createdAt`
+- `id`
+- `(createdAt, id)`
 
 Make sure indexes support the pagination query.
 
@@ -161,9 +160,9 @@ Use Prisma transactions for atomic database changes.
 
 Use:
 
-* nested writes for simple dependent writes
-* `$transaction([])` for independent operations
-* interactive transactions only when necessary
+- nested writes for simple dependent writes
+- `$transaction([])` for independent operations
+- interactive transactions only when necessary
 
 Keep transactions short.
 
@@ -179,12 +178,12 @@ Avoid read-before-write races.
 
 Prefer:
 
-* unique constraints
-* atomic updates
-* `upsert` where appropriate
-* `createMany({ skipDuplicates: true })` where appropriate
-* optimistic concurrency with a version field where appropriate
-* idempotency tables or unique idempotency keys for retryable operations
+- unique constraints
+- atomic updates
+- `upsert` where appropriate
+- `createMany({ skipDuplicates: true })` where appropriate
+- optimistic concurrency with a version field where appropriate
+- idempotency tables or unique idempotency keys for retryable operations
 
 Do not assume that two requests cannot happen at the same time.
 
@@ -194,7 +193,7 @@ Use optimistic concurrency control when multiple writers can update the same rec
 
 Prefer a version field:
 
-```prisma
+```text
 version Int @default(0)
 ```
 
@@ -210,10 +209,10 @@ Use atomic number operations when possible.
 
 Examples:
 
-* `increment`
-* `decrement`
-* `multiply`
-* `divide`
+- `increment`
+- `decrement`
+- `multiply`
+- `divide`
 
 Do not read a numeric value, modify it in application code, and write it back when an atomic update is possible.
 
@@ -223,8 +222,8 @@ Use raw SQL only when Prisma cannot express the required query safely or efficie
 
 Prefer:
 
-* `$queryRaw`
-* `$executeRaw`
+- `$queryRaw`
+- `$executeRaw`
 
 Avoid unsafe raw SQL.
 
@@ -238,13 +237,13 @@ Prisma migrations must be safe for production-sized PostgreSQL tables.
 
 Before creating migrations, consider:
 
-* table size
-* lock duration
-* index creation strategy
-* backfill strategy
-* rollback strategy
-* compatibility with running services
-* CDC impact
+- table size
+- lock duration
+- index creation strategy
+- backfill strategy
+- rollback strategy
+- compatibility with running services
+- CDC impact
 
 Prefer additive migrations:
 
@@ -260,15 +259,15 @@ Avoid destructive migrations without an explicit plan.
 
 For high-load code paths:
 
-* avoid unbounded queries
-* avoid N+1 queries
-* avoid unnecessary relations
-* avoid loading large JSON fields
-* avoid long transactions
-* avoid write amplification from excessive indexes
-* avoid `count` on huge filtered datasets unless needed
-* avoid offset pagination
-* check generated SQL for critical queries
+- avoid unbounded queries
+- avoid N+1 queries
+- avoid unnecessary relations
+- avoid loading large JSON fields
+- avoid long transactions
+- avoid write amplification from excessive indexes
+- avoid `count` on huge filtered datasets unless needed
+- avoid offset pagination
+- check generated SQL for critical queries
 
 Use query logging and database observability for important paths.
 
@@ -276,20 +275,20 @@ Use query logging and database observability for important paths.
 
 When generating Prisma code:
 
-* check official Prisma AI documentation first
-* keep Prisma usage outside domain logic
-* model PostgreSQL types explicitly
-* use `Decimal @db.Decimal(...)` for money and exact decimals
-* avoid `Float` for money
-* use `DateTime @db.Timestamptz(...)`
-* define indexes from query patterns
-* use constraints for correctness
-* make retryable operations idempotent
-* avoid read-before-write races
-* keep transactions short
-* do not call external services inside transactions
-* avoid unbounded `findMany`
-* prefer cursor pagination for large tables
-* use `select` for narrow reads
-* handle concurrency conflicts explicitly
-* make migrations safe for large tables
+- check official Prisma AI documentation first
+- keep Prisma usage outside domain logic
+- model PostgreSQL types explicitly
+- use `Decimal @db.Decimal(...)` for money and exact decimals
+- avoid `Float` for money
+- use `DateTime @db.Timestamptz(...)`
+- define indexes from query patterns
+- use constraints for correctness
+- make retryable operations idempotent
+- avoid read-before-write races
+- keep transactions short
+- do not call external services inside transactions
+- avoid unbounded `findMany`
+- prefer cursor pagination for large tables
+- use `select` for narrow reads
+- handle concurrency conflicts explicitly
+- make migrations safe for large tables

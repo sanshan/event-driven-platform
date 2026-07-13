@@ -12,10 +12,10 @@ Read does not describe how information is obtained.
 
 Read is responsible for:
 
-* expressing read intent
-* carrying read parameters
-* carrying actor information
-* carrying subject information
+- expressing read intent
+- carrying read parameters
+- carrying actor information
+- carrying subject information
 
 Read contains no infrastructure concerns.
 
@@ -23,11 +23,11 @@ Read contains no infrastructure concerns.
 
 Examples:
 
-* Get User
-* Get Wallet
-* Get Deposit History
-* Get Player Balance
-* Get Bonus Details
+- Get User
+- Get Wallet
+- Get Deposit History
+- Get Player Balance
+- Get Bonus Details
 
 Reads should use business language.
 
@@ -35,19 +35,19 @@ Reads should use business language.
 
 A Read may contain:
 
-* actor
-* subject
-* read parameters
+- actor
+- subject
+- read parameters
 
 ## Forbidden responsibilities
 
 Read must not:
 
-* access databases
-* access caches
-* contain query logic
-* contain infrastructure logic
-* contain cache logic
+- access databases
+- access caches
+- contain query logic
+- contain infrastructure logic
+- contain cache logic
 
 ## Execution
 
@@ -59,7 +59,7 @@ Reads are never executed directly.
 
 Reads should:
 
-* be reusable
-* be deterministic
-* be serializable
-* express business intent only
+- be reusable
+- be deterministic
+- be serializable
+- express business intent only

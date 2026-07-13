@@ -1,11 +1,11 @@
-import {describe, expect, expectTypeOf, it} from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import type {Actor} from '@event-driven-platform/actor';
-import type {Intent} from '@event-driven-platform/intent';
-import type {Subject} from '@event-driven-platform/subject';
-import type {Brand} from '@event-driven-platform/types';
+import type { Actor } from '@event-driven-platform/actor';
+import type { Intent } from '@event-driven-platform/intent';
+import type { Subject } from '@event-driven-platform/subject';
+import type { Brand } from '@event-driven-platform/types';
 
-import type {Operation} from './operation.js';
+import type { Operation } from './operation.js';
 
 type WalletId = Brand<string, 'WalletId'>;
 
@@ -13,11 +13,7 @@ interface CreateWalletPayload {
     readonly currency: string;
 }
 
-type CreateWalletOperation = Operation<
-    'CreateWallet',
-    WalletId,
-    CreateWalletPayload
->;
+type CreateWalletOperation = Operation<'CreateWallet', WalletId, CreateWalletPayload>;
 
 describe('Operation', () => {
     it('describes a domain action over one Aggregate', () => {
@@ -37,8 +33,7 @@ describe('Operation', () => {
             id: 'user-1',
         };
 
-        const aggregateId =
-            'wallet-1' as WalletId;
+        const aggregateId = 'wallet-1' as WalletId;
 
         const operation: CreateWalletOperation = {
             name: 'CreateWallet',
@@ -64,13 +59,10 @@ describe('Operation', () => {
             },
         });
 
-        expectTypeOf(operation.name)
-            .toEqualTypeOf<'CreateWallet'>();
+        expectTypeOf(operation.name).toEqualTypeOf<'CreateWallet'>();
 
-        expectTypeOf(operation.aggregateId)
-            .toEqualTypeOf<WalletId>();
+        expectTypeOf(operation.aggregateId).toEqualTypeOf<WalletId>();
 
-        expectTypeOf(operation.payload)
-            .toEqualTypeOf<CreateWalletPayload>();
+        expectTypeOf(operation.payload).toEqualTypeOf<CreateWalletPayload>();
     });
 });

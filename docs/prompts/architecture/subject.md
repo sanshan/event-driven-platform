@@ -37,9 +37,9 @@ Subject is identity, not state.
 
 ```ts
 export interface Subject {
-  readonly type: string;
+    readonly type: string;
 
-  readonly id: string;
+    readonly id: string;
 }
 ```
 

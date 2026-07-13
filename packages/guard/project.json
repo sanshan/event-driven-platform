@@ -1,0 +1,9 @@
+{
+    "name": "@event-driven-platform/guard",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "packages/guard/src",
+    "projectType": "library",
+    "tags": [],
+    "// targets": "to see all targets run: nx show project @event-driven-platform/guard --web",
+    "targets": {}
+}

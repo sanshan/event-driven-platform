@@ -10,16 +10,16 @@ Execution Log records what was executed, when it was executed, who executed it, 
 
 Execution Log is responsible for storing:
 
-* intentId
-* correlationId
-* actor
-* subject
-* operation name
-* operation input
-* execution status
-* result
-* timestamps
-* execution metadata
+- intentId
+- correlationId
+- actor
+- subject
+- operation name
+- operation input
+- execution status
+- result
+- timestamps
+- execution metadata
 
 Every Operation execution attempt must be observable through Execution Log.
 
@@ -27,13 +27,13 @@ Every Operation execution attempt must be observable through Execution Log.
 
 Execution Log provides:
 
-* execution history
-* traceability
-* auditability
-* operational diagnostics
-* idempotency lookup
-* retry analysis
-* failure investigation
+- execution history
+- traceability
+- auditability
+- operational diagnostics
+- idempotency lookup
+- retry analysis
+- failure investigation
 
 Execution Log is not a business read model.
 
@@ -53,11 +53,11 @@ Execution Log should represent the lifecycle of execution.
 
 Common statuses:
 
-* pending
-* running
-* succeeded
-* rejected
-* failed
+- pending
+- running
+- succeeded
+- rejected
+- failed
 
 Rejected means the Operation completed with a business rejection.
 
@@ -69,9 +69,9 @@ Execution Log is used by Runner for idempotency lookup.
 
 When Runner receives a Command with intentId:
 
-* Runner checks Execution Log
-* if a completed execution exists, Runner returns the previously recorded Result
-* if no completed execution exists, Runner continues execution
+- Runner checks Execution Log
+- if a completed execution exists, Runner returns the previously recorded Result
+- if no completed execution exists, Runner continues execution
 
 Idempotency behavior is defined in `idempotency.md`.
 
@@ -83,10 +83,10 @@ Runner persists Operation Result into Execution Log.
 
 The persisted Result may contain:
 
-* success outcome
-* rejection outcome
-* reason
-* emitted events metadata
+- success outcome
+- rejection outcome
+- reason
+- emitted events metadata
 
 Execution Log must preserve the Result exactly enough to return it for repeated intentId execution.
 
@@ -96,12 +96,12 @@ Execution Log must store correlationId.
 
 correlationId is used for tracing execution across:
 
-* REST requests
-* gRPC requests
-* consumers
-* cron jobs
-* webhooks
-* nested use case flows
+- REST requests
+- gRPC requests
+- consumers
+- cron jobs
+- webhooks
+- nested use case flows
 
 correlationId is not an idempotency key.
 
@@ -109,10 +109,10 @@ correlationId is not an idempotency key.
 
 Execution Log should store timestamps such as:
 
-* createdAt
-* startedAt
-* finishedAt
-* failedAt
+- createdAt
+- startedAt
+- finishedAt
+- failedAt
 
 Timestamps must be generated consistently.
 
@@ -124,11 +124,11 @@ Technical failures should be recorded.
 
 Failure records should include:
 
-* failure type
-* safe failure message
-* retry metadata when available
-* timestamps
-* execution duration
+- failure type
+- safe failure message
+- retry metadata when available
+- timestamps
+- execution duration
 
 Do not store secrets or sensitive payloads in failure details.
 
@@ -146,11 +146,11 @@ Retention policy is an operational decision.
 
 Retention must consider:
 
-* idempotency window
-* audit requirements
-* debugging needs
-* storage cost
-* compliance requirements
+- idempotency window
+- audit requirements
+- debugging needs
+- storage cost
+- compliance requirements
 
 Do not remove records required for active idempotency guarantees.
 
@@ -160,24 +160,24 @@ Execution Log should support operational investigation.
 
 It should be possible to answer:
 
-* was this intent executed?
-* who executed it?
-* what Operation was executed?
-* what Result was produced?
-* did execution fail or reject?
-* how long did execution take?
-* which correlationId connects related work?
+- was this intent executed?
+- who executed it?
+- what Operation was executed?
+- what Result was produced?
+- did execution fail or reject?
+- how long did execution take?
+- which correlationId connects related work?
 
 ## Forbidden responsibilities
 
 Execution Log must not:
 
-* execute Operations
-* make business decisions
-* publish Events
-* manage retries
-* replace Outbox
-* replace domain read models
+- execute Operations
+- make business decisions
+- publish Events
+- manage retries
+- replace Outbox
+- replace domain read models
 
 Execution Log is execution history only.
 
@@ -185,12 +185,12 @@ Execution Log is execution history only.
 
 Execution Log should:
 
-* be reliable
-* be queryable
-* be durable
-* support idempotency lookup
-* support traceability
-* preserve Results
-* distinguish rejection from technical failure
-* avoid storing secrets
-* remain owned by Runner
+- be reliable
+- be queryable
+- be durable
+- support idempotency lookup
+- support traceability
+- preserve Results
+- distinguish rejection from technical failure
+- avoid storing secrets
+- remain owned by Runner

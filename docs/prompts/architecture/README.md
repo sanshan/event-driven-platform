@@ -76,4 +76,3 @@ When proposing implementations:
 - prefer observability
 
 This project values architectural clarity over framework convenience.
-

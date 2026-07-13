@@ -1,0 +1,7 @@
+{
+    "name": "@event-driven-platform/subject",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "packages/subject/src",
+    "projectType": "library",
+    "tags": []
+}

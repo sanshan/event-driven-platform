@@ -4,14 +4,14 @@ Grafana is used for observability visualization and operational monitoring.
 
 Use Grafana for:
 
-* dashboards
-* metrics visualization
-* tracing visualization
-* log exploration
-* alerting
-* service monitoring
-* infrastructure monitoring
-* business-independent operational monitoring
+- dashboards
+- metrics visualization
+- tracing visualization
+- log exploration
+- alerting
+- service monitoring
+- infrastructure monitoring
+- business-independent operational monitoring
 
 Grafana must be treated as an observability and operational tooling platform.
 
@@ -21,12 +21,12 @@ Dashboards should answer operational questions.
 
 Every dashboard should help operators understand:
 
-* system health
-* performance
-* failures
-* capacity
-* trends
-* incidents
+- system health
+- performance
+- failures
+- capacity
+- trends
+- incidents
 
 Avoid dashboards that only display raw metrics without context.
 
@@ -36,13 +36,13 @@ Prefer multiple focused dashboards.
 
 Examples:
 
-* platform overview
-* service overview
-* infrastructure overview
-* database overview
-* messaging overview
-* cache overview
-* tracing overview
+- platform overview
+- service overview
+- infrastructure overview
+- database overview
+- messaging overview
+- cache overview
+- tracing overview
 
 Avoid giant dashboards containing everything.
 
@@ -52,13 +52,13 @@ Prefer dashboard sections.
 
 Common sections:
 
-* health
-* traffic
-* latency
-* errors
-* saturation
-* dependencies
-* infrastructure
+- health
+- traffic
+- latency
+- errors
+- saturation
+- dependencies
+- infrastructure
 
 Critical information should appear near the top.
 
@@ -68,10 +68,10 @@ Dashboards should prioritize the golden signals.
 
 Track:
 
-* latency
-* traffic
-* errors
-* saturation
+- latency
+- traffic
+- errors
+- saturation
 
 These signals should be visible for every important service.
 
@@ -79,12 +79,12 @@ These signals should be visible for every important service.
 
 Every service should expose:
 
-* request rate
-* request duration
-* error rate
-* active requests
-* dependency health
-* resource usage
+- request rate
+- request duration
+- error rate
+- active requests
+- dependency health
+- resource usage
 
 Operators should understand service state within seconds.
 
@@ -92,16 +92,16 @@ Operators should understand service state within seconds.
 
 Monitor:
 
-* query latency
-* slow queries
-* connection pool usage
-* active connections
-* lock waits
-* deadlocks
-* replication lag
-* WAL growth
-* storage growth
-* transaction duration
+- query latency
+- slow queries
+- connection pool usage
+- active connections
+- lock waits
+- deadlocks
+- replication lag
+- WAL growth
+- storage growth
+- transaction duration
 
 Database bottlenecks should be visible immediately.
 
@@ -109,14 +109,14 @@ Database bottlenecks should be visible immediately.
 
 Monitor:
 
-* producer throughput
-* consumer throughput
-* consumer lag
-* retry rate
-* dead-letter rate
-* partition distribution
-* broker health
-* storage growth
+- producer throughput
+- consumer throughput
+- consumer lag
+- retry rate
+- dead-letter rate
+- partition distribution
+- broker health
+- storage growth
 
 Messaging backpressure must be visible.
 
@@ -124,12 +124,12 @@ Messaging backpressure must be visible.
 
 Monitor:
 
-* hit rate
-* miss rate
-* memory usage
-* eviction rate
-* latency
-* connection count
+- hit rate
+- miss rate
+- memory usage
+- eviction rate
+- latency
+- connection count
 
 Cache effectiveness should be measurable.
 
@@ -137,15 +137,15 @@ Cache effectiveness should be measurable.
 
 Monitor:
 
-* CPU
-* memory
-* disk usage
-* disk I/O
-* network traffic
-* network errors
-* container health
-* pod health
-* node health
+- CPU
+- memory
+- disk usage
+- disk I/O
+- network traffic
+- network errors
+- container health
+- pod health
+- node health
 
 Infrastructure problems should be distinguishable from application problems.
 
@@ -155,11 +155,11 @@ Integrate distributed tracing.
 
 Use Grafana to visualize:
 
-* request flow
-* service dependencies
-* latency breakdown
-* failed requests
-* slow operations
+- request flow
+- service dependencies
+- latency breakdown
+- failed requests
+- slow operations
 
 Traces should be accessible from dashboards when possible.
 
@@ -169,10 +169,10 @@ Integrate log exploration.
 
 Logs should support:
 
-* trace correlation
-* service filtering
-* environment filtering
-* error investigation
+- trace correlation
+- service filtering
+- environment filtering
+- error investigation
 
 Grafana should help navigate from metrics to logs and traces.
 
@@ -182,10 +182,10 @@ Alerts must be actionable.
 
 Every alert should answer:
 
-* what failed
-* where it failed
-* how severe it is
-* what should be investigated
+- what failed
+- where it failed
+- how severe it is
+- what should be investigated
 
 Avoid alerts that only report a raw metric threshold.
 
@@ -193,16 +193,16 @@ Avoid alerts that only report a raw metric threshold.
 
 Prefer:
 
-* low noise
-* high signal
-* actionable alerts
+- low noise
+- high signal
+- actionable alerts
 
 Avoid:
 
-* alert storms
-* duplicate alerts
-* flapping alerts
-* alerts without ownership
+- alert storms
+- duplicate alerts
+- flapping alerts
+- alerts without ownership
 
 ## Alert categories
 
@@ -210,22 +210,22 @@ Typical alert categories:
 
 Critical:
 
-* service unavailable
-* database unavailable
-* consumer stopped
-* message backlog critical
+- service unavailable
+- database unavailable
+- consumer stopped
+- message backlog critical
 
 Warning:
 
-* elevated latency
-* elevated error rate
-* resource pressure
-* retry increase
+- elevated latency
+- elevated error rate
+- resource pressure
+- retry increase
 
 Informational:
 
-* deployment completed
-* maintenance events
+- deployment completed
+- maintenance events
 
 ## Thresholds
 
@@ -235,10 +235,10 @@ Avoid arbitrary values.
 
 Thresholds should be based on:
 
-* service SLOs
-* historical behavior
-* capacity limits
-* business requirements
+- service SLOs
+- historical behavior
+- capacity limits
+- business requirements
 
 ## Variables
 
@@ -246,11 +246,11 @@ Use dashboard variables carefully.
 
 Good variables:
 
-* environment
-* service
-* namespace
-* cluster
-* topic
+- environment
+- service
+- namespace
+- cluster
+- topic
 
 Avoid variables that create excessive query cardinality.
 
@@ -260,11 +260,11 @@ Avoid dashboards that depend on high-cardinality labels.
 
 Do not build dashboards around:
 
-* user ids
-* emails
-* session ids
-* request ids
-* UUIDs
+- user ids
+- emails
+- session ids
+- request ids
+- UUIDs
 
 Use traces and logs for individual investigations.
 
@@ -276,10 +276,10 @@ Dashboard queries must be efficient.
 
 Avoid:
 
-* expensive full-range scans
-* excessive cardinality
-* overly complex panels
-* unnecessary refresh intervals
+- expensive full-range scans
+- excessive cardinality
+- overly complex panels
+- unnecessary refresh intervals
 
 Observability systems must remain responsive under load.
 
@@ -289,9 +289,9 @@ Separate environments clearly.
 
 At minimum:
 
-* development
-* acceptance
-* production
+- development
+- acceptance
+- production
 
 Operators must never confuse environments.
 
@@ -305,11 +305,11 @@ Dashboard names should describe purpose.
 
 Examples:
 
-* Platform Overview
-* User Service Overview
-* PostgreSQL Overview
-* Redpanda Overview
-* Redis Overview
+- Platform Overview
+- User Service Overview
+- PostgreSQL Overview
+- Redpanda Overview
+- Redis Overview
 
 Avoid ambiguous dashboard names.
 
@@ -317,15 +317,15 @@ Avoid ambiguous dashboard names.
 
 When generating Grafana dashboards or alerts:
 
-* prioritize operational visibility
-* expose golden signals
-* create focused dashboards
-* avoid giant dashboards
-* use actionable alerts
-* avoid high-cardinality metrics
-* make failures visible
-* separate environments clearly
-* include service, database, messaging and infrastructure monitoring
-* support correlation between metrics, logs and traces
-* optimize dashboard query performance
-* prefer maintainable dashboards over visually complex dashboards
+- prioritize operational visibility
+- expose golden signals
+- create focused dashboards
+- avoid giant dashboards
+- use actionable alerts
+- avoid high-cardinality metrics
+- make failures visible
+- separate environments clearly
+- include service, database, messaging and infrastructure monitoring
+- support correlation between metrics, logs and traces
+- optimize dashboard query performance
+- prefer maintainable dashboards over visually complex dashboards

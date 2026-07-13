@@ -4,12 +4,12 @@ Vitest is the primary testing framework.
 
 Use Vitest for:
 
-* unit tests
-* integration tests
-* contract tests
-* infrastructure tests
-* utility tests
-* application tests
+- unit tests
+- integration tests
+- contract tests
+- infrastructure tests
+- utility tests
+- application tests
 
 Vitest must be treated as a testing tool, not as part of application logic.
 
@@ -19,18 +19,18 @@ Tests must verify behavior.
 
 Prefer testing:
 
-* observable outcomes
-* public APIs
-* contracts
-* business rules
-* integration boundaries
+- observable outcomes
+- public APIs
+- contracts
+- business rules
+- integration boundaries
 
 Avoid testing:
 
-* implementation details
-* private methods
-* internal framework behavior
-* library internals
+- implementation details
+- private methods
+- internal framework behavior
+- library internals
 
 Tests should remain stable during refactoring.
 
@@ -38,9 +38,9 @@ Tests should remain stable during refactoring.
 
 Prefer:
 
-* Arrange
-* Act
-* Assert
+- Arrange
+- Act
+- Assert
 
 Structure tests clearly.
 
@@ -55,21 +55,21 @@ Test names should describe behavior.
 Prefer:
 
 ```ts id="pxzgdy"
-it('returns cached user when cache contains value')
+it('returns cached user when cache contains value');
 ```
 
 ```ts id="6ymv4z"
-it('rejects duplicate intent execution')
+it('rejects duplicate intent execution');
 ```
 
 Avoid:
 
 ```ts id="5mt7ye"
-it('works')
+it('works');
 ```
 
 ```ts id="22egyu"
-it('test user service')
+it('test user service');
 ```
 
 Test names should explain expected behavior.
@@ -78,10 +78,10 @@ Test names should explain expected behavior.
 
 Unit tests should:
 
-* run fast
-* be deterministic
-* have no external dependencies
-* execute in isolation
+- run fast
+- be deterministic
+- have no external dependencies
+- execute in isolation
 
 Mock only true external dependencies.
 
@@ -93,10 +93,10 @@ Integration tests should verify collaboration between components.
 
 Examples:
 
-* database integration
-* cache integration
-* messaging integration
-* API integration
+- database integration
+- cache integration
+- messaging integration
+- API integration
 
 Integration tests may use real infrastructure.
 
@@ -106,10 +106,10 @@ Prefer realistic environments.
 
 Use contract tests for:
 
-* API contracts
-* event contracts
-* schema validation
-* message contracts
+- API contracts
+- event contracts
+- schema validation
+- message contracts
 
 Contracts should be verified automatically.
 
@@ -119,10 +119,10 @@ Contract failures should be detected early.
 
 Tests must not depend on:
 
-* execution order
-* shared mutable state
-* previous tests
-* external timing assumptions
+- execution order
+- shared mutable state
+- previous tests
+- external timing assumptions
 
 Every test should be runnable independently.
 
@@ -132,16 +132,16 @@ Tests must be deterministic.
 
 Avoid:
 
-* random behavior
-* real clock dependence
-* race-sensitive assertions
-* sleep-based synchronization
+- random behavior
+- real clock dependence
+- race-sensitive assertions
+- sleep-based synchronization
 
 Control:
 
-* time
-* randomness
-* external dependencies
+- time
+- randomness
+- external dependencies
 
 ## Async testing
 
@@ -151,14 +151,14 @@ Always await asynchronous operations.
 
 Avoid:
 
-```ts id="pvl2rq"
+```text
 service.execute();
 expect(...)
 ```
 
 Prefer:
 
-```ts id="w5ylwt"
+```text
 await service.execute();
 expect(...)
 ```
@@ -172,13 +172,13 @@ Prefer specific assertions.
 Good:
 
 ```ts id="u56a0u"
-expect(result.status).toBe('success')
+expect(result.status).toBe('success');
 ```
 
 Avoid:
 
 ```ts id="e7d7lm"
-expect(result).toBeTruthy()
+expect(result).toBeTruthy();
 ```
 
 Assertions should clearly communicate expectations.
@@ -189,11 +189,11 @@ Mock only external dependencies.
 
 Examples:
 
-* external APIs
-* databases in unit tests
-* message brokers in unit tests
-* filesystem access
-* network access
+- external APIs
+- databases in unit tests
+- message brokers in unit tests
+- filesystem access
+- network access
 
 Avoid excessive mocking.
 
@@ -203,10 +203,10 @@ Do not mock behavior that should be tested.
 
 Use:
 
-* mocks
-* stubs
-* spies
-* fakes
+- mocks
+- stubs
+- spies
+- fakes
 
 Choose the simplest test double that satisfies the test.
 
@@ -218,15 +218,15 @@ Keep fixtures explicit.
 
 Prefer:
 
-* builders
-* factories
-* reusable test helpers
+- builders
+- factories
+- reusable test helpers
 
 Avoid:
 
-* massive fixture objects
-* hidden fixture behavior
-* shared mutable fixtures
+- massive fixture objects
+- hidden fixture behavior
+- shared mutable fixtures
 
 Fixtures should be easy to understand.
 
@@ -237,9 +237,7 @@ Prefer builders for complex test objects.
 Example:
 
 ```ts id="z1yyof"
-const user = UserBuilder.create()
-  .withStatus('ACTIVE')
-  .build();
+const user = UserBuilder.create().withStatus('ACTIVE').build();
 ```
 
 Builders improve readability and reduce duplication.
@@ -250,15 +248,15 @@ Use snapshots carefully.
 
 Good use cases:
 
-* generated output
-* structured serialization
-* contract verification
+- generated output
+- structured serialization
+- contract verification
 
 Avoid snapshots for:
 
-* business behavior
-* frequently changing structures
-* complex domain logic
+- business behavior
+- frequently changing structures
+- complex domain logic
 
 Snapshots should remain reviewable.
 
@@ -270,9 +268,9 @@ Use fake timers when needed.
 
 Avoid:
 
-* waiting with setTimeout
-* sleep-based assertions
-* real clock dependence
+- waiting with setTimeout
+- sleep-based assertions
+- real clock dependence
 
 Tests should execute quickly.
 
@@ -283,9 +281,7 @@ Verify failures explicitly.
 Example:
 
 ```ts id="dfy5ae"
-await expect(service.execute())
-  .rejects
-  .toThrow();
+await expect(service.execute()).rejects.toThrow();
 ```
 
 Test expected failures as carefully as successful paths.
@@ -304,10 +300,10 @@ Do not write tests solely to increase coverage numbers.
 
 For database integration tests:
 
-* use isolated databases
-* use migrations
-* reset state between tests
-* avoid shared data
+- use isolated databases
+- use migrations
+- reset state between tests
+- avoid shared data
 
 Database tests should be reproducible.
 
@@ -315,11 +311,11 @@ Database tests should be reproducible.
 
 Verify:
 
-* message production
-* message consumption
-* retry behavior
-* idempotency behavior
-* dead-letter behavior
+- message production
+- message consumption
+- retry behavior
+- idempotency behavior
+- dead-letter behavior
 
 Messaging tests should cover failure scenarios.
 
@@ -329,11 +325,11 @@ Test concurrency-sensitive behavior.
 
 Examples:
 
-* duplicate requests
-* idempotency
-* race conditions
-* locking
-* optimistic concurrency
+- duplicate requests
+- idempotency
+- race conditions
+- locking
+- optimistic concurrency
 
 High-load systems require concurrency validation.
 
@@ -343,10 +339,10 @@ Tests should remain fast.
 
 Avoid:
 
-* unnecessary infrastructure startup
-* redundant setup
-* large datasets
-* excessive waiting
+- unnecessary infrastructure startup
+- redundant setup
+- large datasets
+- excessive waiting
 
 Slow tests reduce developer productivity.
 
@@ -356,10 +352,10 @@ Tests should support parallel execution.
 
 Avoid:
 
-* shared state
-* global mutations
-* port conflicts
-* shared files
+- shared state
+- global mutations
+- port conflicts
+- shared files
 
 Parallel-safe tests scale better.
 
@@ -369,10 +365,10 @@ Tests are production code.
 
 Apply the same standards:
 
-* readability
-* refactoring
-* consistency
-* explicitness
+- readability
+- refactoring
+- consistency
+- explicitness
 
 Poor-quality tests reduce confidence.
 
@@ -380,17 +376,17 @@ Poor-quality tests reduce confidence.
 
 When generating Vitest tests:
 
-* test behavior, not implementation
-* use Arrange-Act-Assert structure
-* write descriptive test names
-* keep tests deterministic
-* control time explicitly
-* await asynchronous operations
-* use specific assertions
-* mock only external dependencies
-* prefer builders for complex fixtures
-* test failure scenarios
-* test concurrency-sensitive behavior
-* keep tests isolated
-* support parallel execution
-* optimize for readability and maintainability
+- test behavior, not implementation
+- use Arrange-Act-Assert structure
+- write descriptive test names
+- keep tests deterministic
+- control time explicitly
+- await asynchronous operations
+- use specific assertions
+- mock only external dependencies
+- prefer builders for complex fixtures
+- test failure scenarios
+- test concurrency-sensitive behavior
+- keep tests isolated
+- support parallel execution
+- optimize for readability and maintainability

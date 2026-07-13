@@ -10,10 +10,10 @@ Result is the contract between Operation and Runner.
 
 Result represents:
 
-* successful execution
-* rejected execution
-* execution outcome
-* emitted events
+- successful execution
+- rejected execution
+- execution outcome
+- emitted events
 
 Result contains no execution logic.
 
@@ -21,9 +21,9 @@ Result contains no execution logic.
 
 Successful Result may contain:
 
-* outcome data
-* emitted events
-* metadata
+- outcome data
+- emitted events
+- metadata
 
 Success indicates that business rules were satisfied.
 
@@ -31,9 +31,9 @@ Success indicates that business rules were satisfied.
 
 Rejected Result may contain:
 
-* rejection reason
-* rejection code
-* metadata
+- rejection reason
+- rejection code
+- metadata
 
 Rejection is a valid business outcome.
 
@@ -55,9 +55,9 @@ Infrastructure failures are not Results.
 
 Examples:
 
-* database unavailable
-* timeout
-* network failure
+- database unavailable
+- timeout
+- network failure
 
 These are execution failures handled by Runner.
 
@@ -65,7 +65,7 @@ These are execution failures handled by Runner.
 
 Results should:
 
-* be immutable
-* be deterministic
-* be serializable
-* represent business outcomes only
+- be immutable
+- be deterministic
+- be serializable
+- represent business outcomes only

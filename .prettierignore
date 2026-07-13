@@ -1,0 +1,12 @@
+cat > .prettierignore <<'EOF'
+node_modules
+dist
+coverage
+.nx
+out-tsc
+
+**/*.tsbuildinfo
+**/vitest.config.*.timestamp*
+
+pnpm-lock.yaml
+EOF

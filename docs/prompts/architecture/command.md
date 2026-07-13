@@ -24,24 +24,14 @@ Operation answers:
 What domain action should happen?
 ```
 
-Command does not replace Operation.
-
-Command wraps Operation with execution requirements.
+Command wraps an Operation together with its execution requirements.
 
 ## Responsibilities
 
-Command is responsible for carrying:
+A Command is responsible for carrying:
 
-* operation
-* execution options
-* retry options
-* timeout options
-* rate limit options
-* guard options
-* consistency options
-* metadata required for execution
-
-Command only declares execution requirements.
+- Operation
+- CommandOptions
 
 Command does not interpret execution requirements.
 
@@ -50,64 +40,18 @@ Command does not execute execution requirements.
 ## Abstract Interface
 
 ```ts
-export interface ICommand<
-  TOperation extends IOperation<unknown, unknown>
-> {
-  readonly operation: TOperation;
+export interface Command<TOperation extends Operation<unknown, unknown>> {
+    readonly operation: TOperation;
 
-  readonly options?: CommandOptions;
+    readonly options?: CommandOptions;
 }
-
-export interface CommandOptions {
-  readonly timeoutMs?: number;
-
-  readonly retry?: RetryOptions;
-
-  readonly rateLimit?: RateLimitOptions;
-
-  readonly guards?: GuardOptions[];
-
-  readonly consistency?: ConsistencyOptions;
-
-  readonly executionMode?: ExecutionMode;
-}
-```
-
-## Command Options Rule
-
-CommandOptions are declared by the Use Case.
-
-CommandOptions are executed by the Runner.
-
-Command must not implement CommandOptions.
-
-Command must not interpret CommandOptions.
-
-Examples:
-
-```txt
-retry:
-  declared in Command
-  executed by Runner
-
-timeout:
-  declared in Command
-  executed by Runner
-
-rateLimit:
-  declared in Command
-  executed by Runner
-
-guards:
-  declared in Command
-  evaluated by Runner
 ```
 
 ## Command vs Operation
 
 Operation describes the domain action.
 
-Command describes execution requirements for that Operation.
+Command describes how that Operation should be executed.
 
 Example:
 
@@ -117,90 +61,57 @@ Operation:
 
 Command:
   Execute ActivateProfile
-  with timeout = 3000ms
-  with retry = 3 attempts
-  with rate limit = profile-activation
+  with specific execution requirements
 ```
 
 ## Idempotency Rule
 
 Command does not define idempotency.
 
-Idempotency is based on Operation intent.
+Idempotency is based on the Operation Intent.
 
-Command only transports the Operation that contains the deterministic intent.
-
-Commands with the same Operation intent represent the same business intention.
+Command transports the Operation that carries the deterministic Intent.
 
 ## Allowed
 
 A Command may contain:
 
-* Operation
-* retry configuration
-* timeout configuration
-* rate limit configuration
-* guard configuration
-* consistency configuration
-* execution mode
-* technical metadata required for execution
+- Operation
+- CommandOptions
 
 ## Forbidden
 
 A Command must not:
 
-* contain business logic
-* contain domain rules
-* validate domain invariants
-* mutate Aggregates
-* load Aggregates
-* save Aggregates
-* execute Operations directly
-* call other Commands
-* call Use Cases
-* publish messages
-* write execution logs
-* write outbox records
-* implement retries
-* implement idempotency
-* implement rate limiting
-* evaluate guards
-* access databases directly
-* access Kafka directly
-* access Redpanda directly
-* access Redis directly
+- contain business logic
+- contain domain rules
+- validate domain invariants
+- mutate Aggregates
+- execute Operations
+- call other Commands
+- call Use Cases
+- publish messages
+- write execution logs
+- write outbox records
+- access infrastructure
 
 ## Architecture Rule
 
-Commands are located inside the domain module of the corresponding business capability.
+Commands are colocated with the corresponding Operations.
 
 Example:
 
 ```txt
 domain/profile/commands/
-domain/wallet/commands/
-domain/withdrawal/commands/
-```
-
-Operations are located separately:
-
-```txt
 domain/profile/operations/
+
+domain/wallet/commands/
 domain/wallet/operations/
-domain/withdrawal/operations/
 ```
 
-Commands are colocated with Operations because each Command wraps a domain Operation.
+Command is not a domain model.
 
-However, Command is not a domain model.
-
-Command does not contain domain rules.
-
-Command does not mutate Aggregates.
-
-Command does not represent Aggregate state.
-
-Command is a transport envelope for executing an Operation through Runner.
+Command is an execution envelope.
 
 ## Core Principle
 
@@ -218,12 +129,6 @@ Domain action.
 Domain model.
 Workflow.
 Handler.
-Persistence.
-Messaging.
-Retry implementation.
-Idempotency implementation.
-Rate limiter.
-Guard evaluator.
-Execution log.
-Outbox writer.
+Execution engine.
+Infrastructure adapter.
 ```

@@ -1,0 +1,7 @@
+{
+    "name": "@event-driven-platform/retry",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "packages/retry/src",
+    "projectType": "library",
+    "tags": []
+}

@@ -43,51 +43,51 @@ ActivateProfileByPlatform
 
 A Use Case is responsible for:
 
-* receiving application input
-* resolving actor context
-* resolving subject context
-* preparing Operation payload
-* creating Commands
-* executing Commands through Runner
-* coordinating multiple Commands
-* combining Results
-* implementing workflow orchestration
+- receiving application input
+- resolving actor context
+- resolving subject context
+- preparing Operation payload
+- creating Commands
+- executing Commands through Runner
+- coordinating multiple Commands
+- combining Results
+- implementing workflow orchestration
 
 ## Allowed
 
 A Use Case may:
 
-* create Operations
-* create Commands
-* call Runner
-* execute Commands sequentially
-* execute Commands conditionally
-* execute Commands in parallel
-* use Results from previous Commands
-* call application-layer services
-* access infrastructure through ports when domain participation is not required
+- create Operations
+- create Commands
+- call Runner
+- execute Commands sequentially
+- execute Commands conditionally
+- execute Commands in parallel
+- use Results from previous Commands
+- call application-layer services
+- access infrastructure through ports when domain participation is not required
 
 ## Forbidden
 
 A Use Case must not:
 
-* execute Operations directly
-* call other Use Cases
-* contain domain rules
-* validate domain invariants
-* mutate Aggregates
-* persist Aggregates
-* own Aggregate lifecycle
-* publish messages
-* access Kafka directly
-* access Redpanda directly
-* access Debezium directly
-* implement retries
-* implement idempotency
-* implement rate limiting
-* write execution logs
-* write outbox records
-* bypass Runner
+- execute Operations directly
+- call other Use Cases
+- contain domain rules
+- validate domain invariants
+- mutate Aggregates
+- persist Aggregates
+- own Aggregate lifecycle
+- publish messages
+- access Kafka directly
+- access Redpanda directly
+- access Debezium directly
+- implement retries
+- implement idempotency
+- implement rate limiting
+- write execution logs
+- write outbox records
+- bypass Runner
 
 ## Aggregate Rule
 
@@ -101,21 +101,21 @@ A Use Case must not pass Aggregate instances into Operations.
 
 Use Cases pass only:
 
-* intent
-* actor
-* aggregate identifier
-* payload
+- intent
+- actor
+- aggregate identifier
+- payload
 
 ## Design Principles
 
 Use Cases should:
 
-* remain thin
-* coordinate workflows
-* delegate domain decisions to Operations
-* delegate execution concerns to Runner
-* remain application-specific
-* remain independent from infrastructure implementation details
+- remain thin
+- coordinate workflows
+- delegate domain decisions to Operations
+- delegate execution concerns to Runner
+- remain application-specific
+- remain independent from infrastructure implementation details
 
 ## Architecture Rule
 

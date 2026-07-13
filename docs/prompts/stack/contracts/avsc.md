@@ -4,11 +4,11 @@ avsc is the Node.js / JavaScript implementation used for Apache Avro schemas.
 
 Use avsc for:
 
-* parsing Avro schemas
-* validating payloads against Avro schemas
-* encoding Avro payloads
-* decoding Avro payloads
-* working with Avro types in TypeScript/Node.js services
+- parsing Avro schemas
+- validating payloads against Avro schemas
+- encoding Avro payloads
+- decoding Avro payloads
+- working with Avro types in TypeScript/Node.js services
 
 avsc must be treated as a technical library for Avro handling.
 
@@ -26,10 +26,10 @@ Decode and validate consumed messages before passing data further into applicati
 
 Use avsc validation at system boundaries:
 
-* before producing Redpanda messages
-* after consuming Redpanda messages
-* when processing CDC-derived messages
-* when accepting externally supplied Avro payloads
+- before producing Redpanda messages
+- after consuming Redpanda messages
+- when processing CDC-derived messages
+- when accepting externally supplied Avro payloads
 
 Do not assume TypeScript types alone are enough for runtime validation.
 
@@ -66,10 +66,10 @@ Invalid payloads should not silently pass through the system.
 
 Prefer clear error reporting with:
 
-* schema name
-* schema version
-* validation failure reason
-* message/topic context when available
+- schema name
+- schema version
+- validation failure reason
+- message/topic context when available
 
 ## Boundaries
 
@@ -77,11 +77,11 @@ Keep avsc usage close to messaging and contract boundaries.
 
 Good places:
 
-* contracts package
-* Redpanda producer adapter
-* Redpanda consumer adapter
-* Schema Registry integration layer
-* CDC adapter layer
+- contracts package
+- Redpanda producer adapter
+- Redpanda consumer adapter
+- Schema Registry integration layer
+- CDC adapter layer
 
 Avoid leaking avsc-specific objects into domain code.
 
@@ -89,11 +89,11 @@ Avoid leaking avsc-specific objects into domain code.
 
 When generating avsc code:
 
-* use `avsc.Type.forSchema(...)`
-* keep schemas explicit
-* validate payloads at runtime
-* isolate encoding and decoding logic
-* do not expose avsc internals to domain code
-* do not rely only on TypeScript interfaces
-* handle validation errors explicitly
-* keep Avro schema files as the source of truth
+- use `avsc.Type.forSchema(...)`
+- keep schemas explicit
+- validate payloads at runtime
+- isolate encoding and decoding logic
+- do not expose avsc internals to domain code
+- do not rely only on TypeScript interfaces
+- handle validation errors explicitly
+- keep Avro schema files as the source of truth

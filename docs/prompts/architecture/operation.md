@@ -40,23 +40,20 @@ Operation is responsible only for carrying:
 ## Public API
 
 ```ts
-export interface Operation<
-  TPayload,
-  TAggregateId,
-> {
-  readonly name: string;
+export interface Operation<TPayload, TAggregateId> {
+    readonly name: string;
 
-  readonly intent: Intent;
+    readonly intent: Intent;
 
-  readonly correlationId: string;
+    readonly correlationId: string;
 
-  readonly actor: Actor;
+    readonly actor: Actor;
 
-  readonly subject: Subject;
+    readonly subject: Subject;
 
-  readonly aggregateId: TAggregateId;
+    readonly aggregateId: TAggregateId;
 
-  readonly payload: TPayload;
+    readonly payload: TPayload;
 }
 ```
 

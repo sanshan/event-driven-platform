@@ -12,15 +12,15 @@ Runner provides operational guarantees around Operation execution.
 
 Runner is responsible for:
 
-* command execution
-* operation invocation
-* execution logging
-* idempotency
-* retry handling
-* timeout handling
-* rate limiting
-* result persistence
-* outbox persistence
+- command execution
+- operation invocation
+- execution logging
+- idempotency
+- retry handling
+- timeout handling
+- rate limiting
+- result persistence
+- outbox persistence
 
 ## Execution flow
 
@@ -45,17 +45,17 @@ Every execution must be recorded.
 
 Execution log contains:
 
-* intentId
-* correlationId
-* operation
-* result
-* timestamps
+- intentId
+- correlationId
+- operation
+- result
+- timestamps
 
 Execution log is the source of:
 
-* idempotency
-* execution history
-* traceability
+- idempotency
+- execution history
+- traceability
 
 ## Events
 
@@ -69,9 +69,9 @@ Runner does not publish Events directly.
 
 Runner must not:
 
-* contain business rules
-* make business decisions
-* implement domain logic
+- contain business rules
+- make business decisions
+- implement domain logic
 
 Runner is execution infrastructure only.
 
@@ -79,10 +79,10 @@ Runner is execution infrastructure only.
 
 Runner should provide:
 
-* deterministic execution
-* observability
-* traceability
-* repeatability
-* reliability
+- deterministic execution
+- observability
+- traceability
+- repeatability
+- reliability
 
 All write-side execution flows through Runner.

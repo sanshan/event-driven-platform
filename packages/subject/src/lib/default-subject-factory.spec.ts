@@ -1,6 +1,6 @@
-import {describe, expect, it} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {DefaultSubjectFactory} from './default-subject-factory.js';
+import { DefaultSubjectFactory } from './default-subject-factory.js';
 
 describe('DefaultSubjectFactory', () => {
     const factory = new DefaultSubjectFactory();
@@ -73,10 +73,12 @@ describe('DefaultSubjectFactory', () => {
     });
 
     it('rejects unknown descriptor fields', () => {
-        expect(() => factory.create({
-            type: 'user',
-            id: 'user-1',
-            unexpected: true,
-        } as never)).toThrow();
+        expect(() =>
+            factory.create({
+                type: 'user',
+                id: 'user-1',
+                unexpected: true,
+            } as never),
+        ).toThrow();
     });
 });

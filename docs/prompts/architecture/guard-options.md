@@ -1,10 +1,10 @@
 # Guard Options
 
-GuardOptions describe which execution guards must be evaluated before or during Command execution.
+GuardOptions describe which execution Guards must be evaluated before Command execution.
 
 GuardOptions are declarative.
 
-GuardOptions do not evaluate guards by themselves.
+GuardOptions do not evaluate Guards.
 
 GuardOptions are carried by CommandOptions and interpreted by the Runner.
 
@@ -13,59 +13,44 @@ GuardOptions are carried by CommandOptions and interpreted by the Runner.
 GuardOptions answer:
 
 ```txt
-Which execution guards should be evaluated for this Command?
+Which Guards must pass before this Command may be executed?
 ```
 
 GuardOptions do not answer:
 
 ```txt
 Is the Aggregate state valid?
+Why did a Guard fail?
 ```
 
-That is a domain invariant concern.
+Those concerns belong to domain logic and Guard implementations.
 
 ## Responsibilities
 
-GuardOptions are responsible for carrying:
+GuardOptions are responsible only for carrying:
 
-* guard name
-* guard parameters
-* guard phase
-* rejection behavior
+- guard name
+- guard parameters
 
-GuardOptions do not implement guard behavior.
+GuardOptions do not implement Guard behavior.
 
 ## Abstract Interface
 
 ```ts
 export interface GuardOptions {
-  readonly name: string;
+    readonly name: string;
 
-  readonly phase?: GuardPhase;
-
-  readonly params?: Record<string, unknown>;
-
-  readonly rejectWith?: GuardRejection;
-}
-
-export type GuardPhase =
-  | 'before-execution'
-  | 'after-execution';
-
-export interface GuardRejection {
-  readonly reason: string;
-
-  readonly code?: string;
+    readonly params?: Readonly<Record<string, unknown>>;
 }
 ```
 
 ## Name Rule
 
-`name` identifies the guard to evaluate.
+`name` identifies the Guard to evaluate.
 
 The name must be stable.
 
-The name must be known by the Runner guard registry.
+The name must be known by the Runner Guard registry.
 
 Examples:
 
@@ -78,27 +63,23 @@ maintenance-window-closed
 
 ## Parameters Rule
 
-`params` provide guard-specific configuration.
+`params` provide Guard-specific configuration.
 
 Parameters must be serializable.
 
-Parameters must not contain Aggregate instances.
+Parameters must not contain:
 
-Parameters must not contain infrastructure clients.
+- Aggregate instances
+- infrastructure clients
+- executable functions
 
-## Phase Rule
+## Execution Rule
 
-`phase` declares when the guard should be evaluated.
+All declared Guards are evaluated before Operation execution.
 
-```txt
-before-execution:
-  evaluated before Command Handler execution
+The evaluation order and execution strategy are determined by the Runner.
 
-after-execution:
-  evaluated after Command Handler execution
-```
-
-If omitted, the default phase is `before-execution`.
+GuardOptions do not control Guard execution.
 
 ## Domain Boundary Rule
 
@@ -106,7 +87,7 @@ Guards are execution-level checks.
 
 Guards must not replace domain invariants.
 
-Examples of valid guards:
+Valid Guards:
 
 ```txt
 tenant is active
@@ -115,57 +96,41 @@ actor is not blocked
 system is not in maintenance mode
 ```
 
-Examples of invalid guards:
+Invalid Guards:
 
 ```txt
-withdrawal amount is allowed by Aggregate state
-profile can be activated from current Profile status
-wallet can be closed with current balance
+profile can be activated from its current state
+wallet can be closed with its current balance
 ```
 
 Those decisions belong to domain logic.
-
-## Rejection Rule
-
-`rejectWith` declares rejection metadata.
-
-The Runner produces the rejection Result when guard evaluation fails.
-
-GuardOptions do not reject execution by themselves.
 
 ## Allowed
 
 GuardOptions may contain:
 
-* guard name
-* guard phase
-* guard parameters
-* rejection metadata
+- Guard name
+- Guard parameters
 
 ## Forbidden
 
 GuardOptions must not:
 
-* evaluate guards
-* access databases
-* access caches
-* access messaging infrastructure
-* contain domain invariants
-* mutate Aggregates
-* load Aggregates
-* save Aggregates
-* execute Commands
-* execute Operations
-* publish messages
-* write execution logs
-* write outbox records
+- evaluate Guards
+- contain domain rules
+- mutate Aggregates
+- execute Operations
+- execute Commands
+- access infrastructure
+- publish messages
+- write execution logs
 
 ## Core Principle
 
 GuardOptions are only:
 
 ```txt
-Declarative guard requirements.
+Declarative Guard requirements.
 ```
 
 GuardOptions are not:
@@ -173,8 +138,6 @@ GuardOptions are not:
 ```txt
 Guard implementation.
 Domain invariant.
-Authorization engine.
-Policy engine.
 Execution engine.
 Infrastructure adapter.
 ```

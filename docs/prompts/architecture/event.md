@@ -12,9 +12,9 @@ Events are immutable.
 
 Events are responsible for:
 
-* communicating business facts
-* describing completed state transitions
-* informing downstream systems
+- communicating business facts
+- describing completed state transitions
+- informing downstream systems
 
 Events contain no behavior.
 
@@ -22,11 +22,11 @@ Events contain no behavior.
 
 Examples:
 
-* UserCreated
-* UserLocked
-* DepositCreated
-* WithdrawalApproved
-* KycApproved
+- UserCreated
+- UserLocked
+- DepositCreated
+- WithdrawalApproved
+- KycApproved
 
 Events should be expressed in business language.
 
@@ -44,11 +44,11 @@ Responsibilities must remain separated.
 
 Events should contain:
 
-* eventId
-* eventType
-* occurredAt
-* aggregateId
-* event payload
+- eventId
+- eventType
+- occurredAt
+- aggregateId
+- event payload
 
 Events should contain only information required by consumers.
 
@@ -64,11 +64,11 @@ Events are append-only.
 
 Events must not:
 
-* execute logic
-* publish themselves
-* call services
-* update state
-* trigger workflows directly
+- execute logic
+- publish themselves
+- call services
+- update state
+- trigger workflows directly
 
 Events are facts only.
 
@@ -76,8 +76,8 @@ Events are facts only.
 
 Events should:
 
-* be immutable
-* be serializable
-* be versionable
-* be business-oriented
-* be durable
+- be immutable
+- be serializable
+- be versionable
+- be business-oriented
+- be durable
