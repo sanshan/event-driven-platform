@@ -1,4 +1,3 @@
-cat > .prettierignore <<'EOF'
 node_modules
 dist
 coverage
@@ -9,4 +8,3 @@ out-tsc
 **/vitest.config.*.timestamp*
 
 pnpm-lock.yaml
-EOF
