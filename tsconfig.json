@@ -1,21 +1,33 @@
 {
-  "extends": "./tsconfig.base.json",
-  "files": [],
-  "references": [
-    {
-      "path": "./packages/types"
-    },
-    {
-      "path": "./packages/intent"
-    },
-    {
-      "path": "./packages/actor"
-    },
-    {
-      "path": "./packages/subject"
-    },
-    {
-      "path": "./packages/operation"
-    }
-  ]
+    "extends": "./tsconfig.base.json",
+    "files": [],
+    "references": [
+        {
+            "path": "./packages/types"
+        },
+        {
+            "path": "./packages/intent"
+        },
+        {
+            "path": "./packages/actor"
+        },
+        {
+            "path": "./packages/subject"
+        },
+        {
+            "path": "./packages/operation"
+        },
+        {
+            "path": "./packages/retry"
+        },
+        {
+            "path": "./packages/rate-limit"
+        },
+        {
+            "path": "./packages/guard"
+        },
+        {
+            "path": "./packages/command"
+        }
+    ]
 }

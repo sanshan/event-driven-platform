@@ -1,6 +1,6 @@
-import {describe, expect, it} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {DefaultActorFactory} from './default-actor-factory.js';
+import { DefaultActorFactory } from './default-actor-factory.js';
 
 describe('DefaultActorFactory', () => {
     const factory = new DefaultActorFactory();
@@ -95,18 +95,16 @@ describe('DefaultActorFactory', () => {
         expect(Object.isFrozen(actor.origin)).toBe(true);
     });
 
-    it.each([
-        'user',
-        'service',
-        'system',
-        'scheduler',
-    ] as const)('creates an Actor with type "%s"', (type) => {
-        const actor = factory.create({
-            type,
-            id: 'actor-1',
-            origin: {},
-        });
+    it.each(['user', 'service', 'system', 'scheduler'] as const)(
+        'creates an Actor with type "%s"',
+        (type) => {
+            const actor = factory.create({
+                type,
+                id: 'actor-1',
+                origin: {},
+            });
 
-        expect(actor.type).toBe(type);
-    });
+            expect(actor.type).toBe(type);
+        },
+    );
 });

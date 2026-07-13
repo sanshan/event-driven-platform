@@ -10,10 +10,10 @@ Cache writing and cache reading must remain separated.
 
 Cache Writers are responsible for:
 
-* cache population
-* cache refresh
-* cache update
-* cache invalidation
+- cache population
+- cache refresh
+- cache update
+- cache invalidation
 
 Cache Writers never read data.
 
@@ -33,11 +33,11 @@ PostgreSQL Handler
 
 Read Handler:
 
-* reads data
+- reads data
 
 Cache Writer:
 
-* writes cache
+- writes cache
 
 These responsibilities must not be combined.
 
@@ -45,8 +45,8 @@ These responsibilities must not be combined.
 
 Examples:
 
-* L1 Cache Writer
-* Redis Cache Writer
+- L1 Cache Writer
+- Redis Cache Writer
 
 Each writer owns one cache layer.
 
@@ -54,10 +54,10 @@ Each writer owns one cache layer.
 
 Cache Writers may perform:
 
-* delete
-* update
-* replace
-* refresh
+- delete
+- update
+- replace
+- refresh
 
 depending on cache strategy.
 
@@ -65,10 +65,10 @@ depending on cache strategy.
 
 Cache Writers must not:
 
-* query databases
-* query ClickHouse
-* query external services
-* orchestrate reads
+- query databases
+- query ClickHouse
+- query external services
+- orchestrate reads
 
 Cache Writers only write cache state.
 
@@ -76,7 +76,7 @@ Cache Writers only write cache state.
 
 Cache Writers should:
 
-* be idempotent
-* be deterministic
-* own a single cache layer
-* remain infrastructure-focused
+- be idempotent
+- be deterministic
+- own a single cache layer
+- remain infrastructure-focused

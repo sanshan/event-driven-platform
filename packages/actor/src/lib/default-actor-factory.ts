@@ -1,9 +1,7 @@
-import type {Actor, ActorDescriptor, ActorFactory,} from './actor.js';
-import {actorDescriptorSchema} from './actor-descriptor-schema.js';
+import type { Actor, ActorDescriptor, ActorFactory } from './actor.js';
+import { actorDescriptorSchema } from './actor-descriptor-schema.js';
 
-export class DefaultActorFactory
-    implements ActorFactory {
-
+export class DefaultActorFactory implements ActorFactory {
     create(descriptor: ActorDescriptor): Actor {
         const parsed = actorDescriptorSchema.parse(descriptor);
 
@@ -12,5 +10,4 @@ export class DefaultActorFactory
             origin: Object.freeze(parsed.origin),
         });
     }
-
 }

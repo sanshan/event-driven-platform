@@ -10,10 +10,10 @@ Outbox exists to guarantee reliable event delivery.
 
 Outbox stores:
 
-* event payload
-* event metadata
-* timestamps
-* delivery state
+- event payload
+- event metadata
+- timestamps
+- delivery state
 
 Outbox is written by Runner.
 
@@ -52,16 +52,16 @@ Publishing is delegated to CDC infrastructure.
 
 Examples:
 
-* Debezium
-* CDC pipelines
+- Debezium
+- CDC pipelines
 
 ## Design rules
 
 Outbox should:
 
-* be append-oriented
-* support reliable delivery
-* support replay
-* support observability
+- be append-oriented
+- support reliable delivery
+- support replay
+- support observability
 
 Outbox should not contain business logic.

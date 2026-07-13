@@ -1,7 +1,7 @@
-import type {Actor} from '@event-driven-platform/actor';
-import type {Intent} from '@event-driven-platform/intent';
-import type {Subject} from '@event-driven-platform/subject';
-import type {Brand} from '@event-driven-platform/types';
+import type { Actor } from '@event-driven-platform/actor';
+import type { Intent } from '@event-driven-platform/intent';
+import type { Subject } from '@event-driven-platform/subject';
+import type { Brand } from '@event-driven-platform/types';
 
 export interface Operation<
     TName extends string,

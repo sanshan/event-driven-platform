@@ -26,4 +26,3 @@ Examples:
 - Grafana dashboards: `observability/grafana.md`
 - Tests: `testing/vitest.md`
 - Testcontainers: `testing/testcontainers.md`
-

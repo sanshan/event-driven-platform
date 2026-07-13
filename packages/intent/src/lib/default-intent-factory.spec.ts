@@ -1,6 +1,6 @@
-import {describe, expect, it} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {DefaultIntentFactory} from './default-intent-factory.js';
+import { DefaultIntentFactory } from './default-intent-factory.js';
 
 describe('DefaultIntentFactory', () => {
     const factory = new DefaultIntentFactory();
@@ -17,9 +17,7 @@ describe('DefaultIntentFactory', () => {
             },
         });
 
-        expect(intent.key).toBe(
-            'wallet:create:v1:currency=EUR&tenantId=tenant-1&userId=user-1',
-        );
+        expect(intent.key).toBe('wallet:create:v1:currency=EUR&tenantId=tenant-1&userId=user-1');
 
         expect(intent.id).toMatch(
             /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
@@ -115,9 +113,7 @@ describe('DefaultIntentFactory', () => {
             },
         });
 
-        expect(intent.key).toBe(
-            'webhook:process:v1:externalId=provider%2Fevent%3D42',
-        );
+        expect(intent.key).toBe('webhook:process:v1:externalId=provider%2Fevent%3D42');
     });
 
     it('returns an immutable Intent', () => {

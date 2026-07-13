@@ -4,13 +4,13 @@ TypeScript is the primary programming language.
 
 Use TypeScript for:
 
-* backend services
-* shared packages
-* contracts
-* infrastructure adapters
-* application code
-* tests
-* tooling scripts
+- backend services
+- shared packages
+- contracts
+- infrastructure adapters
+- application code
+- tests
+- tooling scripts
 
 TypeScript must be used for type safety, explicit contracts and maintainable code.
 
@@ -20,11 +20,11 @@ Use strict TypeScript.
 
 Prefer:
 
-* `strict: true`
-* `noImplicitAny`
-* `strictNullChecks`
-* `noUncheckedIndexedAccess`
-* `exactOptionalPropertyTypes`
+- `strict: true`
+- `noImplicitAny`
+- `strictNullChecks`
+- `noUncheckedIndexedAccess`
+- `exactOptionalPropertyTypes`
 
 Do not weaken compiler settings to make code pass.
 
@@ -62,12 +62,12 @@ Validate external input at runtime.
 
 Validate:
 
-* HTTP request bodies
-* message payloads
-* environment variables
-* external API responses
-* database JSON fields
-* file contents
+- HTTP request bodies
+- message payloads
+- environment variables
+- external API responses
+- database JSON fields
+- file contents
 
 Do not trust external data because it has a TypeScript type.
 
@@ -77,11 +77,11 @@ Public functions should have clear input and output types.
 
 Prefer explicit return types for:
 
-* exported functions
-* public class methods
-* interface implementations
-* package boundaries
-* framework entry points
+- exported functions
+- public class methods
+- interface implementations
+- package boundaries
+- framework entry points
 
 Internal helper functions may infer return types when inference is obvious.
 
@@ -91,11 +91,11 @@ Use precise types for important concepts.
 
 Prefer:
 
-* branded types
-* readonly objects
-* discriminated unions
-* literal unions
-* enums only when they are the best fit
+- branded types
+- readonly objects
+- discriminated unions
+- literal unions
+- enums only when they are the best fit
 
 Avoid primitive obsession for critical identifiers.
 
@@ -112,9 +112,7 @@ Use discriminated unions for result-like and state-like structures.
 Prefer:
 
 ```ts
-type Result =
-  | { status: 'success'; value: string }
-  | { status: 'rejected'; reason: string };
+type Result = { status: 'success'; value: string } | { status: 'rejected'; reason: string };
 ```
 
 Avoid boolean flag combinations that allow impossible states.
@@ -127,8 +125,8 @@ Avoid unnecessary optional fields.
 
 Use:
 
-* `null` for intentionally empty values
-* `undefined` for omitted values
+- `null` for intentionally empty values
+- `undefined` for omitted values
 
 Do not mix `null` and `undefined` accidentally.
 
@@ -138,10 +136,10 @@ Prefer immutable data where practical.
 
 Use:
 
-* `readonly`
-* `ReadonlyArray<T>`
-* readonly object fields
-* immutable updates
+- `readonly`
+- `ReadonlyArray<T>`
+- readonly object fields
+- immutable updates
 
 Avoid mutating shared state.
 
@@ -151,16 +149,16 @@ Functions should be small and explicit.
 
 Prefer:
 
-* clear parameters
-* clear return values
-* no hidden side effects
-* no mutation of input arguments
+- clear parameters
+- clear return values
+- no hidden side effects
+- no mutation of input arguments
 
 Avoid:
 
-* boolean parameter traps
-* large parameter lists
-* functions that both compute and perform side effects
+- boolean parameter traps
+- large parameter lists
+- functions that both compute and perform side effects
 
 Use objects for complex parameters.
 
@@ -180,9 +178,9 @@ Always handle promises.
 
 Avoid:
 
-* floating promises
-* unhandled rejections
-* unnecessary async wrappers
+- floating promises
+- unhandled rejections
+- unnecessary async wrappers
 
 Use `Promise.all` only when parallel execution is intentional.
 
@@ -198,8 +196,8 @@ Generic type names should be meaningful when the type is non-trivial.
 
 Prefer:
 
-```ts
-function mapResult<TInput, TOutput>(input: TInput): TOutput
+```text
+function mapResult<TInput, TOutput>(input: TInput): TOutput;
 ```
 
 over unclear generic names in complex code.
@@ -212,7 +210,7 @@ Prefer:
 
 ```ts
 function isUser(value: unknown): value is User {
-  return typeof value === 'object' && value !== null;
+    return typeof value === 'object' && value !== null;
 }
 ```
 
@@ -228,7 +226,7 @@ Example:
 
 ```ts
 function assertNever(value: never): never {
-  throw new Error(`Unexpected value: ${String(value)}`);
+    throw new Error(`Unexpected value: ${String(value)}`);
 }
 ```
 
@@ -254,8 +252,8 @@ Example:
 
 ```ts
 const config = {
-  retryAttempts: 3,
-  timeoutMs: 1000,
+    retryAttempts: 3,
+    timeoutMs: 1000,
 } as const satisfies RuntimeConfig;
 ```
 
@@ -275,11 +273,11 @@ Use `interface` for object shapes intended to be extended or implemented.
 
 Use `type` for:
 
-* unions
-* intersections
-* mapped types
-* branded types
-* utility compositions
+- unions
+- intersections
+- mapped types
+- branded types
+- utility compositions
 
 Be consistent inside a package.
 
@@ -305,19 +303,19 @@ Use builders or factories for complex test data.
 
 When generating TypeScript code:
 
-* keep `strict` TypeScript compatibility
-* avoid `any`
-* use `unknown` for untrusted input
-* validate external data at runtime
-* use explicit public API types
-* prefer discriminated unions for state and result variants
-* avoid impossible states
-* handle nullable values explicitly
-* avoid unsafe casts
-* avoid mutating shared state
-* handle promises explicitly
-* use exhaustive checks for unions
-* use `satisfies` where useful
-* keep module boundaries clean
-* do not leak infrastructure types across layers
-* do not weaken compiler options
+- keep `strict` TypeScript compatibility
+- avoid `any`
+- use `unknown` for untrusted input
+- validate external data at runtime
+- use explicit public API types
+- prefer discriminated unions for state and result variants
+- avoid impossible states
+- handle nullable values explicitly
+- avoid unsafe casts
+- avoid mutating shared state
+- handle promises explicitly
+- use exhaustive checks for unions
+- use `satisfies` where useful
+- keep module boundaries clean
+- do not leak infrastructure types across layers
+- do not weaken compiler options

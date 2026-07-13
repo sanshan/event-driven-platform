@@ -10,11 +10,11 @@ Query is infrastructure-oriented.
 
 Query carries:
 
-* Read
-* cache strategy
-* consistency requirements
-* timeout settings
-* execution options
+- Read
+- cache strategy
+- consistency requirements
+- timeout settings
+- execution options
 
 Query contains no business logic.
 
@@ -28,25 +28,25 @@ Query does not perform reads itself.
 
 Query may define:
 
-* cache preferences
-* consistency requirements
-* timeout configuration
-* execution metadata
+- cache preferences
+- consistency requirements
+- timeout configuration
+- execution metadata
 
 ## Forbidden responsibilities
 
 Query must not:
 
-* access storage
-* contain business logic
-* perform reads
-* update caches
+- access storage
+- contain business logic
+- perform reads
+- update caches
 
 ## Design rules
 
 Queries should:
 
-* be immutable
-* be deterministic
-* be serializable
-* separate read intent from execution concerns
+- be immutable
+- be deterministic
+- be serializable
+- separate read intent from execution concerns

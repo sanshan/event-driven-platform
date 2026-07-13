@@ -12,12 +12,12 @@ Reader is infrastructure-oriented.
 
 Reader is responsible for:
 
-* query execution
-* handler resolution
-* cache traversal
-* cache population orchestration
-* read observability
-* read result assembly
+- query execution
+- handler resolution
+- cache traversal
+- cache population orchestration
+- read observability
+- read result assembly
 
 ## Execution flow
 
@@ -61,9 +61,9 @@ Reader coordinates cache population after successful reads.
 
 Reader must not:
 
-* contain business logic
-* contain domain rules
-* implement read behavior itself
+- contain business logic
+- contain domain rules
+- implement read behavior itself
 
 Read behavior belongs to Read Handlers.
 
@@ -71,9 +71,9 @@ Read behavior belongs to Read Handlers.
 
 Reader should provide:
 
-* deterministic execution
-* observability
-* cache orchestration
-* reusable read pipelines
+- deterministic execution
+- observability
+- cache orchestration
+- reusable read pipelines
 
 All reads execute through Reader.

@@ -10,19 +10,19 @@ Read Handlers are business-aware but infrastructure-specific.
 
 Read Handlers are responsible for:
 
-* reading data
-* mapping data
-* producing Read Result
+- reading data
+- mapping data
+- producing Read Result
 
 Each Read Handler should access only one source.
 
 Examples:
 
-* L1 Cache Handler
-* Redis Handler
-* PostgreSQL Handler
-* ClickHouse Handler
-* Elasticsearch Handler
+- L1 Cache Handler
+- Redis Handler
+- PostgreSQL Handler
+- ClickHouse Handler
+- Elasticsearch Handler
 
 ## Single-source rule
 
@@ -52,8 +52,8 @@ Read Handlers return Read Results.
 
 Possible outcomes:
 
-* hit
-* miss
+- hit
+- miss
 
 Handlers do not decide what happens next.
 
@@ -71,17 +71,17 @@ Cache population belongs to Reader.
 
 Read Handlers must not:
 
-* update caches
-* call other handlers
-* perform orchestration
-* contain retry logic
-* contain cache traversal logic
+- update caches
+- call other handlers
+- perform orchestration
+- contain retry logic
+- contain cache traversal logic
 
 ## Design rules
 
 Read Handlers should:
 
-* remain small
-* remain deterministic
-* access one source only
-* return explicit Read Results
+- remain small
+- remain deterministic
+- access one source only
+- return explicit Read Results

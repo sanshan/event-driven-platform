@@ -28,12 +28,12 @@ That is not a rate limiting concern.
 
 RateLimitOptions are responsible for carrying:
 
-* rate limit key
-* rate limit scope
-* limit value
-* time window
-* cost
-* rejection behavior
+- rate limit key
+- rate limit scope
+- limit value
+- time window
+- cost
+- rejection behavior
 
 RateLimitOptions do not implement rate limiting behavior.
 
@@ -41,30 +41,25 @@ RateLimitOptions do not implement rate limiting behavior.
 
 ```ts
 export interface RateLimitOptions {
-  readonly key: string;
+    readonly key: string;
 
-  readonly scope: RateLimitScope;
+    readonly scope: RateLimitScope;
 
-  readonly limit?: number;
+    readonly limit: number;
 
-  readonly windowMs?: number;
+    readonly windowMs: number;
 
-  readonly cost?: number;
+    readonly cost?: number;
 
-  readonly rejectWith?: RateLimitRejection;
+    readonly rejectWith?: RateLimitRejection;
 }
 
-export type RateLimitScope =
-  | 'actor'
-  | 'tenant'
-  | 'subject'
-  | 'operation'
-  | 'global';
+export type RateLimitScope = 'actor' | 'tenant' | 'subject' | 'operation' | 'global';
 
 export interface RateLimitRejection {
-  readonly reason: string;
+    readonly reason: string;
 
-  readonly retryAfterMs?: number;
+    readonly retryAfterMs?: number;
 }
 ```
 
@@ -137,31 +132,31 @@ RateLimitOptions do not reject execution by themselves.
 
 RateLimitOptions may contain:
 
-* deterministic rate limit key
-* rate limit scope
-* limit value
-* time window
-* execution cost
-* rejection metadata
+- deterministic rate limit key
+- rate limit scope
+- limit value
+- time window
+- execution cost
+- rejection metadata
 
 ## Forbidden
 
 RateLimitOptions must not:
 
-* perform rate limiting
-* store counters
-* read counters
-* access Redis
-* access databases
-* access caches
-* reject execution directly
-* contain domain rules
-* validate domain invariants
-* mutate Aggregates
-* execute Commands
-* execute Operations
-* write execution logs
-* write outbox records
+- perform rate limiting
+- store counters
+- read counters
+- access Redis
+- access databases
+- access caches
+- reject execution directly
+- contain domain rules
+- validate domain invariants
+- mutate Aggregates
+- execute Commands
+- execute Operations
+- write execution logs
+- write outbox records
 
 ## Core Principle
 

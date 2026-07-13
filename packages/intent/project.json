@@ -1,0 +1,7 @@
+{
+    "name": "@event-driven-platform/intent",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "packages/intent/src",
+    "projectType": "library",
+    "tags": []
+}

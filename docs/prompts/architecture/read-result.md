@@ -10,10 +10,10 @@ Read Result is the contract between Read Handlers and Reader.
 
 Read Result is responsible for:
 
-* describing hit or miss status
-* returning data
-* returning cache population instructions
-* returning read metadata
+- describing hit or miss status
+- returning data
+- returning cache population instructions
+- returning read metadata
 
 Read Result contains no execution logic.
 
@@ -23,9 +23,9 @@ A hit means data was successfully found.
 
 A hit may contain:
 
-* data
-* cache population instructions
-* metadata
+- data
+- cache population instructions
+- metadata
 
 A hit does not automatically stop execution.
 
@@ -37,9 +37,9 @@ A miss means data was not found in the current source.
 
 Examples:
 
-* cache miss
-* Redis miss
-* database miss
+- cache miss
+- Redis miss
+- database miss
 
 A miss is a valid outcome.
 
@@ -49,10 +49,10 @@ A miss is not an error.
 
 Read Result may contain:
 
-* entity
-* collection
-* projection
-* snapshot
+- entity
+- collection
+- projection
+- snapshot
 
 The shape depends on the Read being executed.
 
@@ -60,9 +60,9 @@ The shape depends on the Read being executed.
 
 Read Result may indicate:
 
-* populate L1 cache
-* populate Redis
-* populate additional cache layers
+- populate L1 cache
+- populate Redis
+- populate additional cache layers
 
 Read Result does not perform cache updates.
 
@@ -74,10 +74,10 @@ Reader evaluates Read Results.
 
 Based on Read Result, Reader may:
 
-* stop execution
-* continue traversal
-* invoke Cache Writers
-* return data
+- stop execution
+- continue traversal
+- invoke Cache Writers
+- return data
 
 Read Handlers do not make orchestration decisions.
 
@@ -85,11 +85,11 @@ Read Handlers do not make orchestration decisions.
 
 Read Result must not:
 
-* update caches
-* call Cache Writers
-* call Readers
-* execute handlers
-* contain infrastructure logic
+- update caches
+- call Cache Writers
+- call Readers
+- execute handlers
+- contain infrastructure logic
 
 Read Result is a data structure only.
 
@@ -97,8 +97,8 @@ Read Result is a data structure only.
 
 Read Results should:
 
-* be immutable
-* be deterministic
-* be serializable
-* clearly describe read outcomes
-* support cache population orchestration
+- be immutable
+- be deterministic
+- be serializable
+- clearly describe read outcomes
+- support cache population orchestration

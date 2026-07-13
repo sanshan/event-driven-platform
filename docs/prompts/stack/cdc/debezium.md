@@ -4,12 +4,12 @@ Debezium is used for Change Data Capture (CDC) to stream database changes.
 
 Use Debezium for:
 
-* PostgreSQL CDC from transaction logs
-* streaming table snapshots
-* event-driven data pipelines
-* outbox pattern implementation
-* read model synchronization
-* cache warmup
+- PostgreSQL CDC from transaction logs
+- streaming table snapshots
+- event-driven data pipelines
+- outbox pattern implementation
+- read model synchronization
+- cache warmup
 
 Debezium must be treated as infrastructure for data streaming.
 
@@ -19,11 +19,11 @@ Use PostgreSQL Logical Decoding.
 
 Configuration:
 
-* logical replication enabled
-* pgoutput decoding plugin
-* explicit replication slots
-* explicit publications
-* specific table/schema includes
+- logical replication enabled
+- pgoutput decoding plugin
+- explicit replication slots
+- explicit publications
+- specific table/schema includes
 
 Avoid database-wide capture unless necessary.
 
@@ -31,10 +31,10 @@ Avoid database-wide capture unless necessary.
 
 Manage replication slots carefully:
 
-* create explicit slots
-* track slot lag
-* clean up unused slots
-* prevent slot accumulation
+- create explicit slots
+- track slot lag
+- clean up unused slots
+- prevent slot accumulation
 
 Slots protect WAL segments from cleanup.
 
@@ -42,10 +42,10 @@ Slots protect WAL segments from cleanup.
 
 Define publications explicitly:
 
-* include only required tables
-* specify schema requirements
-* use clear publication names
-* manage schema evolution
+- include only required tables
+- specify schema requirements
+- use clear publication names
+- manage schema evolution
 
 Publications control what gets captured.
 
@@ -53,9 +53,9 @@ Publications control what gets captured.
 
 Choose snapshot strategy:
 
-* initial: capture initial table state
-* no data: skip initial snapshot
-* when_needed: snapshot if needed
+- initial: capture initial table state
+- no data: skip initial snapshot
+- when_needed: snapshot if needed
 
 Snapshots affect startup time and network load.
 
@@ -65,9 +65,9 @@ Prefer Avro with Schema Registry.
 
 Serialization options:
 
-* Avro for versioned contracts
-* JSON for simple structures
-* protobuf when appropriate
+- Avro for versioned contracts
+- JSON for simple structures
+- protobuf when appropriate
 
 Match downstream consumer expectations.
 
@@ -77,9 +77,9 @@ Use clear, stable topic names.
 
 Pattern:
 
-* `{database}.{schema}.{table}` for raw CDC
-* `{domain}.{entity}.{event-type}` after transformation
-* Avoid temporary or generated names
+- `{database}.{schema}.{table}` for raw CDC
+- `{domain}.{entity}.{event-type}` after transformation
+- Avoid temporary or generated names
 
 Topic names should describe content clearly.
 
@@ -89,10 +89,10 @@ Use for transactional guarantees.
 
 Outbox flow:
 
-* application writes outbox record in transaction
-* Debezium captures outbox changes
-* SMT (Single Message Transform) extracts payload
-* events published to domain topics
+- application writes outbox record in transaction
+- Debezium captures outbox changes
+- SMT (Single Message Transform) extracts payload
+- events published to domain topics
 
 Ensures exactly-once delivery.
 
@@ -100,10 +100,10 @@ Ensures exactly-once delivery.
 
 Use SMTs for:
 
-* outbox extraction
-* field mapping
-* envelope routing
-* schema enrichment
+- outbox extraction
+- field mapping
+- envelope routing
+- schema enrichment
 
 SMTs transform captured data before publishing.
 
@@ -111,10 +111,10 @@ SMTs transform captured data before publishing.
 
 Handle failures gracefully:
 
-* connector restarts
-* poison message handling
-* error logging and alerting
-* recovery procedures
+- connector restarts
+- poison message handling
+- error logging and alerting
+- recovery procedures
 
 Monitor connector health.
 
@@ -122,11 +122,11 @@ Monitor connector health.
 
 Track Debezium health:
 
-* capture lag
-* connector status
-* failed transformations
-* processing rate
-* replication slot lag
+- capture lag
+- connector status
+- failed transformations
+- processing rate
+- replication slot lag
 
 Health should be observable.
 
@@ -134,10 +134,10 @@ Health should be observable.
 
 Handle database schema changes:
 
-* compatibility checking
-* schema versioning
-* migration safety
-* downstream validation
+- compatibility checking
+- schema versioning
+- migration safety
+- downstream validation
 
 Schema changes must not break consumers.
 
@@ -145,10 +145,10 @@ Schema changes must not break consumers.
 
 Optimize performance:
 
-* batch size configuration
-* max.batch.size
-* poll.interval.ms
-* snapshot sampling
+- batch size configuration
+- max.batch.size
+- poll.interval.ms
+- snapshot sampling
 
 Balance throughput and latency.
 
@@ -156,10 +156,10 @@ Balance throughput and latency.
 
 Ensure reliable capture:
 
-* persistent connectors
-* automatic retries
-* idempotent consumers
-* offset management
+- persistent connectors
+- automatic retries
+- idempotent consumers
+- offset management
 
 Data loss should not occur.
 
@@ -167,10 +167,10 @@ Data loss should not occur.
 
 Connect to Redpanda:
 
-* configure Redpanda connector
-* map topics appropriately
-* handle partitioning
-* manage retention
+- configure Redpanda connector
+- map topics appropriately
+- handle partitioning
+- manage retention
 
 Ensure consumer compatibility.
 
@@ -178,16 +178,15 @@ Ensure consumer compatibility.
 
 When working with Debezium CDC:
 
-* use PostgreSQL logical replication
-* define publications explicitly
-* use Avro with Schema Registry for shared contracts
-* implement outbox pattern for transactional guarantees
-* use SMTs for payload transformation
-* name topics clearly
-* monitor connector lag and health
-* handle schema evolution gracefully
-* design for idempotent consumption
-* ensure exactly-once semantics where required
-* test connector behavior
-* plan recovery procedures
-
+- use PostgreSQL logical replication
+- define publications explicitly
+- use Avro with Schema Registry for shared contracts
+- implement outbox pattern for transactional guarantees
+- use SMTs for payload transformation
+- name topics clearly
+- monitor connector lag and health
+- handle schema evolution gracefully
+- design for idempotent consumption
+- ensure exactly-once semantics where required
+- test connector behavior
+- plan recovery procedures

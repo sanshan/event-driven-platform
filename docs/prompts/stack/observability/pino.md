@@ -4,13 +4,13 @@ Pino is the primary logging library.
 
 Use Pino for:
 
-* structured logging
-* application logs
-* infrastructure logs
-* request logs
-* operational diagnostics
-* error logging
-* audit-related operational events when appropriate
+- structured logging
+- application logs
+- infrastructure logs
+- request logs
+- operational diagnostics
+- error logging
+- audit-related operational events when appropriate
 
 Pino must be treated as observability infrastructure.
 
@@ -34,9 +34,9 @@ Better:
 
 ```json
 {
-  "event": "user.created",
-  "userId": "...",
-  "tenantId": "..."
+    "event": "user.created",
+    "userId": "...",
+    "tenantId": "..."
 }
 ```
 
@@ -46,12 +46,12 @@ Use log levels consistently.
 
 Use:
 
-* trace
-* debug
-* info
-* warn
-* error
-* fatal
+- trace
+- debug
+- info
+- warn
+- error
+- fatal
 
 Choose the lowest level that accurately reflects importance.
 
@@ -59,9 +59,9 @@ Choose the lowest level that accurately reflects importance.
 
 Use trace for:
 
-* detailed execution flow
-* temporary diagnostics
-* low-level runtime information
+- detailed execution flow
+- temporary diagnostics
+- low-level runtime information
 
 Trace logs should not be required for normal operations.
 
@@ -69,10 +69,10 @@ Trace logs should not be required for normal operations.
 
 Use debug for:
 
-* development diagnostics
-* troubleshooting
-* execution decisions
-* non-critical internal state
+- development diagnostics
+- troubleshooting
+- execution decisions
+- non-critical internal state
 
 Debug logging should be safe to disable.
 
@@ -80,12 +80,12 @@ Debug logging should be safe to disable.
 
 Use info for:
 
-* service startup
-* service shutdown
-* successful operations worth tracking
-* major state transitions
-* background job execution
-* consumer lifecycle events
+- service startup
+- service shutdown
+- successful operations worth tracking
+- major state transitions
+- background job execution
+- consumer lifecycle events
 
 Info logs should describe important operational events.
 
@@ -93,11 +93,11 @@ Info logs should describe important operational events.
 
 Use warn for:
 
-* recoverable failures
-* retries
-* degraded behavior
-* unexpected but handled situations
-* dependency instability
+- recoverable failures
+- retries
+- degraded behavior
+- unexpected but handled situations
+- dependency instability
 
 Warnings should indicate something requires attention.
 
@@ -105,11 +105,11 @@ Warnings should indicate something requires attention.
 
 Use error for:
 
-* failed operations
-* failed requests
-* failed message processing
-* dependency failures
-* unexpected exceptions
+- failed operations
+- failed requests
+- failed message processing
+- dependency failures
+- unexpected exceptions
 
 Errors should include sufficient diagnostic context.
 
@@ -117,10 +117,10 @@ Errors should include sufficient diagnostic context.
 
 Use fatal for:
 
-* unrecoverable failures
-* process termination
-* startup failures
-* configuration failures preventing execution
+- unrecoverable failures
+- process termination
+- startup failures
+- configuration failures preventing execution
 
 Fatal logs should precede process exit.
 
@@ -130,16 +130,16 @@ Include consistent fields.
 
 Recommended fields:
 
-* timestamp
-* level
-* service
-* environment
-* correlationId
-* requestId
-* traceId
-* spanId
-* operation
-* durationMs
+- timestamp
+- level
+- service
+- environment
+- correlationId
+- requestId
+- traceId
+- spanId
+- operation
+- durationMs
 
 Keep field naming consistent across services.
 
@@ -149,12 +149,12 @@ Logs should contain useful context.
 
 Examples:
 
-* tenantId
-* userId when appropriate
-* operation name
-* topic name
-* message key when safe
-* database entity identifier
+- tenantId
+- userId when appropriate
+- operation name
+- topic name
+- message key when safe
+- database entity identifier
 
 Include enough context for investigation.
 
@@ -166,15 +166,15 @@ Correlate logs across services.
 
 Include:
 
-* correlationId
-* traceId
-* spanId
+- correlationId
+- traceId
+- spanId
 
 Logs should support navigation from:
 
-* logs
-* traces
-* metrics
+- logs
+- traces
+- metrics
 
 Correlation must survive service boundaries.
 
@@ -186,11 +186,11 @@ Prefer:
 
 ```ts id="0fqzpq"
 logger.error(
-  {
-    err,
-    operation: 'payment.process',
-  },
-  'Payment processing failed',
+    {
+        err,
+        operation: 'payment.process',
+    },
+    'Payment processing failed',
 );
 ```
 
@@ -208,14 +208,14 @@ Preserve error causes.
 
 Never log:
 
-* passwords
-* access tokens
-* refresh tokens
-* session tokens
-* secrets
-* private keys
-* payment card data
-* authentication credentials
+- passwords
+- access tokens
+- refresh tokens
+- session tokens
+- secrets
+- private keys
+- payment card data
+- authentication credentials
 
 Avoid logging entire request bodies.
 
@@ -229,11 +229,11 @@ Log request lifecycle consistently.
 
 Capture:
 
-* request start
-* request completion
-* duration
-* status code
-* failures
+- request start
+- request completion
+- duration
+- status code
+- failures
 
 Avoid logging excessive request payloads.
 
@@ -243,10 +243,10 @@ Do not log full query results.
 
 Prefer:
 
-* operation type
-* duration
-* affected rows
-* query identifier
+- operation type
+- duration
+- affected rows
+- query identifier
 
 Avoid logging sensitive SQL parameters.
 
@@ -254,12 +254,12 @@ Avoid logging sensitive SQL parameters.
 
 Log:
 
-* consumer startup
-* consumer shutdown
-* producer failures
-* consumer failures
-* retry attempts
-* dead-letter routing
+- consumer startup
+- consumer shutdown
+- producer failures
+- consumer failures
+- retry attempts
+- dead-letter routing
 
 Avoid logging full message payloads by default.
 
@@ -269,11 +269,11 @@ Logging must remain safe under load.
 
 Avoid:
 
-* logging inside tight loops
-* excessive debug logging
-* logging every database row
-* logging every cache access
-* logging every successful low-level operation
+- logging inside tight loops
+- excessive debug logging
+- logging every database row
+- logging every cache access
+- logging every successful low-level operation
 
 Logs should not become a performance bottleneck.
 
@@ -281,9 +281,9 @@ Logs should not become a performance bottleneck.
 
 Use log sampling when necessary for:
 
-* high-volume events
-* repetitive warnings
-* noisy diagnostics
+- high-volume events
+- repetitive warnings
+- noisy diagnostics
 
 Do not sample critical failures.
 
@@ -291,11 +291,11 @@ Do not sample critical failures.
 
 Log:
 
-* service startup
-* version
-* environment
-* configuration summary when safe
-* dependency initialization
+- service startup
+- version
+- environment
+- configuration summary when safe
+- dependency initialization
 
 Startup failures must be obvious.
 
@@ -303,10 +303,10 @@ Startup failures must be obvious.
 
 Log:
 
-* graceful shutdown start
-* dependency shutdown
-* telemetry flush
-* process termination
+- graceful shutdown start
+- dependency shutdown
+- telemetry flush
+- process termination
 
 Unexpected shutdowns should be identifiable.
 
@@ -314,9 +314,9 @@ Unexpected shutdowns should be identifiable.
 
 Logs should integrate with:
 
-* OpenTelemetry
-* Grafana
-* log aggregation systems
+- OpenTelemetry
+- Grafana
+- log aggregation systems
 
 Logging should support distributed tracing workflows.
 
@@ -326,13 +326,13 @@ Use stable event names.
 
 Examples:
 
-* service.started
-* service.stopped
-* consumer.started
-* consumer.stopped
-* message.processed
-* message.failed
-* database.query.failed
+- service.started
+- service.stopped
+- consumer.started
+- consumer.stopped
+- message.processed
+- message.failed
+- database.query.failed
 
 Avoid free-form event naming.
 
@@ -340,16 +340,16 @@ Avoid free-form event naming.
 
 When generating Pino logging:
 
-* use structured JSON logs
-* use appropriate log levels
-* include correlation identifiers
-* include trace identifiers when available
-* log actual error objects
-* preserve stack traces
-* never log secrets
-* avoid logging full payloads by default
-* keep log volume under control
-* make failures observable
-* keep event names stable
-* ensure logs support operational debugging
-* ensure logs support distributed tracing workflows
+- use structured JSON logs
+- use appropriate log levels
+- include correlation identifiers
+- include trace identifiers when available
+- log actual error objects
+- preserve stack traces
+- never log secrets
+- avoid logging full payloads by default
+- keep log volume under control
+- make failures observable
+- keep event names stable
+- ensure logs support operational debugging
+- ensure logs support distributed tracing workflows

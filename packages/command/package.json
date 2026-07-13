@@ -1,0 +1,25 @@
+{
+    "name": "@event-driven-platform/command",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        "./package.json": "./package.json",
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "dependencies": {
+        "@event-driven-platform/guard": "workspace:*",
+        "@event-driven-platform/operation": "workspace:*",
+        "@event-driven-platform/rate-limit": "workspace:*",
+        "@event-driven-platform/retry": "workspace:*",
+        "@event-driven-platform/types": "workspace:*",
+        "tslib": "^2.3.0"
+    }
+}

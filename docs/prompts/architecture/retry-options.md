@@ -28,12 +28,12 @@ That is not a retry concern.
 
 RetryOptions are responsible for carrying:
 
-* maximum retry attempts
-* retry strategy
-* retry delay
-* maximum retry delay
-* retryable error classification
-* non-retryable error classification
+- maximum retry attempts
+- retry strategy
+- retry delay
+- maximum retry delay
+- retryable error classification
+- non-retryable error classification
 
 RetryOptions do not implement retry behavior.
 
@@ -41,23 +41,20 @@ RetryOptions do not implement retry behavior.
 
 ```ts
 export interface RetryOptions {
-  readonly maxAttempts: number;
+    readonly maxAttempts: number;
 
-  readonly strategy: RetryStrategy;
+    readonly strategy: RetryStrategy;
 
-  readonly delayMs?: number;
+    readonly delayMs?: number;
 
-  readonly maxDelayMs?: number;
+    readonly maxDelayMs?: number;
 
-  readonly retryOn?: readonly RetryableErrorCode[];
+    readonly retryOn?: readonly RetryableErrorCode[];
 
-  readonly doNotRetryOn?: readonly NonRetryableErrorCode[];
+    readonly doNotRetryOn?: readonly NonRetryableErrorCode[];
 }
 
-export type RetryStrategy =
-  | 'none'
-  | 'fixed'
-  | 'exponential';
+export type RetryStrategy = 'none' | 'fixed' | 'exponential';
 
 export type RetryableErrorCode = string;
 
@@ -123,30 +120,30 @@ RetryOptions must not generate a new idempotency key.
 
 RetryOptions may contain:
 
-* retry strategy
-* maximum attempts
-* delay configuration
-* maximum delay configuration
-* retryable error codes
-* non-retryable error codes
+- retry strategy
+- maximum attempts
+- delay configuration
+- maximum delay configuration
+- retryable error codes
+- non-retryable error codes
 
 ## Forbidden
 
 RetryOptions must not:
 
-* perform retries
-* execute Commands
-* execute Operations
-* change Operation intent
-* generate new intent IDs
-* implement idempotency
-* inspect domain state
-* contain domain rules
-* access databases
-* access caches
-* access messaging infrastructure
-* write execution logs
-* write outbox records
+- perform retries
+- execute Commands
+- execute Operations
+- change Operation intent
+- generate new intent IDs
+- implement idempotency
+- inspect domain state
+- contain domain rules
+- access databases
+- access caches
+- access messaging infrastructure
+- write execution logs
+- write outbox records
 
 ## Core Principle
 

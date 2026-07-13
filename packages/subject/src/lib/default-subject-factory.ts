@@ -1,9 +1,7 @@
-import type {Subject, SubjectDescriptor, SubjectFactory,} from './subject.js';
-import {subjectDescriptorSchema} from './subject-descriptor-schema.js';
+import type { Subject, SubjectDescriptor, SubjectFactory } from './subject.js';
+import { subjectDescriptorSchema } from './subject-descriptor-schema.js';
 
-export class DefaultSubjectFactory
-    implements SubjectFactory {
-
+export class DefaultSubjectFactory implements SubjectFactory {
     create(descriptor: SubjectDescriptor): Subject {
         const parsed = subjectDescriptorSchema.parse(descriptor);
 
@@ -11,5 +9,4 @@ export class DefaultSubjectFactory
             ...parsed,
         });
     }
-
 }
