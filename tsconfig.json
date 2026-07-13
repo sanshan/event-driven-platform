@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/types"
+    },
+    {
+      "path": "./packages/intent"
+    },
+    {
+      "path": "./packages/actor"
+    },
+    {
+      "path": "./packages/subject"
+    },
+    {
+      "path": "./packages/operation"
+    }
+  ]
+}

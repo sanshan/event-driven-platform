@@ -1,6 +1,6 @@
 # Intent
 
-Intent represents a deterministic business intention.
+Intent represents the deterministic identity of exactly one business intention.
 
 Intent is not an Operation.
 
@@ -24,29 +24,42 @@ Intent does not answer:
 
 ```txt
 How is it executed?
+Who executes it?
 Where did it come from?
+Which Aggregate is affected?
 How many attempts were made?
 ```
 
 ## Responsibilities
 
-Intent is responsible for carrying:
+Intent is responsible only for carrying:
 
-* deterministic intent id
-* explainable business key
-* correlation id
+- deterministic intent id
+- canonical business key
 
 Intent is identity, not execution.
 
-## Abstract Interface
+## Public API
 
 ```ts
-export interface IIntent {
-  readonly id: IntentId;
+export interface Intent {
+  readonly id: string;
 
-  readonly key: IntentKey;
+  readonly key: string;
+}
 
-  readonly correlationId: CorrelationId;
+export interface IntentDescriptor {
+  readonly namespace: string;
+
+  readonly action: string;
+
+  readonly version: number;
+
+  readonly components: Readonly<Record<string, string>>;
+}
+
+export interface IntentFactory {
+  create(descriptor: IntentDescriptor): Intent;
 }
 ```
 
@@ -56,89 +69,117 @@ export interface IIntent {
 
 `id` is the deterministic identifier of the Intent.
 
-It must be derived from stable business inputs.
+It is derived from the canonical Intent key.
 
-It must be used as the idempotency key.
+It is represented as a deterministic UUIDv5.
+
+It is used as the idempotency key.
 
 The same business intention must always produce the same `id`.
 
-Different business intentions must produce different `id` values.
+Different business intentions must always produce different `id` values.
+
+The UUID generation algorithm is an implementation detail.
 
 ### key
 
-`key` is the explainable business key used to derive `id`.
+`key` is the canonical business identity used to derive `id`.
 
-It exists for readability, debugging, logs and traceability.
+It exists for readability, debugging, logging and traceability.
 
 Examples:
 
 ```txt
-register-user:{tenantId}:{email}
-approve-withdrawal:{tenantId}:{withdrawalId}:{approvalStep}
-lock-user:{tenantId}:{userId}:{reason}
-create-deposit:{tenantId}:{paymentId}
-process-webhook:{provider}:{externalEventId}
+profile:activate:v1:profileId=profile-42&tenantId=tenant-1
+
+wallet:create:v1:currency=EUR&tenantId=tenant-1&userId=user-1
+
+withdrawal:approve:v1:approvalStep=1&tenantId=tenant-1&withdrawalId=wd-42
+
+payment:deposit-create:v1:paymentId=pay-42&tenantId=tenant-1
+
+webhook:process:v1:externalEventId=evt-42&provider=stripe
 ```
 
-The exact key format is defined by the domain or application scenario.
+Intent keys are:
 
-### correlationId
+- canonical
+- deterministic
+- versionable
+- unambiguous
 
-`correlationId` connects multiple intents within the same trace or workflow.
+Intent keys must not contain:
 
-The same `correlationId` may include many intents.
+- passwords
+- access tokens
+- secrets
+- personally identifiable information (PII)
 
-The same `intentId` must represent only one business intention.
+Instead, stable business identifiers or public identifiers should be used.
+
+## Intent Descriptor
+
+Intent is created from an `IntentDescriptor`.
+
+The descriptor defines:
+
+- namespace
+- action
+- semantic version
+- business identity components
+
+The Intent Factory converts the descriptor into a canonical key and generates the deterministic UUID.
 
 ## Determinism
 
 Intent generation must not depend on:
 
-* random values
-* current time
-* process memory
-* retry attempt number
-* transport-specific metadata
-* message offset
-* request id
+- random values
+- current time
+- process memory
+- retry attempt number
+- transport metadata
+- message metadata
+- message offset
+- request id
 
-Intent generation must depend only on stable business inputs.
+Intent generation must depend only on the canonical Intent Descriptor.
 
 ## Ownership
 
-Intent is created before Operation execution.
+Intent is created before an Operation.
 
-Intent travels with Operation.
+Intent Factory creates Intent from an IntentDescriptor.
 
-Intent must remain unchanged during the entire execution lifecycle.
+Intent becomes part of an Operation.
 
-Use Case may create Intent.
+Intent remains immutable during the entire execution lifecycle.
 
-Transport adapters may create Intent.
+Intent may be created by:
 
-Message consumers may create Intent.
-
-Webhook handlers may create Intent.
-
-Cron jobs may create Intent.
+- Use Cases
+- Transport adapters
+- Message consumers
+- Webhook handlers
+- Cron jobs
 
 Runner must not modify Intent.
 
-Command Handler must not modify Intent.
+Command Handlers must not modify Intent.
 
-Operation must not modify Intent.
+Operations must not modify Intent.
 
 ## Intent vs Operation
 
 Intent identifies the business intention.
 
-Operation describes the domain action over an Aggregate.
+Operation describes the domain action executed under that Intent.
 
 Example:
 
 ```txt
 Intent:
-profile.activate:{tenantId}:{profileId}:by-platform
+profile:activate:v1:profileId=profile-42&tenantId=tenant-1
 
 Operation:
 ActivateProfile
@@ -148,67 +189,59 @@ ActivateProfile
 
 Intent is business identity.
 
-Command transports Operation through the execution pipeline.
+Command transports an Operation through the execution pipeline.
 
 Command may contain execution options.
 
-Intent must not contain execution options.
-
-## Intent vs Correlation
-
-Intent is used for idempotency.
-
-Correlation is used for tracing.
-
-Example:
-
-```txt
-correlationId = register-user-flow-123
-
-intent 1 = create-user:{tenantId}:{email}
-intent 2 = create-profile:{tenantId}:{userId}
-intent 3 = create-wallet:{tenantId}:{userId}:{currency}
-```
+Intent must never contain execution options.
 
 ## Forbidden
 
 Intent must not contain:
 
-* retry options
-* timeout options
-* rate limit options
-* transport metadata
-* message metadata
-* execution attempt number
-* outbox metadata
-* cache metadata
-* Operation payload
-* Actor
-* Aggregate data
+- actor
+- correlation
+- aggregate identifier
+- aggregate data
+- operation payload
+- retry options
+- timeout options
+- rate limit options
+- execution metadata
+- transport metadata
+- message metadata
+- execution attempt number
+- outbox metadata
+- cache metadata
 
 Intent must not:
 
-* execute logic
-* replace Operation
-* replace Command
-* replace Execution Log
+- execute logic
+- replace Operation
+- replace Command
+- replace Execution Log
 
 ## Design Rules
 
 Intent should be:
 
-* deterministic
-* stable
-* explainable
-* traceable
-* derived from business identifiers
-* safe to persist
-* safe to log
+- deterministic
+- immutable
+- stable
+- canonical
+- reproducible
+- explainable
+- versionable
+- derived from business identifiers
+- safe to persist
+- safe to log
 
 ## Core Principle
 
 Intent is only:
 
 ```txt
-Deterministic identity of one business intention.
+Deterministic identity of exactly one business intention.
+
+It is the basis for idempotency.
 ```

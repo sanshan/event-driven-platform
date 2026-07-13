@@ -1,20 +1,14 @@
 # Operation
 
-An Operation is a pure immutable description of a domain action over a single Aggregate.
+Operation represents a pure immutable description of a single domain action over exactly one Aggregate.
 
 Operation belongs to the domain layer.
-
-Operation is not executable by itself.
-
-Operation contains no workflow logic.
-
-Operation contains no infrastructure concerns.
 
 Operation is reusable across multiple Use Cases.
 
 ## Purpose
 
-An Operation answers:
+Operation answers:
 
 ```txt
 What domain action should happen?
@@ -26,56 +20,39 @@ Examples:
 ActivateProfile
 DisableProfile
 VerifyProfile
-CreateProfile
 CreateWallet
 ApproveWithdrawal
 RejectWithdrawal
 ```
 
-Operations describe domain intent.
-
-Operations do not describe workflows.
-
 ## Responsibilities
 
 Operation is responsible only for carrying:
 
-* operation name
-* intent
-* actor
-* aggregate identifier
-* payload
+- operation name
+- intent
+- correlation id
+- actor
+- subject
+- aggregate identifier
+- business payload
 
-Operation contains no execution logic.
-
-Operation contains no infrastructure logic.
-
-Operation contains no orchestration logic.
-
-## Related Concepts
-
-Operation depends on the following architectural concepts:
-
-* Intent
-* Actor
-* Aggregate Identifier
-
-These concepts are defined in separate architecture documents.
-
-Operation uses them but does not define them.
-
-## Abstract Interface
+## Public API
 
 ```ts
-export interface IOperation<
+export interface Operation<
   TPayload,
-  TAggregateId
+  TAggregateId,
 > {
   readonly name: string;
 
   readonly intent: Intent;
 
+  readonly correlationId: string;
+
   readonly actor: Actor;
+
+  readonly subject: Subject;
 
   readonly aggregateId: TAggregateId;
 
@@ -87,60 +64,44 @@ export interface IOperation<
 
 Every Operation targets exactly one Aggregate.
 
-Operation must contain an Aggregate identifier.
+Operation contains only the Aggregate identifier.
 
-Operation must not contain Aggregate instances.
-
-Operation must not load Aggregates.
-
-Operation must not save Aggregates.
-
-Aggregate lifecycle belongs to Command Handlers.
+Aggregate loading and persistence are outside of Operation.
 
 ## Allowed
 
-Operations may contain:
+Operation may contain:
 
-* domain identifiers
-* business payload
-* actor information
-* intent information
+- domain identifiers
+- business payload
 
 ## Forbidden
 
-Operations must not:
+Operation must not:
 
-* execute themselves
-* execute other Operations
-* access repositories
-* access infrastructure
-* access databases
-* access caches
-* publish messages
-* access messaging infrastructure
-* manage retries
-* manage idempotency
-* manage execution logs
-* manage outbox persistence
-* manage cache invalidation
+- contain execution logic
+- orchestrate other Operations
+- access infrastructure
+- access repositories
+- publish events
+- manage retries
+- manage idempotency
+- manage execution logging
 
-## Operation Granularity
+## Naming
 
-Operations should represent domain actions.
+Operation names should represent business actions.
 
 Prefer:
 
 ```txt
 ActivateProfile
 DisableProfile
-VerifyProfile
-CreateProfile
-CreateWallet
 ApproveWithdrawal
 RejectWithdrawal
 ```
 
-Avoid generic CRUD-style Operations:
+Avoid:
 
 ```txt
 UpdateProfile
@@ -148,40 +109,13 @@ UpdateWallet
 UpdateWithdrawal
 ```
 
-The Operation name should clearly communicate domain intent.
-
-## Architecture Rule
-
-Operations belong only to:
-
-```txt
-domain/
-```
-
-Operations must never exist in:
-
-```txt
-application/
-infrastructure/
-```
-
 ## Core Principle
 
-Operation is only:
+Operation is a pure immutable description of:
 
-```txt
-A description of who performs what action,
-on which Aggregate,
-with which Intent,
-and with which Payload.
-```
-
-Operation is not:
-
-```txt
-Execution.
-Workflow.
-Infrastructure.
-Persistence.
-Messaging.
-```
+- what domain action should happen;
+- who initiated it;
+- whose domain context is affected;
+- which Aggregate should handle it;
+- under which Intent and Correlation;
+- with which business payload.
