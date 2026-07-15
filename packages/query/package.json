@@ -1,5 +1,5 @@
 {
-    "name": "@event-driven-platform/command",
+    "name": "@event-driven-platform/query",
     "version": "0.0.1",
     "private": true,
     "type": "module",
@@ -15,16 +15,11 @@
         }
     },
     "dependencies": {
-        "@event-driven-platform/guard": "workspace:*",
-        "@event-driven-platform/operation": "workspace:*",
-        "@event-driven-platform/rate-limit": "workspace:*",
-        "@event-driven-platform/retry": "workspace:*",
+        "@event-driven-platform/read": "workspace:*",
         "tslib": "catalog:"
     },
     "devDependencies": {
         "@event-driven-platform/actor": "workspace:*",
-        "@event-driven-platform/intent": "workspace:*",
-        "@event-driven-platform/subject": "workspace:*",
         "@event-driven-platform/types": "workspace:*"
     }
 }

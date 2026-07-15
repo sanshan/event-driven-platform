@@ -1,1 +1,1 @@
-export * from './lib/operation.js';
+export type { AnyOperation, Operation, OperationResultOf } from './lib/operation.js';
