@@ -28,6 +28,12 @@
         },
         {
             "path": "./packages/command"
+        },
+        {
+            "path": "./packages/read"
+        },
+        {
+            "path": "./packages/query"
         }
     ]
 }

@@ -101,12 +101,22 @@ importers:
       '@event-driven-platform/retry':
         specifier: workspace:*
         version: link:../retry
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/actor':
+        specifier: workspace:*
+        version: link:../actor
+      '@event-driven-platform/intent':
+        specifier: workspace:*
+        version: link:../intent
+      '@event-driven-platform/subject':
+        specifier: workspace:*
+        version: link:../subject
       '@event-driven-platform/types':
         specifier: workspace:*
         version: link:../types
-      tslib:
-        specifier: ^2.3.0
-        version: 2.8.1
 
   packages/guard:
     dependencies:
@@ -144,11 +154,40 @@ importers:
         specifier: 'catalog:'
         version: 2.8.1
 
+  packages/query:
+    dependencies:
+      '@event-driven-platform/read':
+        specifier: workspace:*
+        version: link:../read
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/actor':
+        specifier: workspace:*
+        version: link:../actor
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
+
   packages/rate-limit:
     dependencies:
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
+
+  packages/read:
+    dependencies:
+      '@event-driven-platform/actor':
+        specifier: workspace:*
+        version: link:../actor
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
 
   packages/retry:
     dependencies:

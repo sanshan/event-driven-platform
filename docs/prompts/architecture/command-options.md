@@ -1,117 +1,132 @@
-# Command Options
+# CommandOptions
 
-CommandOptions describe execution requirements for a Command.
+CommandOptions represent declarative requirements for Operation execution.
 
-CommandOptions are declarative.
+CommandOptions describe how an Operation should be executed.
 
-CommandOptions do not execute anything by themselves.
-
-CommandOptions are defined by the Use Case and interpreted by the Runner.
+CommandOptions contain no execution behavior.
 
 ## Purpose
 
 CommandOptions answer:
 
 ```txt
-With which execution requirements should this Command be executed?
+With which execution requirements should the Operation be executed?
 ```
 
-CommandOptions do not answer:
-
-```txt
-What domain action should happen?
-```
-
-That is the responsibility of the Operation.
+CommandOptions do not describe the domain action itself.
 
 ## Responsibilities
 
-CommandOptions are responsible for carrying:
+CommandOptions are responsible only for carrying execution requirements.
 
-- timeout requirements
-- retry requirements
-- rate limit requirements
-- Guard requirements
+CommandOptions may carry:
 
-CommandOptions do not implement execution behavior.
+* timeout requirements
+* retry requirements
+* rate limit requirements
+* guard requirements
+* consistency requirements
 
-## Abstract Interface
+## Public API
 
 ```ts
 export interface CommandOptions {
-    readonly timeoutMs?: number;
+  readonly timeoutMs?: number;
 
-    readonly retry?: RetryOptions;
+  readonly retry?: RetryOptions;
 
-    readonly rateLimit?: RateLimitOptions;
+  readonly rateLimit?: RateLimitOptions;
 
-    readonly guards?: readonly GuardOptions[];
+  readonly guards?: readonly GuardOptions[];
+
+  readonly consistency?: ConsistencyOptions;
 }
 ```
 
-Each option is described by its own architecture document.
+Each option type defines its own declarative contract.
 
-## Ownership Rule
+## Declarative nature
 
-CommandOptions are declared by the Use Case.
+CommandOptions describe requested execution behavior.
 
-CommandOptions are carried by the Command.
+They do not implement that behavior.
 
-CommandOptions are interpreted by the Runner.
+For example:
 
-```txt
-Use Case
-  -> declares CommandOptions
-
-Command
-  -> carries CommandOptions
-
-Runner
-  -> interprets CommandOptions
+```text
+{
+  timeoutMs: 5_000,
+  retry: {
+    attempts: 3,
+  },
+}
 ```
+
+This describes execution requirements.
+
+It does not start a timeout or perform a retry.
+
+## Creation
+
+CommandOptions are defined by the component that creates the Command.
+
+A Command may be created by:
+
+* a Use Case
+* a transport adapter
+* a consumer
+* a scheduled job
+* a webhook handler
+
+The creator may omit CommandOptions when no explicit execution requirements are needed.
+
+## Optionality
+
+CommandOptions and all of their fields are optional.
+
+Absence of an option means that no explicit requirement of that type was provided by the Command.
+
+Default execution behavior is not defined by CommandOptions.
 
 ## Allowed
 
-CommandOptions may contain:
-
-- timeout configuration
-- retry configuration
-- rate limit configuration
-- Guard configuration
+CommandOptions may contain only declarative execution requirements.
 
 ## Forbidden
 
 CommandOptions must not:
 
-- contain business logic
-- contain domain rules
-- validate domain invariants
-- execute Commands
-- execute Operations
-- perform retries
-- perform rate limiting
-- evaluate Guards
-- access infrastructure
-- publish messages
-- write execution logs
-- write outbox records
+* contain business logic
+* contain domain rules
+* validate domain invariants
+* execute Commands
+* execute Operations
+* perform retries
+* enforce timeouts
+* perform rate limiting
+* evaluate guards
+* manage consistency
+* access infrastructure
+* publish messages
+* write execution logs
+* write outbox records
 
-## Core Principle
+## Design rules
+
+CommandOptions must:
+
+* be immutable
+* be serializable
+* remain declarative
+* contain no execution implementation
+* contain no business payload
+* contain only execution requirements
+
+## Core principle
 
 CommandOptions are only:
 
 ```txt
-Declarative execution requirements.
-```
-
-CommandOptions are not:
-
-```txt
-Business rules.
-Domain rules.
-Execution implementation.
-Retry implementation.
-Rate limiter.
-Guard evaluator.
-Infrastructure adapter.
+Declarative requirements for Operation execution.
 ```

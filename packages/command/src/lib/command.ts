@@ -1,14 +1,12 @@
-import type { Operation } from '@event-driven-platform/operation';
-import type { Brand } from '@event-driven-platform/types';
+import type { AnyOperation } from '@event-driven-platform/operation';
 
+import type { CommandContext } from './command-context.js';
 import type { CommandOptions } from './command-options.js';
 
-export interface Command<
-    TName extends string,
-    TAggregateId extends Brand<string, string>,
-    TPayload,
-> {
-    readonly operation: Operation<TName, TAggregateId, TPayload>;
+export interface Command<TOperation extends AnyOperation> {
+    readonly operation: TOperation;
+
+    readonly context: CommandContext;
 
     readonly options?: CommandOptions;
 }

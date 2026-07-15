@@ -2,10 +2,11 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { Actor } from '@event-driven-platform/actor';
 import type { Intent } from '@event-driven-platform/intent';
+import type { Operation, OperationResultOf } from '@event-driven-platform/operation';
 import type { Subject } from '@event-driven-platform/subject';
 import type { Brand } from '@event-driven-platform/types';
 
-import type { Operation, OperationResultOf } from './operation.js';
+import type { Command } from './command.js';
 
 type WalletId = Brand<string, 'WalletId'>;
 
@@ -24,8 +25,10 @@ type CreateWalletOperation = Operation<
     CreateWalletResult
 >;
 
-describe('Operation', () => {
-    it('describes a domain action over one Aggregate', () => {
+type CreateWalletCommand = Command<CreateWalletOperation>;
+
+describe('Command', () => {
+    it('carries an Operation, execution context and execution options', () => {
         const intent: Intent = {
             id: '287e771a-8769-5c0f-84dc-765c38be8f60',
             key: 'wallet.create:v1:user-1:EUR',
@@ -55,27 +58,32 @@ describe('Operation', () => {
             },
         };
 
-        expect(operation).toEqual({
-            name: 'CreateWallet',
-            intent,
-            actor,
-            subject,
-            aggregateId: 'wallet-1',
-            payload: {
-                currency: 'EUR',
+        const command: CreateWalletCommand = {
+            operation,
+            context: {
+                correlationId: 'register-user-flow-1',
+            },
+            options: {
+                timeoutMs: 5_000,
+            },
+        };
+
+        expect(command).toEqual({
+            operation,
+            context: {
+                correlationId: 'register-user-flow-1',
+            },
+            options: {
+                timeoutMs: 5_000,
             },
         });
 
-        expectTypeOf(operation.name).toEqualTypeOf<'CreateWallet'>();
+        expectTypeOf(command.operation).toEqualTypeOf<CreateWalletOperation>();
 
-        expectTypeOf(operation.aggregateId).toEqualTypeOf<WalletId>();
+        expectTypeOf(command.context.correlationId).toEqualTypeOf<string>();
 
-        expectTypeOf(operation.payload).toEqualTypeOf<CreateWalletPayload>();
-    });
-
-    it('associates the Operation with its result type', () => {
         expectTypeOf<
-            OperationResultOf<CreateWalletOperation>
+            OperationResultOf<typeof command.operation>
         >().toEqualTypeOf<CreateWalletResult>();
     });
 });

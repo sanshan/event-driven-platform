@@ -12,28 +12,10 @@
     "include": ["src/**/*.ts"],
     "references": [
         {
-            "path": "../retry/tsconfig.lib.json"
-        },
-        {
-            "path": "../rate-limit/tsconfig.lib.json"
-        },
-        {
-            "path": "../operation/tsconfig.lib.json"
-        },
-        {
-            "path": "../guard/tsconfig.lib.json"
+            "path": "../actor/tsconfig.lib.json"
         },
         {
             "path": "../types/tsconfig.lib.json"
-        },
-        {
-            "path": "../subject/tsconfig.lib.json"
-        },
-        {
-            "path": "../intent/tsconfig.lib.json"
-        },
-        {
-            "path": "../actor/tsconfig.lib.json"
         }
     ],
     "exclude": [

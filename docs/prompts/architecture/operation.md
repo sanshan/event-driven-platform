@@ -29,65 +29,120 @@ RejectWithdrawal
 
 Operation is responsible only for carrying:
 
-- operation name
-- intent
-- correlation id
-- actor
-- subject
-- aggregate identifier
-- business payload
+* operation name
+* intent
+* actor
+* subject
+* aggregate identifier
+* business payload
 
 ## Public API
 
 ```ts
-export interface Operation<TPayload, TAggregateId> {
-    readonly name: string;
+export interface Operation<
+  TName extends string,
+  TAggregateId,
+  TPayload,
+  TResult,
+> {
+  readonly name: TName;
 
-    readonly intent: Intent;
+  readonly intent: Intent;
 
-    readonly correlationId: string;
+  readonly actor: Actor;
 
-    readonly actor: Actor;
+  readonly subject: Subject;
 
-    readonly subject: Subject;
+  readonly aggregateId: TAggregateId;
 
-    readonly aggregateId: TAggregateId;
-
-    readonly payload: TPayload;
+  readonly payload: TPayload;
 }
 ```
 
-## Aggregate Rule
+The result type is part of the static Operation contract.
+
+It is not runtime data carried by Operation.
+
+## Intent
+
+Every Operation carries an Intent.
+
+Intent identifies the exact business intention represented by the Operation.
+
+Repeated execution of the same Intent represents repeated execution of the same business intention.
+
+Operation carries Intent but does not implement idempotency.
+
+## Actor
+
+Operation carries the Actor that initiated the domain action.
+
+## Subject
+
+Operation carries the Subject affected by the domain action.
+
+## Aggregate rule
 
 Every Operation targets exactly one Aggregate.
 
 Operation contains only the Aggregate identifier.
 
-Aggregate loading and persistence are outside of Operation.
+Operation does not contain the Aggregate instance.
+
+## Payload
+
+Operation carries the business data required to describe the domain action.
+
+Payload is specific to the concrete Operation.
+
+Payload must not contain execution or infrastructure concerns.
+
+## Result type
+
+Every Operation defines the type of business outcome it is expected to produce.
+
+The result type is associated with Operation at the type-system level.
+
+The result type must not be independently defined by Command.
+
+Examples:
+
+```txt
+ActivateProfileOperation -> ProfileActivated
+CreateWalletOperation -> WalletCreated
+ApproveWithdrawalOperation -> WithdrawalApproved
+```
 
 ## Allowed
 
 Operation may contain:
 
-- domain identifiers
-- business payload
+* domain identifiers
+* business values
+* business payload
 
 ## Forbidden
 
 Operation must not:
 
-- contain execution logic
-- orchestrate other Operations
-- access infrastructure
-- access repositories
-- publish events
-- manage retries
-- manage idempotency
-- manage execution logging
+* contain execution logic
+* orchestrate other Operations
+* execute other Operations
+* access infrastructure
+* access repositories
+* access caches
+* publish events
+* publish messages
+* manage retries
+* manage rate limits
+* manage timeouts
+* manage idempotency
+* manage execution logging
+* contain correlation metadata
 
 ## Naming
 
-Operation names should represent business actions.
+Operation names must represent explicit business actions.
 
 Prefer:
 
@@ -98,7 +153,7 @@ ApproveWithdrawal
 RejectWithdrawal
 ```
 
-Avoid:
+Avoid vague names:
 
 ```txt
 UpdateProfile
@@ -106,13 +161,26 @@ UpdateWallet
 UpdateWithdrawal
 ```
 
-## Core Principle
+## Design rules
+
+Operations must:
+
+* use business language
+* be immutable
+* be reusable
+* be serializable
+* describe exactly one domain action
+* target exactly one Aggregate
+* define a single unambiguous result contract
+* contain business intent only
+
+## Core principle
 
 Operation is a pure immutable description of:
 
-- what domain action should happen;
-- who initiated it;
-- whose domain context is affected;
-- which Aggregate should handle it;
-- under which Intent and Correlation;
-- with which business payload.
+* what domain action should happen
+* who initiated it
+* which business entity is affected
+* which Aggregate should handle it
+* which business intention it represents
+* which business data is required
