@@ -2,7 +2,7 @@
 
 OperationHandler executes one specific type of Operation.
 
-OperationHandler contains the business execution logic required to perform the Operation.
+OperationHandler contains the business execution logic required to perform that Operation.
 
 OperationHandler does not execute Commands.
 
@@ -21,7 +21,7 @@ How is the Command executed?
 How are retries performed?
 How is idempotency guaranteed?
 How is execution logged?
-How are Events published?
+How are Events persisted or published?
 ```
 
 ## Operation association
@@ -35,9 +35,9 @@ CreateWalletOperation
 → CreateWalletOperationHandler
 ```
 
-OperationHandler must handle exactly one Operation type.
+An OperationHandler handles exactly one Operation type.
 
-OperationHandler must not select Operations through conditional dispatch.
+OperationHandler must not resolve or select Operations through conditional dispatch.
 
 ```ts
 switch (operation.name) {
@@ -52,30 +52,71 @@ Handler resolution is outside the responsibility of OperationHandler.
 OperationHandler is responsible for:
 
 * executing one specific Operation
-* loading required domain state
+* loading the domain state required by the Operation
 * evaluating business rules and invariants
 * changing domain state
 * persisting domain state through transactional dependencies
-* producing an Operation Result
-* producing Events as part of the Result
+* producing an OperationResult
+* producing Events as part of an OperationResult
 
 OperationHandler contains business execution logic only.
+
+## Execution contract
+
+OperationHandler receives an Operation and returns an OperationResult.
+
+```txt
+Operation
+→ OperationHandler
+→ OperationResult
+```
+
+The exact Operation and OperationResult types are defined by the concrete handler.
+
+A handler must return only outcomes that belong to its declared result union.
 
 ## Transaction boundary
 
 OperationHandler is executed inside a transaction managed externally.
 
-OperationHandler does not create, commit or roll back transactions.
+OperationHandler does not:
 
-OperationHandler must use dependencies associated with the transaction in which it is executed.
+* create a transaction
+* commit a transaction
+* roll back a transaction
+* control transaction lifecycle
 
-OperationHandler must not control transaction lifecycle.
+OperationHandler performs its work through dependencies associated with the active transaction.
+
+OperationHandler must not depend on a concrete transaction implementation unless that implementation is itself part of an explicitly defined transactional dependency contract.
+
+## Transactional outcome
+
+OperationHandler communicates the business and transactional outcome through OperationResult.
+
+The possible result categories are:
+
+```txt
+success
+committed rejection
+rolled-back rejection
+```
+
+OperationHandler does not commit or roll back the transaction directly.
+
+It returns the appropriate OperationResult variant.
+
+A successful result means that produced changes must be preserved.
+
+A committed rejection means that the Operation was rejected, but produced changes must be preserved.
+
+A rolled-back rejection means that the Operation was rejected and produced changes must be discarded.
 
 ## External interactions
 
-OperationHandler must not interact with external APIs.
+OperationHandler must not interact with external APIs or perform non-transactional external side effects.
 
-OperationHandler is executed inside a local transaction, while external systems cannot participate in that transaction.
+External systems cannot participate in the local transaction in which OperationHandler executes.
 
 An external side effect cannot be rolled back together with local transactional changes.
 
@@ -91,38 +132,65 @@ OperationHandler must not directly perform:
 * external file storage operations
 * other non-transactional external side effects
 
-External side effects must be represented through Events produced by the OperationHandler.
+Required external side effects must be represented through Events produced as part of OperationResult.
 
 OperationHandler produces Events as data.
 
-OperationHandler does not publish Events.
+OperationHandler does not persist or publish Events.
 
-## Result
+## OperationResult
 
-OperationHandler returns the Result of the Operation execution.
+OperationHandler returns an OperationResult representing the business outcome of the Operation.
 
-The Result represents the business outcome of the Operation.
+OperationResult may contain:
 
-A Result may represent:
-
-* successful execution
-* business rejection
+* successful business data
+* rejection reason
+* rejection data
 * produced Events
+* transactional completion semantics
 
-Expected business rejection must be returned as a Result.
+Expected business rejection must be returned as an OperationResult.
 
-Unexpected infrastructure or execution failures may be raised as errors.
+Expected business rejection must not be represented as an exception.
 
-The exact Result contract is defined separately.
+OperationHandler may return:
+
+* SuccessfulOperationResult
+* CommittedOperationRejection
+* RolledBackOperationRejection
+
+The exact OperationResult contract is defined separately.
+
+## Errors
+
+OperationHandler may raise an error when execution cannot produce a valid business result.
+
+Examples include:
+
+* unavailable persistence dependency
+* unexpected persistence failure
+* corrupted or inconsistent stored data
+* violated internal implementation assumption
+* unexpected dependency failure
+
+Unexpected execution failures must not be converted into business rejection results.
 
 ## Events
 
-OperationHandler may produce Events through the Result.
+OperationHandler may produce Events through OperationResult.
 
-Events describe facts produced by the completed business action.
+Events represent business facts produced by the Operation outcome.
+
+SuccessfulOperationResult may contain Events.
+
+CommittedOperationRejection may contain Events.
+
+RolledBackOperationRejection must not contain Events.
 
 OperationHandler must not:
 
+* persist Events
 * publish Events
 * write directly to Outbox
 * select Topics
@@ -130,15 +198,24 @@ OperationHandler must not:
 
 ## Dependencies
 
-OperationHandler may depend on domain services and transactional persistence abstractions required to execute its Operation.
+OperationHandler may depend on:
 
-Dependencies should be explicit.
+* domain services
+* domain policies
+* transactional repositories
+* transactional persistence abstractions
+* deterministic business utilities required by the Operation
 
-OperationHandler should not depend on:
+Dependencies must be explicit.
+
+OperationHandler should normally receive dependencies through construction.
+
+OperationHandler must not depend on:
 
 * Runner
 * Command
 * retry infrastructure
+* timeout infrastructure
 * rate limiting infrastructure
 * idempotency infrastructure
 * execution logging infrastructure
@@ -156,9 +233,11 @@ OperationHandler must not invoke Runner.
 
 Coordination of multiple Operations belongs to a Use Case.
 
+Calling a domain service is allowed when that service does not execute Operations and remains inside the same business and transactional boundary.
+
 ## State
 
-OperationHandler should not maintain mutable execution state between invocations.
+OperationHandler must not maintain mutable execution state between invocations.
 
 OperationHandler dependencies should normally be immutable.
 
@@ -168,11 +247,22 @@ Each execution must depend only on:
 * explicit dependencies
 * transactional domain state
 
+OperationHandler should be safe to reuse across multiple executions.
+
+## Determinism
+
+OperationHandler should not depend on hidden sources of nondeterminism.
+
+Values such as current time, generated identifiers or random values should be obtained through explicit dependencies when they affect business behavior or produced data.
+
+This keeps OperationHandler independently testable and makes its behavior explicit.
+
 ## Forbidden responsibilities
 
 OperationHandler must not:
 
 * execute Commands
+* resolve handlers
 * manage transactions
 * implement retries
 * implement timeout handling
@@ -183,16 +273,19 @@ OperationHandler must not:
 * publish messages
 * interact with external APIs
 * execute other Operations
+* invoke other OperationHandlers
 * orchestrate workflows
 
 ## Design rules
 
-OperationHandler should be:
+OperationHandler must be:
 
 * specific to one Operation type
+* explicit about its OperationResult union
 * business-oriented
 * transaction-compatible
 * independently testable
 * explicit in its dependencies
 * free from execution infrastructure concerns
-* free from external side effects
+* free from non-transactional external side effects
+* stateless between executions

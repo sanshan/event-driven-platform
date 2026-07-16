@@ -154,10 +154,38 @@ importers:
         specifier: 'catalog:'
         version: 2.8.1
 
+  packages/operation-handler:
+    dependencies:
+      '@event-driven-platform/operation':
+        specifier: workspace:*
+        version: link:../operation
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+
+  packages/operation-handler-resolver:
+    dependencies:
+      '@event-driven-platform/operation':
+        specifier: workspace:*
+        version: link:../operation
+      '@event-driven-platform/operation-handler':
+        specifier: workspace:*
+        version: link:../operation-handler
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/operation-result':
+        specifier: workspace:*
+        version: link:../operation-result
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
+
   packages/operation-result:
     dependencies:
       tslib:
-        specifier: ^2.3.0
+        specifier: 'catalog:'
         version: 2.8.1
 
   packages/query:
