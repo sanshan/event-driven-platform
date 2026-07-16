@@ -37,6 +37,12 @@
         },
         {
             "path": "./packages/operation-result"
+        },
+        {
+            "path": "./packages/operation-handler"
+        },
+        {
+            "path": "./packages/operation-handler-resolver"
         }
     ]
 }
