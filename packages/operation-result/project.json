@@ -1,0 +1,9 @@
+{
+    "name": "@event-driven-platform/operation-result",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "packages/operation-result/src",
+    "projectType": "library",
+    "tags": [],
+    "// targets": "to see all targets run: nx show project @event-driven-platform/operation-result --web",
+    "targets": {}
+}

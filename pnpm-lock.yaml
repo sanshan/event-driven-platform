@@ -154,6 +154,12 @@ importers:
         specifier: 'catalog:'
         version: 2.8.1
 
+  packages/operation-result:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
   packages/query:
     dependencies:
       '@event-driven-platform/read':
