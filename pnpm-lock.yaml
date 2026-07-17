@@ -118,6 +118,62 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  packages/event:
+    dependencies:
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+
+  packages/execution:
+    dependencies:
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+
+  packages/execution-log:
+    dependencies:
+      '@event-driven-platform/execution':
+        specifier: workspace:*
+        version: link:../execution
+      '@event-driven-platform/operation':
+        specifier: workspace:*
+        version: link:../operation
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/operation-result':
+        specifier: workspace:*
+        version: link:../operation-result
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
+
+  packages/execution-log-store:
+    dependencies:
+      '@event-driven-platform/execution':
+        specifier: workspace:*
+        version: link:../execution
+      '@event-driven-platform/execution-log':
+        specifier: workspace:*
+        version: link:../execution-log
+      '@event-driven-platform/operation':
+        specifier: workspace:*
+        version: link:../operation
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/operation-result':
+        specifier: workspace:*
+        version: link:../operation-result
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
+
   packages/guard:
     dependencies:
       tslib:
@@ -184,6 +240,9 @@ importers:
 
   packages/operation-result:
     dependencies:
+      '@event-driven-platform/event':
+        specifier: workspace:*
+        version: link:../event
       tslib:
         specifier: 'catalog:'
         version: 2.8.1

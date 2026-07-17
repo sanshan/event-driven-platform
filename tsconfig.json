@@ -43,6 +43,18 @@
         },
         {
             "path": "./packages/operation-handler-resolver"
+        },
+        {
+            "path": "./packages/event"
+        },
+        {
+            "path": "./packages/execution"
+        },
+        {
+            "path": "./packages/execution-log"
+        },
+        {
+            "path": "./packages/execution-log-store"
         }
     ]
 }

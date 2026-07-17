@@ -15,6 +15,7 @@
         }
     },
     "dependencies": {
+        "@event-driven-platform/event": "workspace:*",
         "tslib": "catalog:"
     }
 }

@@ -20,6 +20,7 @@ interface CreateWalletResult {
 
 type CreateWalletOperation = Operation<
     'CreateWallet',
+    1,
     WalletId,
     CreateWalletPayload,
     CreateWalletResult
@@ -49,6 +50,7 @@ describe('Command', () => {
 
         const operation: CreateWalletOperation = {
             name: 'CreateWallet',
+            schemaVersion: 1,
             intent,
             actor,
             subject,

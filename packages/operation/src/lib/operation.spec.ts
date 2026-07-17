@@ -19,13 +19,14 @@ interface CreateWalletResult {
 
 type CreateWalletOperation = Operation<
     'CreateWallet',
+    1,
     WalletId,
     CreateWalletPayload,
     CreateWalletResult
 >;
 
 describe('Operation', () => {
-    it('describes a domain action over one Aggregate', () => {
+    it('describes a versioned domain action over one Aggregate', () => {
         const intent: Intent = {
             id: '287e771a-8769-5c0f-84dc-765c38be8f60',
             key: 'wallet.create:v1:user-1:EUR',
@@ -46,6 +47,7 @@ describe('Operation', () => {
 
         const operation: CreateWalletOperation = {
             name: 'CreateWallet',
+            schemaVersion: 1,
             intent,
             actor,
             subject,
@@ -57,6 +59,7 @@ describe('Operation', () => {
 
         expect(operation).toEqual({
             name: 'CreateWallet',
+            schemaVersion: 1,
             intent,
             actor,
             subject,
@@ -67,6 +70,8 @@ describe('Operation', () => {
         });
 
         expectTypeOf(operation.name).toEqualTypeOf<'CreateWallet'>();
+
+        expectTypeOf(operation.schemaVersion).toEqualTypeOf<1>();
 
         expectTypeOf(operation.aggregateId).toEqualTypeOf<WalletId>();
 

@@ -1,5 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import type { Event } from '@event-driven-platform/event';
+
 import {
     type CommittedOperationRejection,
     isCommittedOperationRejection,
@@ -11,12 +13,44 @@ import {
     type SuccessfulOperationResult,
 } from '../index.js';
 
+interface WalletCreatedPayload {
+    readonly walletId: string;
+}
+
+type WalletCreatedEvent = Event<'wallet.created', 1, WalletCreatedPayload>;
+
+interface WalletCreationRejectedPayload {
+    readonly walletId: string;
+}
+
+type WalletCreationRejectedEvent = Event<
+    'wallet.creation-rejected',
+    1,
+    WalletCreationRejectedPayload
+>;
+
+interface BalanceChangedPayload {
+    readonly previousBalance: number;
+    readonly currentBalance: number;
+}
+
+type BalanceChangedEvent = Event<'balance.changed', 1, BalanceChangedPayload>;
+
+interface BalanceChangeRejectedPayload {
+    readonly attemptId: string;
+}
+
+type BalanceChangeRejectedEvent = Event<'balance.change-rejected', 1, BalanceChangeRejectedPayload>;
+
 describe('OperationResults', () => {
     describe('success', () => {
         it('creates a successful result with data and events', () => {
-            const event = {
-                name: 'wallet.created' as const,
-                walletId: 'wallet-1',
+            const event: WalletCreatedEvent = {
+                name: 'wallet.created',
+                schemaVersion: 1,
+                payload: {
+                    walletId: 'wallet-1',
+                },
             };
 
             const result = OperationResults.success({
@@ -31,7 +65,15 @@ describe('OperationResults', () => {
                 data: {
                     walletId: 'wallet-1',
                 },
-                events: [event],
+                events: [
+                    {
+                        name: 'wallet.created',
+                        schemaVersion: 1,
+                        payload: {
+                            walletId: 'wallet-1',
+                        },
+                    },
+                ],
             });
 
             expectTypeOf(result).toEqualTypeOf<
@@ -39,10 +81,7 @@ describe('OperationResults', () => {
                     {
                         walletId: string;
                     },
-                    {
-                        name: 'wallet.created';
-                        walletId: string;
-                    }
+                    WalletCreatedEvent
                 >
             >();
         });
@@ -68,12 +107,32 @@ describe('OperationResults', () => {
 
             expect(result.events).toEqual([]);
         });
+
+        it('does not accept values that are not Events', () => {
+            OperationResults.success({
+                data: {
+                    walletId: 'wallet-1',
+                },
+
+                events: [
+                    {
+                        name: 'wallet.created',
+                        // @ts-expect-error result events must implement Event
+                        walletId: 'wallet-1',
+                    },
+                ],
+            });
+        });
     });
 
     describe('committedRejection', () => {
         it('creates a committed rejection with reason, data and events', () => {
-            const event = {
-                name: 'wallet.creation-rejected' as const,
+            const event: WalletCreationRejectedEvent = {
+                name: 'wallet.creation-rejected',
+                schemaVersion: 1,
+                payload: {
+                    walletId: 'wallet-1',
+                },
             };
 
             const result = OperationResults.committedRejection({
@@ -95,7 +154,15 @@ describe('OperationResults', () => {
                 data: {
                     walletId: 'wallet-1',
                 },
-                events: [event],
+                events: [
+                    {
+                        name: 'wallet.creation-rejected',
+                        schemaVersion: 1,
+                        payload: {
+                            walletId: 'wallet-1',
+                        },
+                    },
+                ],
             });
 
             expectTypeOf(result).toEqualTypeOf<
@@ -106,9 +173,7 @@ describe('OperationResults', () => {
                     {
                         walletId: string;
                     },
-                    {
-                        name: 'wallet.creation-rejected';
-                    }
+                    WalletCreationRejectedEvent
                 >
             >();
         });
@@ -200,6 +265,10 @@ describe('OperationResults', () => {
                 events: [
                     {
                         name: 'balance.change-rejected',
+                        schemaVersion: 1,
+                        payload: {
+                            attemptId: 'attempt-1',
+                        },
                     },
                 ],
             });
@@ -214,9 +283,7 @@ describe('OperationResult type guards', () => {
                   previousBalance: number;
                   currentBalance: number;
               },
-              {
-                  name: 'balance.changed';
-              }
+              BalanceChangedEvent
           >
         | CommittedOperationRejection<
               {
@@ -225,9 +292,7 @@ describe('OperationResult type guards', () => {
               {
                   attemptId: string;
               },
-              {
-                  name: 'balance.change-rejected';
-              }
+              BalanceChangeRejectedEvent
           >
         | RolledBackOperationRejection<
               {
@@ -248,6 +313,11 @@ describe('OperationResult type guards', () => {
             events: [
                 {
                     name: 'balance.changed',
+                    schemaVersion: 1,
+                    payload: {
+                        previousBalance: 100,
+                        currentBalance: 50,
+                    },
                 },
             ],
         }),
@@ -261,6 +331,10 @@ describe('OperationResult type guards', () => {
             events: [
                 {
                     name: 'balance.change-rejected',
+                    schemaVersion: 1,
+                    payload: {
+                        attemptId: 'attempt-1',
+                    },
                 },
             ],
         }),
