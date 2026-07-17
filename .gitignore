@@ -148,3 +148,5 @@ lib-cov/
 .DS_Store
 Thumbs.db
 Desktop.ini
+.claude/worktrees
+.claude/settings.local.json

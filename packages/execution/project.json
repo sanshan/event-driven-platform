@@ -1,0 +1,9 @@
+{
+    "name": "@event-driven-platform/execution",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "packages/execution/src",
+    "projectType": "library",
+    "tags": [],
+    "// targets": "to see all targets run: nx show project @event-driven-platform/execution --web",
+    "targets": {}
+}

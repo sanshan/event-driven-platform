@@ -1,8 +1,10 @@
+import type { AnyEvent } from '@event-driven-platform/event';
+
 import type { CommittedOperationRejection } from './committed-operation-rejection.js';
 import type { RolledBackOperationRejection } from './rolled-back-operation-rejection.js';
 import type { SuccessfulOperationResult } from './successful-operation-result.js';
 
-export type SuccessfulOperationResultInput<TData, TEvent> = {
+export type SuccessfulOperationResultInput<TData, TEvent extends AnyEvent> = {
     readonly events?: readonly TEvent[];
 } & ([TData] extends [void]
     ? {
@@ -12,8 +14,9 @@ export type SuccessfulOperationResultInput<TData, TEvent> = {
           readonly data: TData;
       });
 
-export type CommittedOperationRejectionInput<TReason, TData, TEvent> = {
+export type CommittedOperationRejectionInput<TReason, TData, TEvent extends AnyEvent> = {
     readonly reason: TReason;
+
     readonly events?: readonly TEvent[];
 } & ([TData] extends [void]
     ? {
@@ -33,7 +36,7 @@ export type RolledBackOperationRejectionInput<TReason, TData> = {
           readonly data: TData;
       });
 
-function success<TData = void, TEvent = never>(
+function success<TData = void, TEvent extends AnyEvent = never>(
     ...args: [TData] extends [void]
         ? [input?: SuccessfulOperationResultInput<TData, TEvent>]
         : [input: SuccessfulOperationResultInput<TData, TEvent>]
@@ -47,7 +50,7 @@ function success<TData = void, TEvent = never>(
     };
 }
 
-function committedRejection<TReason, TData = void, TEvent = never>(
+function committedRejection<TReason, TData = void, TEvent extends AnyEvent = never>(
     input: CommittedOperationRejectionInput<TReason, TData, TEvent>,
 ): CommittedOperationRejection<TReason, TData, TEvent> {
     return {

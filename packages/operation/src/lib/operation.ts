@@ -7,15 +7,28 @@ declare const operationResultType: unique symbol;
 
 export interface Operation<
     TName extends string,
+    TSchemaVersion extends number,
     TAggregateId extends Brand<string, string>,
     TPayload,
     TResult,
 > {
     readonly name: TName;
 
+    /**
+     * Version of the serialized Operation contract.
+     *
+     * The combination of:
+     *
+     *   name + schemaVersion
+     *
+     * uniquely identifies the Operation schema.
+     */
+    readonly schemaVersion: TSchemaVersion;
+
     readonly intent: Intent;
 
     readonly actor: Actor;
+
     readonly subject: Subject;
 
     readonly aggregateId: TAggregateId;
@@ -31,9 +44,15 @@ export interface Operation<
     readonly [operationResultType]?: TResult;
 }
 
-export type AnyOperation = Operation<string, Brand<string, string>, unknown, unknown>;
+export type AnyOperation = Operation<string, number, Brand<string, string>, unknown, unknown>;
 
 export type OperationResultOf<TOperation extends AnyOperation> =
-    TOperation extends Operation<infer _TName, infer _TAggregateId, infer _TPayload, infer TResult>
+    TOperation extends Operation<
+        infer _TName,
+        infer _TSchemaVersion,
+        infer _TAggregateId,
+        infer _TPayload,
+        infer TResult
+    >
         ? TResult
         : never;

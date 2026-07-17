@@ -38,6 +38,7 @@ type CreateWalletResult =
 
 type CreateWalletOperation = Operation<
     'wallet.create',
+    1,
     WalletId,
     CreateWalletPayload,
     CreateWalletResult
