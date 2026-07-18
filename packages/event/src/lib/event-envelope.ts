@@ -1,11 +1,18 @@
+import type { AnyAggregateReference } from '@event-driven-platform/aggregate-reference';
+import type { AnyTenantReference } from '@event-driven-platform/tenant-reference';
+
 import type { AnyEvent } from './event.js';
 import type { EventActor } from './event-actor.js';
-import type { EventAggregate } from './event-aggregate.js';
+import type { EventId } from './event-id.js';
 import type { EventSubject } from './event-subject.js';
-import type { EventTenant } from './event-tenant.js';
 
-export interface EventEnvelope<TEvent extends AnyEvent, TOperationName extends string = string> {
-    readonly eventId: string;
+export interface EventEnvelope<
+    TEvent extends AnyEvent,
+    TOperationName extends string = string,
+    TTenant extends AnyTenantReference = AnyTenantReference,
+    TAggregate extends AnyAggregateReference = AnyAggregateReference,
+> {
+    readonly eventId: EventId;
 
     readonly eventName: TEvent['name'];
 
@@ -19,15 +26,20 @@ export interface EventEnvelope<TEvent extends AnyEvent, TOperationName extends s
 
     readonly operationName: TOperationName;
 
-    readonly tenant: EventTenant;
+    readonly tenant: TTenant;
 
     readonly actor: EventActor;
 
     readonly subject: EventSubject;
 
-    readonly aggregate: EventAggregate;
+    readonly aggregate: TAggregate;
 
     readonly payload: TEvent['payload'];
 }
 
-export type AnyEventEnvelope = EventEnvelope<AnyEvent>;
+export type AnyEventEnvelope = EventEnvelope<
+    AnyEvent,
+    string,
+    AnyTenantReference,
+    AnyAggregateReference
+>;

@@ -1,0 +1,27 @@
+{
+    "name": "@event-driven-platform/outbox",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        "./package.json": "./package.json",
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "dependencies": {
+        "@event-driven-platform/clock": "workspace:*",
+        "@event-driven-platform/event": "workspace:*",
+        "tslib": "catalog:"
+    },
+    "devDependencies": {
+        "@event-driven-platform/aggregate-reference": "workspace:*",
+        "@event-driven-platform/tenant-reference": "workspace:*",
+        "@event-driven-platform/types": "workspace:*"
+    }
+}

@@ -5,16 +5,28 @@ const COMPONENT_NAME_PATTERN = /^[a-z][a-zA-Z0-9]*$/;
 
 const segmentSchema = z.string().regex(SEGMENT_PATTERN, 'must use lowercase kebab-case.');
 
-const componentValueSchema = z
+const nonEmptyStringSchema = z
     .string()
     .min(1, 'must not be empty.')
     .refine((value) => value === value.trim(), 'must not contain leading or trailing whitespace.');
 
+const componentValueSchema = nonEmptyStringSchema;
+
+const tenantReferenceSchema = z.strictObject({
+    type: nonEmptyStringSchema,
+    id: nonEmptyStringSchema,
+});
+
 export const intentDescriptorSchema = z
     .strictObject({
         namespace: segmentSchema,
+
         action: segmentSchema,
+
         version: z.number().int().positive('Intent version must be a positive safe integer.'),
+
+        tenant: tenantReferenceSchema,
+
         components: z.record(z.string(), componentValueSchema),
     })
     .superRefine((descriptor, context) => {

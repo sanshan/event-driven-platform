@@ -15,6 +15,11 @@
         }
     },
     "dependencies": {
-        "tslib": "catalog:"
+        "@event-driven-platform/aggregate-reference": "workspace:*",
+        "@event-driven-platform/tenant-reference": "workspace:*",
+        "@event-driven-platform/types": "workspace:*",
+        "tslib": "catalog:",
+        "uuid": "catalog:",
+        "zod": "catalog:"
     }
 }

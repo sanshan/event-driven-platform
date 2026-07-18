@@ -10,7 +10,7 @@ catalogs:
       specifier: ^2.3.0
       version: 2.8.1
     uuid:
-      specifier: ^13.0.0
+      specifier: ^13.0.2
       version: 13.0.2
     zod:
       specifier: ^4.4.3
@@ -87,6 +87,24 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
 
+  packages/aggregate-reference:
+    dependencies:
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+
+  packages/clock:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
   packages/command:
     dependencies:
       '@event-driven-platform/guard':
@@ -108,21 +126,42 @@ importers:
       '@event-driven-platform/actor':
         specifier: workspace:*
         version: link:../actor
+      '@event-driven-platform/aggregate-reference':
+        specifier: workspace:*
+        version: link:../aggregate-reference
       '@event-driven-platform/intent':
         specifier: workspace:*
         version: link:../intent
       '@event-driven-platform/subject':
         specifier: workspace:*
         version: link:../subject
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
       '@event-driven-platform/types':
         specifier: workspace:*
         version: link:../types
 
   packages/event:
     dependencies:
+      '@event-driven-platform/aggregate-reference':
+        specifier: workspace:*
+        version: link:../aggregate-reference
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
+      uuid:
+        specifier: 'catalog:'
+        version: 13.0.2
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
 
   packages/execution:
     dependencies:
@@ -132,6 +171,12 @@ importers:
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
+      uuid:
+        specifier: 'catalog:'
+        version: 13.0.2
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
 
   packages/execution-log:
     dependencies:
@@ -145,9 +190,15 @@ importers:
         specifier: 'catalog:'
         version: 2.8.1
     devDependencies:
+      '@event-driven-platform/aggregate-reference':
+        specifier: workspace:*
+        version: link:../aggregate-reference
       '@event-driven-platform/operation-result':
         specifier: workspace:*
         version: link:../operation-result
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
       '@event-driven-platform/types':
         specifier: workspace:*
         version: link:../types
@@ -167,12 +218,24 @@ importers:
         specifier: ^2.3.0
         version: 2.8.1
     devDependencies:
+      '@event-driven-platform/aggregate-reference':
+        specifier: workspace:*
+        version: link:../aggregate-reference
       '@event-driven-platform/operation-result':
         specifier: workspace:*
         version: link:../operation-result
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
       '@event-driven-platform/types':
         specifier: workspace:*
         version: link:../types
+
+  packages/execution-transaction:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
   packages/guard:
     dependencies:
@@ -182,6 +245,9 @@ importers:
 
   packages/intent:
     dependencies:
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
@@ -191,24 +257,62 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+    devDependencies:
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
 
   packages/operation:
     dependencies:
       '@event-driven-platform/actor':
         specifier: workspace:*
         version: link:../actor
+      '@event-driven-platform/aggregate-reference':
+        specifier: workspace:*
+        version: link:../aggregate-reference
       '@event-driven-platform/intent':
         specifier: workspace:*
         version: link:../intent
+      '@event-driven-platform/operation-result':
+        specifier: workspace:*
+        version: link:../operation-result
       '@event-driven-platform/subject':
         specifier: workspace:*
         version: link:../subject
-      '@event-driven-platform/types':
+      '@event-driven-platform/tenant-reference':
         specifier: workspace:*
-        version: link:../types
+        version: link:../tenant-reference
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
+
+  packages/operation-event-envelope-factory:
+    dependencies:
+      '@event-driven-platform/clock':
+        specifier: workspace:*
+        version: link:../clock
+      '@event-driven-platform/command':
+        specifier: workspace:*
+        version: link:../command
+      '@event-driven-platform/event':
+        specifier: workspace:*
+        version: link:../event
+      '@event-driven-platform/operation':
+        specifier: workspace:*
+        version: link:../operation
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/aggregate-reference':
+        specifier: workspace:*
+        version: link:../aggregate-reference
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
 
   packages/operation-handler:
     dependencies:
@@ -231,9 +335,15 @@ importers:
         specifier: 'catalog:'
         version: 2.8.1
     devDependencies:
+      '@event-driven-platform/aggregate-reference':
+        specifier: workspace:*
+        version: link:../aggregate-reference
       '@event-driven-platform/operation-result':
         specifier: workspace:*
         version: link:../operation-result
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
       '@event-driven-platform/types':
         specifier: workspace:*
         version: link:../types
@@ -246,6 +356,44 @@ importers:
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
+
+  packages/outbox:
+    dependencies:
+      '@event-driven-platform/clock':
+        specifier: workspace:*
+        version: link:../clock
+      '@event-driven-platform/event':
+        specifier: workspace:*
+        version: link:../event
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/aggregate-reference':
+        specifier: workspace:*
+        version: link:../aggregate-reference
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
+
+  packages/outbox-store:
+    dependencies:
+      '@event-driven-platform/outbox':
+        specifier: workspace:*
+        version: link:../outbox
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/event':
+        specifier: workspace:*
+        version: link:../event
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
 
   packages/query:
     dependencies:
@@ -288,6 +436,80 @@ importers:
         specifier: ^2.3.0
         version: 2.8.1
 
+  packages/runner:
+    dependencies:
+      '@event-driven-platform/clock':
+        specifier: workspace:*
+        version: link:../clock
+      '@event-driven-platform/command':
+        specifier: workspace:*
+        version: link:../command
+      '@event-driven-platform/execution':
+        specifier: workspace:*
+        version: link:../execution
+      '@event-driven-platform/execution-log':
+        specifier: workspace:*
+        version: link:../execution-log
+      '@event-driven-platform/execution-log-store':
+        specifier: workspace:*
+        version: link:../execution-log-store
+      '@event-driven-platform/execution-transaction':
+        specifier: workspace:*
+        version: link:../execution-transaction
+      '@event-driven-platform/operation':
+        specifier: workspace:*
+        version: link:../operation
+      '@event-driven-platform/operation-event-envelope-factory':
+        specifier: workspace:*
+        version: link:../operation-event-envelope-factory
+      '@event-driven-platform/operation-handler-resolver':
+        specifier: workspace:*
+        version: link:../operation-handler-resolver
+      '@event-driven-platform/operation-result':
+        specifier: workspace:*
+        version: link:../operation-result
+      '@event-driven-platform/outbox':
+        specifier: workspace:*
+        version: link:../outbox
+      '@event-driven-platform/outbox-store':
+        specifier: workspace:*
+        version: link:../outbox-store
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/aggregate-reference':
+        specifier: workspace:*
+        version: link:../aggregate-reference
+      '@event-driven-platform/event':
+        specifier: workspace:*
+        version: link:../event
+      '@event-driven-platform/operation-handler':
+        specifier: workspace:*
+        version: link:../operation-handler
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
+
+  packages/scoped-execution-transaction:
+    dependencies:
+      '@event-driven-platform/execution-transaction':
+        specifier: workspace:*
+        version: link:../execution-transaction
+      '@event-driven-platform/transaction-adapter':
+        specifier: workspace:*
+        version: link:../transaction-adapter
+      '@event-driven-platform/transaction-scope':
+        specifier: workspace:*
+        version: link:../transaction-scope
+    devDependencies:
+      '@event-driven-platform/transaction-scope-node':
+        specifier: workspace:*
+        version: link:../transaction-scope-node
+
   packages/subject:
     dependencies:
       tslib:
@@ -296,6 +518,48 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+
+  packages/tenant-reference:
+    dependencies:
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+
+  packages/transaction-adapter:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
+  packages/transaction-host:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
+  packages/transaction-scope:
+    dependencies:
+      '@event-driven-platform/transaction-host':
+        specifier: workspace:*
+        version: link:../transaction-host
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
+  packages/transaction-scope-node:
+    dependencies:
+      '@event-driven-platform/transaction-host':
+        specifier: workspace:*
+        version: link:../transaction-host
+      '@event-driven-platform/transaction-scope':
+        specifier: workspace:*
+        version: link:../transaction-scope
 
   packages/types:
     dependencies:

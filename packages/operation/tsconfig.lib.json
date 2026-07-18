@@ -15,10 +15,19 @@
             "path": "../types/tsconfig.lib.json"
         },
         {
+            "path": "../tenant-reference/tsconfig.lib.json"
+        },
+        {
             "path": "../subject/tsconfig.lib.json"
         },
         {
             "path": "../intent/tsconfig.lib.json"
+        },
+        {
+            "path": "../aggregate-reference/tsconfig.lib.json"
+        },
+        {
+            "path": "../operation-result/tsconfig.lib.json"
         },
         {
             "path": "../actor/tsconfig.lib.json"

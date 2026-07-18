@@ -1,0 +1,1 @@
+export const EVENT_ID_UUID_NAMESPACE = '3a36f885-c84c-55ea-b3b8-959681a2bc51';

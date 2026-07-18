@@ -1,8 +1,4 @@
-import type {
-    ExecutionAttemptId,
-    ExecutionId,
-    ExecutionLease,
-} from '@event-driven-platform/execution';
+import type { ExecutionId, ExecutionLeaseOwnerId } from '@event-driven-platform/execution';
 import type {
     AnyExecutionLogEntry,
     CompletedExecutionLogEntry,
@@ -16,23 +12,34 @@ import type { AnyOperation } from '@event-driven-platform/operation';
  * The store derives the Intent identifier from:
  *
  * request.operation.intent.id
+ *
+ * The store atomically assigns:
+ *
+ * - attempt number
+ * - attempt identifier
+ * - lease version
+ * - lease acquisition timestamp
+ * - lease expiration timestamp
  */
 export interface ClaimExecutionRequest<TOperation extends AnyOperation> {
     readonly executionId: ExecutionId;
-
-    readonly attemptId: ExecutionAttemptId;
 
     readonly operation: TOperation;
 
     readonly correlationId: string;
 
-    readonly lease: ExecutionLease;
+    readonly leaseOwnerId: ExecutionLeaseOwnerId;
 
-    readonly startedAt: string;
+    readonly leaseDurationMs: number;
+
+    readonly requestedAt: string;
 }
 
 /**
  * A new execution attempt was created and claimed successfully.
+ *
+ * The returned entry contains the attempt and lease values assigned
+ * atomically by the store.
  */
 export interface ExecutionClaimed<TOperation extends AnyOperation> {
     readonly type: 'claimed';

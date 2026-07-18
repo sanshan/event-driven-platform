@@ -55,6 +55,45 @@
         },
         {
             "path": "./packages/execution-log-store"
+        },
+        {
+            "path": "./packages/execution-transaction"
+        },
+        {
+            "path": "./packages/transaction-host"
+        },
+        {
+            "path": "./packages/transaction-scope"
+        },
+        {
+            "path": "./packages/transaction-scope-node"
+        },
+        {
+            "path": "./packages/transaction-adapter"
+        },
+        {
+            "path": "./packages/scoped-execution-transaction"
+        },
+        {
+            "path": "./packages/outbox"
+        },
+        {
+            "path": "./packages/outbox-store"
+        },
+        {
+            "path": "./packages/aggregate-reference"
+        },
+        {
+            "path": "./packages/tenant-reference"
+        },
+        {
+            "path": "./packages/clock"
+        },
+        {
+            "path": "./packages/operation-event-envelope-factory"
+        },
+        {
+            "path": "./packages/runner"
         }
     ]
 }

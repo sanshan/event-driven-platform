@@ -1,0 +1,39 @@
+{
+    "name": "@event-driven-platform/runner",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        "./package.json": "./package.json",
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "dependencies": {
+        "@event-driven-platform/clock": "workspace:*",
+        "@event-driven-platform/command": "workspace:*",
+        "@event-driven-platform/execution": "workspace:*",
+        "@event-driven-platform/execution-log": "workspace:*",
+        "@event-driven-platform/execution-log-store": "workspace:*",
+        "@event-driven-platform/execution-transaction": "workspace:*",
+        "@event-driven-platform/operation": "workspace:*",
+        "@event-driven-platform/operation-result": "workspace:*",
+        "@event-driven-platform/operation-event-envelope-factory": "workspace:*",
+        "@event-driven-platform/operation-handler-resolver": "workspace:*",
+        "@event-driven-platform/outbox": "workspace:*",
+        "@event-driven-platform/outbox-store": "workspace:*",
+        "tslib": "^2.3.0"
+    },
+    "devDependencies": {
+        "@event-driven-platform/aggregate-reference": "workspace:*",
+        "@event-driven-platform/event": "workspace:*",
+        "@event-driven-platform/operation-handler": "workspace:*",
+        "@event-driven-platform/tenant-reference": "workspace:*",
+        "@event-driven-platform/types": "workspace:*"
+    }
+}

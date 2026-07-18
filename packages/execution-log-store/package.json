@@ -21,7 +21,9 @@
         "tslib": "^2.3.0"
     },
     "devDependencies": {
+        "@event-driven-platform/aggregate-reference": "workspace:*",
         "@event-driven-platform/operation-result": "workspace:*",
+        "@event-driven-platform/tenant-reference": "workspace:*",
         "@event-driven-platform/types": "workspace:*"
     }
 }

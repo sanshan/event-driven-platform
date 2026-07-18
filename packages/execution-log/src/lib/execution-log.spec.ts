@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import type { AggregateReference } from '@event-driven-platform/aggregate-reference';
 import type {
     ExecutionAttemptId,
     ExecutionId,
@@ -9,6 +10,7 @@ import type {
 } from '@event-driven-platform/execution';
 import type { Operation } from '@event-driven-platform/operation';
 import type { SuccessfulOperationResult } from '@event-driven-platform/operation-result';
+import type { TenantReference } from '@event-driven-platform/tenant-reference';
 import type { Brand } from '@event-driven-platform/types';
 
 import {
@@ -30,7 +32,13 @@ import {
     type TimedOutExecutionAttempt,
 } from '../index.js';
 
+type MerchantId = Brand<string, 'MerchantId'>;
+
 type WalletId = Brand<string, 'WalletId'>;
+
+type MerchantTenant = TenantReference<'merchant', MerchantId>;
+
+type WalletAggregate = AggregateReference<'wallet', WalletId>;
 
 interface CreateWalletPayload {
     readonly currency: string;
@@ -45,7 +53,8 @@ type CreateWalletResult = SuccessfulOperationResult<CreateWalletData>;
 type CreateWalletOperation = Operation<
     'CreateWallet',
     1,
-    WalletId,
+    MerchantTenant,
+    WalletAggregate,
     CreateWalletPayload,
     CreateWalletResult
 >;
@@ -65,23 +74,40 @@ const lease: ExecutionLease = {
     expiresAt: '2026-07-17T10:01:00.000Z',
 };
 
+const merchantId = 'merchant-1' as MerchantId;
+
+const walletId = 'wallet-1' as WalletId;
+
 const operation: CreateWalletOperation = {
     name: 'CreateWallet',
     schemaVersion: 1,
     intent: {
         id: 'intent-1',
-        key: 'wallet.create:v1:user-1:EUR',
+        key: [
+            'wallet',
+            'create',
+            'v1',
+            'tenantType=merchant&tenantId=merchant-1',
+            'currency=EUR&userId=user-1',
+        ].join(':'),
     },
     actor: {
         type: 'user',
         id: 'user-1',
         origin: {},
     },
+    tenant: {
+        type: 'merchant',
+        id: merchantId,
+    },
     subject: {
         type: 'user',
         id: 'user-1',
     },
-    aggregateId: 'wallet-1' as WalletId,
+    aggregate: {
+        type: 'wallet',
+        id: walletId,
+    },
     payload: {
         currency: 'EUR',
     },
@@ -117,10 +143,13 @@ describe('ExecutionLogEntry', () => {
         expect(isInProgressExecutionLogEntry(entry)).toBe(true);
 
         expect(entry.latestAttempt.status).toBe('in-progress');
+
         expect(entry.latestAttempt.correlationId).toBe('flow-1');
+
         expect(entry.lease).toEqual(lease);
 
         expectTypeOf(entry.latestAttempt).toEqualTypeOf<InProgressExecutionAttempt>();
+
         expectTypeOf(entry.result).toEqualTypeOf<null>();
     });
 
@@ -141,7 +170,7 @@ describe('ExecutionLogEntry', () => {
         const result: CreateWalletResult = {
             status: 'success',
             data: {
-                walletId: 'wallet-1' as WalletId,
+                walletId,
             },
             events: [],
         };
@@ -161,9 +190,11 @@ describe('ExecutionLogEntry', () => {
         expect(isCompletedExecutionLogEntry(entry)).toBe(true);
 
         expect(entry.latestAttempt.status).toBe('completed');
+
         expect(entry.lease).toBeNull();
 
         expectTypeOf(entry.latestAttempt).toEqualTypeOf<CompletedExecutionAttempt>();
+
         expectTypeOf(entry.result).toEqualTypeOf<CreateWalletResult>();
     });
 
@@ -200,6 +231,7 @@ describe('ExecutionLogEntry', () => {
         expect(isFailedExecutionLogEntry(entry)).toBe(true);
 
         expect(entry.latestAttempt.status).toBe('failed');
+
         expect(entry.latestAttempt.failure).toEqual({
             code: 'database-unavailable',
             message: 'Database is unavailable.',
@@ -240,6 +272,7 @@ describe('ExecutionLogEntry', () => {
         };
 
         expect(isFailedExecutionLogEntry(entry)).toBe(true);
+
         expect(entry.latestAttempt.status).toBe('timed-out');
     });
 

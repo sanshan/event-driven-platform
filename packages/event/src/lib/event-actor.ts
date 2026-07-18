@@ -7,6 +7,10 @@ export interface EventActorOrigin {
 
     readonly city: string | null;
 
+    readonly latitude: number | null;
+
+    readonly longitude: number | null;
+
     readonly timezone: string | null;
 
     readonly environment: string | null;
