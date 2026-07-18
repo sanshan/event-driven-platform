@@ -9,7 +9,16 @@ export class DefaultIntentFactory implements IntentFactory {
     create(descriptor: IntentDescriptor): Intent {
         const parsed = intentDescriptorSchema.parse(descriptor);
 
-        const key = buildIntentKey(parsed);
+        const validatedDescriptor: IntentDescriptor = {
+            namespace: parsed.namespace,
+            action: parsed.action,
+            version: parsed.version,
+            tenant: descriptor.tenant,
+            components: parsed.components,
+        };
+
+        const key = buildIntentKey(validatedDescriptor);
+
         const id = uuidV5(key, INTENT_UUID_NAMESPACE);
 
         return Object.freeze({

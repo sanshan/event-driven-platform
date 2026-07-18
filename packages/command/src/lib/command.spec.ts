@@ -1,14 +1,22 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import type { AggregateReference } from '@event-driven-platform/aggregate-reference';
 import type { Actor } from '@event-driven-platform/actor';
 import type { Intent } from '@event-driven-platform/intent';
 import type { Operation, OperationResultOf } from '@event-driven-platform/operation';
 import type { Subject } from '@event-driven-platform/subject';
+import type { TenantReference } from '@event-driven-platform/tenant-reference';
 import type { Brand } from '@event-driven-platform/types';
 
 import type { Command } from './command.js';
 
+type MerchantId = Brand<string, 'MerchantId'>;
+
 type WalletId = Brand<string, 'WalletId'>;
+
+type MerchantTenant = TenantReference<'merchant', MerchantId>;
+
+type WalletAggregate = AggregateReference<'wallet', WalletId>;
 
 interface CreateWalletPayload {
     readonly currency: string;
@@ -21,7 +29,8 @@ interface CreateWalletResult {
 type CreateWalletOperation = Operation<
     'CreateWallet',
     1,
-    WalletId,
+    MerchantTenant,
+    WalletAggregate,
     CreateWalletPayload,
     CreateWalletResult
 >;
@@ -30,9 +39,20 @@ type CreateWalletCommand = Command<CreateWalletOperation>;
 
 describe('Command', () => {
     it('carries an Operation, execution context and execution options', () => {
+        const tenant: MerchantTenant = {
+            type: 'merchant',
+            id: 'merchant-1' as MerchantId,
+        };
+
         const intent: Intent = {
             id: '287e771a-8769-5c0f-84dc-765c38be8f60',
-            key: 'wallet.create:v1:user-1:EUR',
+            key: [
+                'wallet',
+                'create',
+                'v1',
+                'tenantType=merchant&tenantId=merchant-1',
+                'currency=EUR&userId=user-1',
+            ].join(':'),
         };
 
         const actor: Actor = {
@@ -46,15 +66,19 @@ describe('Command', () => {
             id: 'user-1',
         };
 
-        const aggregateId = 'wallet-1' as WalletId;
+        const aggregate: WalletAggregate = {
+            type: 'wallet',
+            id: 'wallet-1' as WalletId,
+        };
 
         const operation: CreateWalletOperation = {
             name: 'CreateWallet',
             schemaVersion: 1,
             intent,
             actor,
+            tenant,
             subject,
-            aggregateId,
+            aggregate,
             payload: {
                 currency: 'EUR',
             },
@@ -81,6 +105,10 @@ describe('Command', () => {
         });
 
         expectTypeOf(command.operation).toEqualTypeOf<CreateWalletOperation>();
+
+        expectTypeOf(command.operation.tenant).toEqualTypeOf<MerchantTenant>();
+
+        expectTypeOf(command.operation.aggregate).toEqualTypeOf<WalletAggregate>();
 
         expectTypeOf(command.context.correlationId).toEqualTypeOf<string>();
 

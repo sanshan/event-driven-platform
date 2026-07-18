@@ -16,6 +16,8 @@
     },
     "dependencies": {
         "@event-driven-platform/types": "workspace:*",
-        "tslib": "catalog:"
+        "tslib": "catalog:",
+        "uuid": "catalog:",
+        "zod": "catalog:"
     }
 }

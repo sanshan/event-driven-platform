@@ -16,9 +16,11 @@
     },
     "dependencies": {
         "@event-driven-platform/actor": "workspace:*",
+        "@event-driven-platform/aggregate-reference": "workspace:*",
         "@event-driven-platform/intent": "workspace:*",
         "@event-driven-platform/subject": "workspace:*",
-        "@event-driven-platform/types": "workspace:*",
+        "@event-driven-platform/tenant-reference": "workspace:*",
+        "@event-driven-platform/operation-result": "workspace:*",
         "tslib": "catalog:"
     }
 }

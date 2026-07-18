@@ -1,14 +1,15 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import type { AggregateReference } from '@event-driven-platform/aggregate-reference';
 import type {
     ExecutionAttemptId,
     ExecutionId,
-    ExecutionLease,
     ExecutionLeaseOwnerId,
     ExecutionLeaseVersion,
 } from '@event-driven-platform/execution';
 import type { AnyOperation, Operation } from '@event-driven-platform/operation';
 import type { SuccessfulOperationResult } from '@event-driven-platform/operation-result';
+import type { TenantReference } from '@event-driven-platform/tenant-reference';
 import type { Brand } from '@event-driven-platform/types';
 
 import type {
@@ -22,7 +23,13 @@ import type {
     FailExecutionResult,
 } from '../index.js';
 
+type MerchantId = Brand<string, 'MerchantId'>;
+
 type WalletId = Brand<string, 'WalletId'>;
+
+type MerchantTenant = TenantReference<'merchant', MerchantId>;
+
+type WalletAggregate = AggregateReference<'wallet', WalletId>;
 
 interface CreateWalletPayload {
     readonly currency: string;
@@ -37,7 +44,8 @@ type CreateWalletResult = SuccessfulOperationResult<CreateWalletData>;
 type CreateWalletOperation = Operation<
     'CreateWallet',
     1,
-    WalletId,
+    MerchantTenant,
+    WalletAggregate,
     CreateWalletPayload,
     CreateWalletResult
 >;
@@ -50,33 +58,45 @@ const runnerId = 'runner-1' as ExecutionLeaseOwnerId;
 
 const leaseVersion = 1 as ExecutionLeaseVersion;
 
+const merchantId = 'merchant-1' as MerchantId;
+
+const walletId = 'wallet-1' as WalletId;
+
+const tenant: MerchantTenant = {
+    type: 'merchant',
+    id: merchantId,
+};
+
 const operation: CreateWalletOperation = {
     name: 'CreateWallet',
     schemaVersion: 1,
     intent: {
         id: 'intent-1',
-        key: 'wallet.create:v1:user-1:EUR',
+        key: [
+            'wallet',
+            'create',
+            'v1',
+            'tenantType=merchant&tenantId=merchant-1',
+            'currency=EUR&userId=user-1',
+        ].join(':'),
     },
     actor: {
         type: 'user',
         id: 'user-1',
         origin: {},
     },
+    tenant,
     subject: {
         type: 'user',
         id: 'user-1',
     },
-    aggregateId: 'wallet-1' as WalletId,
+    aggregate: {
+        type: 'wallet',
+        id: walletId,
+    },
     payload: {
         currency: 'EUR',
     },
-};
-
-const lease: ExecutionLease = {
-    ownerId: runnerId,
-    version: leaseVersion,
-    acquiredAt: '2026-07-17T10:00:00.000Z',
-    expiresAt: '2026-07-17T10:01:00.000Z',
 };
 
 const leaseReference: ExecutionLeaseReference = {
@@ -103,7 +123,7 @@ class TestExecutionLogStore implements ExecutionLogStore {
         throw new Error('Not implemented.');
     }
 
-    async findByIntentId(): Promise<null> {
+    async findByIntentId(_intentId: string): Promise<null> {
         return null;
     }
 }
@@ -112,30 +132,34 @@ describe('ExecutionLogStore', () => {
     it('describes an atomic claim request', () => {
         const request: ClaimExecutionRequest<CreateWalletOperation> = {
             executionId,
-            attemptId,
             operation,
             correlationId: 'flow-1',
-            lease,
-            startedAt: '2026-07-17T10:00:00.000Z',
+            leaseOwnerId: runnerId,
+            leaseDurationMs: 60_000,
+            requestedAt: '2026-07-17T10:00:00.000Z',
         };
 
         expect(request).toEqual({
             executionId: 'execution-1',
-            attemptId: 'attempt-1',
             operation,
             correlationId: 'flow-1',
-            lease,
-            startedAt: '2026-07-17T10:00:00.000Z',
+            leaseOwnerId: 'runner-1',
+            leaseDurationMs: 60_000,
+            requestedAt: '2026-07-17T10:00:00.000Z',
         });
 
         expectTypeOf(request.operation).toEqualTypeOf<CreateWalletOperation>();
+
+        expectTypeOf(request.leaseOwnerId).toEqualTypeOf<ExecutionLeaseOwnerId>();
+
+        expectTypeOf(request.leaseDurationMs).toEqualTypeOf<number>();
     });
 
     it('describes a completion request', () => {
         const result: CreateWalletResult = {
             status: 'success',
             data: {
-                walletId: 'wallet-1' as WalletId,
+                walletId,
             },
             events: [],
         };

@@ -1,8 +1,16 @@
-export type { ExecutionAttemptId } from './lib/execution-attempt-id.js';
+export type {
+    ExecutionAttemptId,
+    ExecutionAttemptIdDescriptor,
+    ExecutionAttemptIdFactory,
+} from './lib/execution-attempt-id.js';
+
+export { DefaultExecutionAttemptIdFactory } from './lib/default-execution-attempt-id-factory.js';
 
 export type { ExecutionFailure } from './lib/execution-failure.js';
 
-export type { ExecutionId } from './lib/execution-id.js';
+export type { ExecutionId, ExecutionIdFactory } from './lib/execution-id.js';
+
+export { DefaultExecutionIdFactory } from './lib/default-execution-id-factory.js';
 
 export type { ExecutionLease } from './lib/execution-lease.js';
 

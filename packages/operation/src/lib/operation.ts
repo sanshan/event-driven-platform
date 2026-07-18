@@ -1,56 +1,54 @@
+import type { AnyAggregateReference } from '@event-driven-platform/aggregate-reference';
 import type { Actor } from '@event-driven-platform/actor';
 import type { Intent } from '@event-driven-platform/intent';
+import type { OperationResult } from '@event-driven-platform/operation-result';
 import type { Subject } from '@event-driven-platform/subject';
-import type { Brand } from '@event-driven-platform/types';
+import type { AnyTenantReference } from '@event-driven-platform/tenant-reference';
 
 declare const operationResultType: unique symbol;
 
 export interface Operation<
     TName extends string,
     TSchemaVersion extends number,
-    TAggregateId extends Brand<string, string>,
+    TTenant extends AnyTenantReference,
+    TAggregate extends AnyAggregateReference,
     TPayload,
-    TResult,
+    TResult extends OperationResult,
 > {
     readonly name: TName;
 
-    /**
-     * Version of the serialized Operation contract.
-     *
-     * The combination of:
-     *
-     *   name + schemaVersion
-     *
-     * uniquely identifies the Operation schema.
-     */
     readonly schemaVersion: TSchemaVersion;
 
     readonly intent: Intent;
 
     readonly actor: Actor;
 
+    readonly tenant: TTenant;
+
     readonly subject: Subject;
 
-    readonly aggregateId: TAggregateId;
+    readonly aggregate: TAggregate;
 
     readonly payload: TPayload;
 
-    /**
-     * Type-only marker.
-     *
-     * Associates an Operation with its result type without adding
-     * runtime data to the Operation object.
-     */
     readonly [operationResultType]?: TResult;
 }
 
-export type AnyOperation = Operation<string, number, Brand<string, string>, unknown, unknown>;
+export type AnyOperation = Operation<
+    string,
+    number,
+    AnyTenantReference,
+    AnyAggregateReference,
+    unknown,
+    OperationResult
+>;
 
 export type OperationResultOf<TOperation extends AnyOperation> =
     TOperation extends Operation<
         infer _TName,
         infer _TSchemaVersion,
-        infer _TAggregateId,
+        infer _TTenant,
+        infer _TAggregate,
         infer _TPayload,
         infer TResult
     >

@@ -1,15 +1,24 @@
+import { describe, expectTypeOf, it } from 'vitest';
+
+import type { AggregateReference } from '@event-driven-platform/aggregate-reference';
 import type { Operation } from '@event-driven-platform/operation';
 import type { OperationHandler } from '@event-driven-platform/operation-handler';
 import type {
     RolledBackOperationRejection,
     SuccessfulOperationResult,
 } from '@event-driven-platform/operation-result';
+import type { TenantReference } from '@event-driven-platform/tenant-reference';
 import type { Brand } from '@event-driven-platform/types';
-import { describe, expectTypeOf, it } from 'vitest';
 
 import type { OperationHandlerResolver } from './operation-handler-resolver.js';
 
+type MerchantId = Brand<string, 'MerchantId'>;
+
 type WalletId = Brand<string, 'WalletId'>;
+
+type MerchantTenant = TenantReference<'merchant', MerchantId>;
+
+type WalletAggregate = AggregateReference<'wallet', WalletId>;
 
 interface CreateWalletPayload {
     readonly currency: string;
@@ -17,7 +26,10 @@ interface CreateWalletPayload {
 
 interface WalletCreatedEvent {
     readonly name: 'wallet.created';
-    readonly walletId: WalletId;
+    readonly schemaVersion: 1;
+    readonly payload: {
+        walletId: WalletId;
+    };
 }
 
 type CreateWalletResult =
@@ -39,7 +51,8 @@ type CreateWalletResult =
 type CreateWalletOperation = Operation<
     'wallet.create',
     1,
-    WalletId,
+    MerchantTenant,
+    WalletAggregate,
     CreateWalletPayload,
     CreateWalletResult
 >;
