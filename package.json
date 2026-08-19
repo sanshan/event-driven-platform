@@ -13,12 +13,6 @@
                     "config": ".verdaccio/config.yml",
                     "storage": "tmp/local-registry/storage"
                 }
-            },
-            "verify-local-release": {
-                "executor": "nx:run-commands",
-                "options": {
-                    "command": "node tools/package-verification/verify-local-release.mjs"
-                }
             }
         }
     },
