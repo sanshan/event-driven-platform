@@ -36,4 +36,5 @@ jobs:
           git add pnpm-lock.yaml
           git diff --cached --quiet && exit 0
           git commit -m "chore: update lockfile"
+          git pull --rebase origin issue/13-affected-aware-ci
           git push origin HEAD:issue/13-affected-aware-ci
