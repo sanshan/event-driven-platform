@@ -1,2 +1,3 @@
-export * from './lib/subject.js';
-export * from './lib/default-subject-factory.js';
+export type { Subject, SubjectDescriptor, SubjectFactory } from './lib/subject.js';
+
+export { DefaultSubjectFactory } from './lib/default-subject-factory.js';
