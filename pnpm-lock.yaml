@@ -135,6 +135,9 @@ importers:
       '@event-driven-platform/intent':
         specifier: workspace:*
         version: link:../intent
+      '@event-driven-platform/operation-result':
+        specifier: workspace:*
+        version: link:../operation-result
       '@event-driven-platform/subject':
         specifier: workspace:*
         version: link:../subject
