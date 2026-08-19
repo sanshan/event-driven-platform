@@ -28,6 +28,10 @@ While the public API is in the `0.x` series:
 
 All projects in the `core` group share the same version and are released together.
 
+## Changelogs
+
+Nx Release generates a changelog for each public package. Workspace-level changelog generation is disabled so changes to private projects do not become part of a shared public release history.
+
 ## Registry
 
 Package manifests do not pin a registry. The registry is supplied by the release environment so the same Nx Release configuration can be verified against a local registry before production publishing.
