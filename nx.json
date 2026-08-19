@@ -43,7 +43,7 @@
         },
         "changelog": {
             "workspaceChangelog": false,
-            "projectChangelogs": false
+            "projectChangelogs": true
         },
         "git": {
             "commitMessage": "chore(release): publish {version}"
@@ -62,9 +62,6 @@
                     "@event-driven-platform/operation"
                 ],
                 "projectsRelationship": "fixed",
-                "changelog": {
-                    "file": "CHANGELOG.md"
-                },
                 "releaseTag": {
                     "pattern": "v{version}",
                     "requireSemver": true
