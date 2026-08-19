@@ -10,6 +10,7 @@ import {
     type EventId,
 } from '@event-driven-platform/event';
 import type { Operation } from '@event-driven-platform/operation';
+import type { SuccessfulOperationResult } from '@event-driven-platform/operation-result';
 import type { TenantReference } from '@event-driven-platform/tenant-reference';
 import type { Brand } from '@event-driven-platform/types';
 
@@ -35,9 +36,11 @@ interface CreateWalletPayload {
     readonly currency: string;
 }
 
-interface CreateWalletResult {
+interface CreateWalletData {
     readonly walletId: WalletId;
 }
+
+type CreateWalletResult = SuccessfulOperationResult<CreateWalletData>;
 
 type CreateWalletOperation = Operation<
     'CreateWallet',
