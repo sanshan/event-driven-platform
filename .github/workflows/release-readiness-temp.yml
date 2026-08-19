@@ -1,0 +1,40 @@
+name: Release readiness (temporary)
+
+on:
+  pull_request:
+    branches:
+      - epic/9-first-public-core-release
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+          registry-url: https://registry.npmjs.org/
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Full workspace validation
+        run: pnpm nx run-many -t lint test typecheck build --all
+
+      - name: Verify current publishability boundary
+        run: node tools/release/verify-release-state.mjs 0.0.1
+
+      - name: Verify local registry publishing
+        run: pnpm nx run package-verification:verify-registry
+
+      - name: Verify first Nx release
+        run: pnpm nx release 0.1.0 --first-release --dry-run
