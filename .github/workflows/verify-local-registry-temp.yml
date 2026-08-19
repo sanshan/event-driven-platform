@@ -40,4 +40,4 @@ jobs:
             git push
           fi
 
-      - run: pnpm nx package-verification:verify
+      - run: pnpm nx run package-verification:verify
