@@ -4,6 +4,7 @@ import type { AggregateReference } from '@event-driven-platform/aggregate-refere
 import type { Actor } from '@event-driven-platform/actor';
 import type { Intent } from '@event-driven-platform/intent';
 import type { Operation, OperationResultOf } from '@event-driven-platform/operation';
+import type { SuccessfulOperationResult } from '@event-driven-platform/operation-result';
 import type { Subject } from '@event-driven-platform/subject';
 import type { TenantReference } from '@event-driven-platform/tenant-reference';
 import type { Brand } from '@event-driven-platform/types';
@@ -22,9 +23,11 @@ interface CreateWalletPayload {
     readonly currency: string;
 }
 
-interface CreateWalletResult {
+interface CreateWalletData {
     readonly walletId: WalletId;
 }
+
+type CreateWalletResult = SuccessfulOperationResult<CreateWalletData>;
 
 type CreateWalletOperation = Operation<
     'CreateWallet',
