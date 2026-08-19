@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 import { startLocalRegistry } from '@nx/js/plugins/jest/local-registry';
@@ -54,6 +55,24 @@ function restoreVersionFiles() {
     run('git', ['restore', '--source=HEAD', '--staged', '--worktree', '--', ...releaseFiles]);
 }
 
+async function waitForRegistry() {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+        try {
+            const response = await fetch(`${registry}/-/ping`);
+
+            if (response.ok) {
+                return;
+            }
+        } catch {
+            // The registry process may still be starting.
+        }
+
+        await delay(250);
+    }
+
+    throw new Error(`Local registry did not become ready at ${registry}.`);
+}
+
 const initialStatus = execFileSync('git', ['status', '--porcelain'], {
     cwd: workspaceRoot,
     encoding: 'utf8',
@@ -71,6 +90,7 @@ try {
         storage: './tmp/local-registry/storage',
         verbose: false,
     });
+    await waitForRegistry();
 
     const { projectsVersionData, releaseGraph } = await releaseVersion({
         specifier: '0.1.0',
