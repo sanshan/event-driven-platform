@@ -1,16 +1,21 @@
-name: Verify local registry (temporary)
+name: Pin Verdaccio (temporary)
 
 on:
   pull_request:
     branches:
       - epic/9-first-public-core-release
 
+permissions:
+  contents: write
+
 jobs:
-  verify:
+  pin:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: issue/12-verify-local-registry
           fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
@@ -24,4 +29,13 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm nx run package-verification:verify-registry
+      - run: pnpm add -D -E verdaccio@6.3.2
+
+      - name: Commit Verdaccio pin
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add package.json pnpm-lock.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: pin Verdaccio for Nx 23 compatibility"
+          git push origin HEAD:issue/12-verify-local-registry
