@@ -1,21 +1,16 @@
-name: Setup Verdaccio (temporary)
+name: Verify local registry (temporary)
 
 on:
   pull_request:
     branches:
       - epic/9-first-public-core-release
 
-permissions:
-  contents: write
-
 jobs:
-  generate:
-    if: github.actor != 'github-actions[bot]'
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: issue/12-verify-local-registry
           fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
@@ -29,13 +24,4 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm nx generate @nx/js:setup-verdaccio --skipFormat
-
-      - name: Commit generated setup
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -A
-          git diff --cached --quiet && exit 0
-          git commit -m "chore: setup Verdaccio local registry"
-          git push origin HEAD:issue/12-verify-local-registry
+      - run: pnpm nx run package-verification:verify-registry
