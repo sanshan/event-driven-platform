@@ -37,5 +37,8 @@
         "@event-driven-platform/tenant-reference": "workspace:*",
         "@event-driven-platform/operation-result": "workspace:*",
         "tslib": "catalog:"
+    },
+    "devDependencies": {
+        "@event-driven-platform/types": "workspace:*"
     }
 }
