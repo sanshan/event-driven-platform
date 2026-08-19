@@ -33,5 +33,5 @@ const actorOriginSchema = z.strictObject({
 export const actorDescriptorSchema = z.strictObject({
     type: actorTypeSchema,
     id: nonEmptyStringSchema,
-    origin: actorOriginSchema,
+    origin: actorOriginSchema.default({}),
 });

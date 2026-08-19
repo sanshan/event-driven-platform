@@ -49,6 +49,19 @@ describe('DefaultActorFactory', () => {
         });
     });
 
+    it('creates an Actor with an omitted origin', () => {
+        const actor = factory.create({
+            type: 'system',
+            id: 'wallet-reconciliation',
+        });
+
+        expect(actor).toEqual({
+            type: 'system',
+            id: 'wallet-reconciliation',
+            origin: {},
+        });
+    });
+
     it('creates a defensive copy of origin', () => {
         const origin = {
             environment: 'production',

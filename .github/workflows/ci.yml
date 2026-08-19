@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Affected validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: nrwl/nx-set-shas@v5
+
+      - name: Validate affected projects
+        run: pnpm nx affected -t lint test typecheck build
+
+      - name: Detect affected public packages
+        id: public-core
+        shell: bash
+        run: |
+          AFFECTED="$(pnpm nx show projects --affected --json)" node <<'NODE'
+          const fs = require('node:fs');
+
+          const affected = new Set(JSON.parse(process.env.AFFECTED));
+          const publicPackages = [
+              '@event-driven-platform/types',
+              '@event-driven-platform/actor',
+              '@event-driven-platform/subject',
+              '@event-driven-platform/aggregate-reference',
+              '@event-driven-platform/tenant-reference',
+              '@event-driven-platform/intent',
+              '@event-driven-platform/event',
+              '@event-driven-platform/operation-result',
+              '@event-driven-platform/operation',
+          ];
+          const required = publicPackages.some((project) => affected.has(project));
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `required=${required}\n`);
+          NODE
+
+      - name: Verify published public packages
+        if: steps.public-core.outputs.required == 'true'
+        run: pnpm nx run package-verification:verify-registry

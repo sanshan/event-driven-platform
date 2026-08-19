@@ -6,6 +6,6 @@ export { DefaultEventIdFactory } from './lib/default-event-id-factory.js';
 
 export type { AnyEventEnvelope, EventEnvelope } from './lib/event-envelope.js';
 
-export type { EventActor } from './lib/event-actor.js';
+export type { EventActor, EventActorOrigin } from './lib/event-actor.js';
 
 export type { EventSubject } from './lib/event-subject.js';
