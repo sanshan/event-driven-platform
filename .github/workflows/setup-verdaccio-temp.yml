@@ -29,7 +29,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm add -D -E verdaccio@6.3.2
+      - run: pnpm add -Dw -E verdaccio@6.3.2
 
       - name: Commit Verdaccio pin
         run: |
