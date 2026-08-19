@@ -1,1 +1,1 @@
-export { Brand } from './lib/brand.js';
+export type { Brand } from './lib/brand.js';
