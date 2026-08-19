@@ -42,7 +42,7 @@
             "adjustSemverBumpsForZeroMajorVersion": true
         },
         "changelog": {
-            "workspaceChangelog": true,
+            "workspaceChangelog": false,
             "projectChangelogs": false
         },
         "git": {
@@ -62,6 +62,9 @@
                     "@event-driven-platform/operation"
                 ],
                 "projectsRelationship": "fixed",
+                "changelog": {
+                    "file": "CHANGELOG.md"
+                },
                 "releaseTag": {
                     "pattern": "v{version}",
                     "requireSemver": true
