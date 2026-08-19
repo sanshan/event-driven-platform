@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - issue/12-verify-packed-packages
+  pull_request:
+    branches:
+      - epic/9-first-public-core-release
 
 permissions:
   contents: write
