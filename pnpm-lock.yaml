@@ -317,6 +317,9 @@ importers:
       '@event-driven-platform/aggregate-reference':
         specifier: workspace:*
         version: link:../aggregate-reference
+      '@event-driven-platform/operation-result':
+        specifier: workspace:*
+        version: link:../operation-result
       '@event-driven-platform/tenant-reference':
         specifier: workspace:*
         version: link:../tenant-reference
