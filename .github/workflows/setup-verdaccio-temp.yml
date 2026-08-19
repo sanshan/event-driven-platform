@@ -1,4 +1,4 @@
-name: Pin Verdaccio (temporary)
+name: Verify local registry (temporary)
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  pin:
+  verify:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -29,9 +29,15 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm add -Dw -E verdaccio@6.3.2
+      - name: Pin Verdaccio exactly
+        run: |
+          pnpm pkg set devDependencies.verdaccio=6.3.2
+          pnpm install --lockfile-only
+          pnpm install --frozen-lockfile
 
-      - name: Commit Verdaccio pin
+      - run: pnpm nx run package-verification:verify-registry
+
+      - name: Commit verified dependency pin
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
