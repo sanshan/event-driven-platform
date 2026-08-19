@@ -288,6 +288,10 @@ importers:
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/types':
+        specifier: workspace:*
+        version: link:../types
 
   packages/operation-event-envelope-factory:
     dependencies:
