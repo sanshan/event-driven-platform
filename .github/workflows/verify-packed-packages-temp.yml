@@ -1,9 +1,9 @@
 name: Verify packed packages (temporary)
 
 on:
-  push:
+  pull_request:
     branches:
-      - issue/12-verify-packed-packages
+      - epic/9-first-public-core-release
 
 jobs:
   verify:
