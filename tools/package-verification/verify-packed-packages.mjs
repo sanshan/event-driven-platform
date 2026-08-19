@@ -37,7 +37,6 @@ const artifactsDirectory = join(temporaryRoot, 'artifacts');
 const fixtureDirectory = join(temporaryRoot, 'fixture');
 
 mkdirSync(artifactsDirectory, { recursive: true });
-mkdirSync(fixtureDirectory, { recursive: true });
 
 const projectNames = releasePackages.map(([name]) => name).join(',');
 
