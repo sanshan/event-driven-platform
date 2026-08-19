@@ -1,0 +1,40 @@
+name: Verify local registry flow (temporary)
+
+on:
+  push:
+    branches:
+      - issue/12-verify-packed-packages
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --no-frozen-lockfile
+
+      - name: Update lockfile if required
+        run: |
+          if ! git diff --quiet -- pnpm-lock.yaml; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add pnpm-lock.yaml
+            git commit -m "chore: update lockfile for local registry verification"
+            git push
+          fi
+
+      - run: pnpm nx package-verification:verify
