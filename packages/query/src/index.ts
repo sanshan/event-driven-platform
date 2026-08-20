@@ -1,5 +1,10 @@
+export type { CacheReadResult } from './lib/cache-read-result.js';
+export type { CacheReader } from './lib/cache-reader.js';
+export type { CacheScope } from './lib/cache-scope.js';
+export type { CacheWriter } from './lib/cache-writer.js';
 export type { AnyQuery, Query, QueryResultOf } from './lib/query.js';
-
+export type { QueryCacheLevel } from './lib/query-cache-level.js';
+export type { QueryCacheLevels, QueryCachePlan } from './lib/query-cache-plan.js';
 export type { QueryContext } from './lib/query-context.js';
-
 export type { QueryOptions } from './lib/query-options.js';
+export type { ReadCacheKey } from './lib/read-cache-key.js';
