@@ -1,11 +1,24 @@
-# execution
+# @event-driven-platform/execution
 
-This library was generated with [Nx](https://nx.dev).
+Defines execution identity, attempt identity, lease metadata, and normalized execution failure contracts used by Runner and execution persistence.
 
-## Building
+## Installation
 
-Run `nx build execution` to build the library.
+```bash
+pnpm add @event-driven-platform/execution
+```
 
-## Running unit tests
+## API
 
-Run `nx test execution` to execute the unit tests via [Vitest](https://vitest.dev/).
+Important contracts include:
+
+- `ExecutionId` and `DefaultExecutionIdFactory`;
+- `ExecutionAttemptId` and `DefaultExecutionAttemptIdFactory`;
+- `ExecutionLease`, `ExecutionLeaseOwnerId`, and `ExecutionLeaseVersion`;
+- `ExecutionFailure`.
+
+These are infrastructure-facing execution primitives. They identify and coordinate executions; they are not domain Operations or business results.
+
+## Related documentation
+
+See [`docs/architecture/README.md`](../../docs/architecture/README.md) and [`docs/execution-public-api.md`](../../docs/execution-public-api.md).
