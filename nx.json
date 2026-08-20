@@ -66,6 +66,30 @@
                     "pattern": "v{version}",
                     "requireSemver": true
                 }
+            },
+            "execution": {
+                "projects": [
+                    "@event-driven-platform/guard",
+                    "@event-driven-platform/rate-limit",
+                    "@event-driven-platform/retry",
+                    "@event-driven-platform/command",
+                    "@event-driven-platform/clock",
+                    "@event-driven-platform/execution",
+                    "@event-driven-platform/execution-log",
+                    "@event-driven-platform/execution-log-store",
+                    "@event-driven-platform/execution-transaction",
+                    "@event-driven-platform/operation-handler",
+                    "@event-driven-platform/operation-handler-resolver",
+                    "@event-driven-platform/operation-event-envelope-factory",
+                    "@event-driven-platform/outbox",
+                    "@event-driven-platform/outbox-store",
+                    "@event-driven-platform/runner"
+                ],
+                "projectsRelationship": "fixed",
+                "releaseTag": {
+                    "pattern": "execution-v{version}",
+                    "requireSemver": true
+                }
             }
         }
     }
