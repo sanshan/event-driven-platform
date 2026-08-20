@@ -83,6 +83,8 @@ jobs:
           ];
           const executionReleaseFiles = [
               'nx.json',
+              'package.json',
+              '.verdaccio/config-offline.yml',
               'tools/release/verify-release-state.mjs',
               'tools/package-verification/project.json',
               'tools/package-verification/verify-packed-packages.mjs',
