@@ -6,7 +6,7 @@ The existing `Operation -> Command -> Runner` architecture remains unchanged. Th
 
 ## Final release package set
 
-The Execution release consists of the following currently-private packages in addition to the already-public core packages.
+The Execution release consists of the following approved packages in addition to the already-public core packages.
 
 ### Command and policy contracts
 
@@ -42,6 +42,22 @@ These packages are consumer-visible because external applications must provide o
 - `@event-driven-platform/runner`
 
 Runner is the only execution engine. Consumers must not bypass it to implement idempotency, guard evaluation, rate limiting, timeout, retry, execution-log transitions, or Outbox persistence independently.
+
+## Installation
+
+Packages are installed through normal npm dependencies. Consumers should declare the packages they import directly rather than depending on workspace source resolution. A typical Runner composition uses:
+
+```bash
+pnpm add \
+  @event-driven-platform/command \
+  @event-driven-platform/runner \
+  @event-driven-platform/execution-log-store \
+  @event-driven-platform/execution-transaction \
+  @event-driven-platform/operation-handler-resolver \
+  @event-driven-platform/outbox-store
+```
+
+The Execution group has its own fixed release version and `execution-v{version}` git tag namespace. Its declared dependencies remain compatible with the separately versioned public core.
 
 ## Runner public surface
 
@@ -93,8 +109,10 @@ A consuming repository is expected to:
 
 Operations remain unaware of retries, rate limiting, guards, timeout, persistence, messaging, and Outbox infrastructure. OperationHandlers execute one Operation against the domain transaction boundary and do not orchestrate other Operations.
 
+The repository's release verification installs the package set into an isolated project, typechecks against the installed declarations, and executes a representative ESM `Operation -> Command -> Runner` flow with guards, rate limiting, timeout, and retry enabled. This verification is intentionally independent of workspace source resolution.
+
 ## Packages intentionally outside this release
 
 Packages unrelated to constructing or executing the write pipeline remain private. In particular, the incomplete read-side packages and any repository-specific infrastructure implementations are not made public merely because they exist in the workspace.
 
-The release boundary must not be expanded during publication preparation unless a concrete external-consumer verification in issues #36-#38 proves that a missing public dependency makes the selected packages unusable.
+The release boundary must not be expanded during publication or final verification without reopening the appropriate release-boundary review.
