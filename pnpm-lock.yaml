@@ -464,6 +464,21 @@ importers:
         specifier: 'catalog:'
         version: 2.8.1
 
+  packages/reader:
+    dependencies:
+      '@event-driven-platform/query':
+        specifier: workspace:*
+        version: link:../query
+      '@event-driven-platform/read':
+        specifier: workspace:*
+        version: link:../read
+      '@event-driven-platform/read-handler-resolver':
+        specifier: workspace:*
+        version: link:../read-handler-resolver
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+
   packages/repository-knowledge-framework/dist/lib/specification/object-types: {}
 
   packages/retry:
