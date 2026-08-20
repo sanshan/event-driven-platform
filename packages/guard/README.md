@@ -1,11 +1,23 @@
-# guard
+# @event-driven-platform/guard
 
-This library was generated with [Nx](https://nx.dev).
+Defines Command-level guard policy options for the write execution pipeline.
 
-## Building
+## Installation
 
-Run `nx build guard` to build the library.
+```bash
+pnpm add @event-driven-platform/guard
+```
 
-## Running unit tests
+## API
 
-Run `nx test guard` to execute the unit tests via [Vitest](https://vitest.dev/).
+The package exports `GuardOptions`, the policy configuration carried by a `Command` when execution must be conditionally allowed or rejected.
+
+Guard evaluation itself belongs to Runner. Consumers provide a `GuardEvaluator` through the Runner runtime boundary when guard options are used.
+
+## Architectural boundary
+
+This package contains policy configuration, not guard execution or business logic. Operations remain unaware of guards.
+
+## Related documentation
+
+See [`docs/execution-public-api.md`](../../docs/execution-public-api.md).
