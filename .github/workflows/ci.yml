@@ -40,5 +40,8 @@ jobs:
       - name: Validate affected projects
         run: pnpm nx affected -t lint test typecheck build
 
+      - name: Preview Nx release
+        run: pnpm nx release --dry-run --skip-publish
+
       - name: Verify packages through Verdaccio
         run: pnpm nx run package-verification:verify-registry
