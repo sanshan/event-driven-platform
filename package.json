@@ -35,6 +35,14 @@
                     "config": ".verdaccio/config.yml",
                     "storage": "tmp/local-registry/storage"
                 }
+            },
+            "local-registry-offline": {
+                "executor": "@nx/js:verdaccio",
+                "options": {
+                    "port": 4873,
+                    "config": ".verdaccio/config-offline.yml",
+                    "storage": "tmp/local-registry-offline/storage"
+                }
             }
         }
     }
