@@ -8,6 +8,7 @@ import type { OutboxRecordFactory } from '@event-driven-platform/outbox';
 import type { OutboxStore } from '@event-driven-platform/outbox-store';
 
 import type { GuardEvaluator } from './guard-evaluator.js';
+import type { RateLimiter } from './rate-limiter.js';
 
 export interface RunnerDependencies {
     readonly clock: Clock;
@@ -17,6 +18,8 @@ export interface RunnerDependencies {
     readonly executionLogStore: ExecutionLogStore;
 
     readonly guardEvaluator?: GuardEvaluator;
+
+    readonly rateLimiter?: RateLimiter;
 
     readonly operationHandlerResolver: OperationHandlerResolver;
 

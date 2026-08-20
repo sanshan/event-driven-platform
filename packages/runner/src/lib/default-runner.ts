@@ -9,12 +9,15 @@ import { ExecutionTransactionOutcomes } from '@event-driven-platform/execution-t
 import type { AnyOperation, OperationResultOf } from '@event-driven-platform/operation';
 import { isRolledBackOperationRejection } from '@event-driven-platform/operation-result';
 
+import { buildRateLimitBucketKey } from './build-rate-limit-bucket-key.js';
 import { ExecutionAlreadyInProgressError } from './execution-already-in-progress.error.js';
 import { ExecutionGuardRejectedError } from './execution-guard-rejected.error.js';
 import { ExecutionIntentConflictError } from './execution-intent-conflict.error.js';
+import { ExecutionRateLimitRejectedError } from './execution-rate-limit-rejected.error.js';
 import { ExecutionTransitionRejectedError } from './execution-transition-rejected.error.js';
 import { GuardEvaluatorUnavailableError } from './guard-evaluator-unavailable.error.js';
 import { normalizeExecutionFailure } from './normalize-execution-failure.js';
+import { RateLimiterUnavailableError } from './rate-limiter-unavailable.error.js';
 import type { RunnerDependencies } from './runner-dependencies.js';
 import type { RunnerExecution } from './runner-execution.js';
 import type { RunnerOptions } from './runner-options.js';
@@ -82,6 +85,7 @@ export class DefaultRunner implements Runner {
 
         try {
             await this.evaluateGuards(command);
+            await this.enforceRateLimit(command);
 
             const handler = this.dependencies.operationHandlerResolver.resolve(command.operation);
 
@@ -155,6 +159,33 @@ export class DefaultRunner implements Runner {
             if (!accepted) {
                 throw new ExecutionGuardRejectedError(guard);
             }
+        }
+    }
+
+    private async enforceRateLimit<TOperation extends AnyOperation>(
+        command: Command<TOperation>,
+    ): Promise<void> {
+        const rateLimit = command.options?.rateLimit;
+
+        if (rateLimit === undefined) {
+            return;
+        }
+
+        const limiter = this.dependencies.rateLimiter;
+
+        if (limiter === undefined) {
+            throw new RateLimiterUnavailableError();
+        }
+
+        const decision = await limiter.consume({
+            bucketKey: buildRateLimitBucketKey(rateLimit, command.operation),
+            limit: rateLimit.limit,
+            windowMs: rateLimit.windowMs,
+            cost: rateLimit.cost ?? 1,
+        });
+
+        if (decision.type === 'rejected') {
+            throw new ExecutionRateLimitRejectedError(rateLimit);
         }
     }
 
