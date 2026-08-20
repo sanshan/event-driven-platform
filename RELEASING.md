@@ -76,11 +76,15 @@ With `adjustSemverBumpsForZeroMajorVersion` enabled, Nx applies its pre-1.0 semv
 
 Nx also handles dependency-aware version updates for independently versioned packages. Repository scripts must not reproduce this logic.
 
-## Package artifacts
+## Package verification
 
-Source manifests use pnpm workspace dependencies. CI packs every public package and installs the resulting tarballs into an isolated fixture to verify that published artifacts are consumable without workspace source resolution.
+CI follows the Nx local-registry testing pattern.
 
-This verification checks package output; it does not decide versions or which packages Nx should release.
+`tools/start-local-registry.ts` starts Verdaccio through `@nx/js:verdaccio`, versions the current workspace with the temporary `0.0.0-e2e` version using `releaseVersion()`, and publishes it with `releasePublish()`. The setup does not maintain package lists, release groups, production-version knowledge, or registry baselines.
+
+An isolated consumer then installs its declared dependencies from Verdaccio, compiles against the published declarations, and executes the representative ESM `Operation -> Command -> Runner` flow.
+
+The same verification runs on every CI execution. Nx Release remains responsible for deciding which workspace projects are publishable; the consumer fixture only declares packages that it directly imports.
 
 ## Production publishing
 
