@@ -7,7 +7,6 @@ import type {
 } from '@event-driven-platform/execution-log-store';
 import { ExecutionTransactionOutcomes } from '@event-driven-platform/execution-transaction';
 import type { AnyOperation, OperationResultOf } from '@event-driven-platform/operation';
-import type { OperationHandler } from '@event-driven-platform/operation-handler';
 import { isRolledBackOperationRejection } from '@event-driven-platform/operation-result';
 
 import { buildRateLimitBucketKey } from './build-rate-limit-bucket-key.js';
@@ -30,6 +29,10 @@ import type { RunnerExecution } from './runner-execution.js';
 import type { RunnerOptions } from './runner-options.js';
 import type { RunnerRuntime } from './runner-runtime.js';
 import type { Runner } from './runner.js';
+
+interface ResolvedOperationHandler<TOperation extends AnyOperation> {
+    execute(operation: TOperation): Promise<OperationResultOf<TOperation>>;
+}
 
 interface FailedHandlerAttempt<TOperation extends AnyOperation> {
     readonly type: 'failed';
@@ -126,7 +129,7 @@ export class DefaultRunner implements Runner {
             throw error;
         }
 
-        let handler: OperationHandler<TOperation>;
+        let handler: ResolvedOperationHandler<TOperation>;
 
         try {
             handler = this.dependencies.operationHandlerResolver.resolve(command.operation);
@@ -141,7 +144,7 @@ export class DefaultRunner implements Runner {
 
     private async executeHandlerAttempts<TOperation extends AnyOperation>(
         command: Command<TOperation>,
-        handler: OperationHandler<TOperation>,
+        handler: ResolvedOperationHandler<TOperation>,
         initialEntry: InProgressExecutionLogEntry<TOperation>,
     ): Promise<RunnerExecution<TOperation>> {
         let entry = initialEntry;
@@ -199,7 +202,7 @@ export class DefaultRunner implements Runner {
 
     private async executeHandlerAttempt<TOperation extends AnyOperation>(
         command: Command<TOperation>,
-        handler: OperationHandler<TOperation>,
+        handler: ResolvedOperationHandler<TOperation>,
         entry: InProgressExecutionLogEntry<TOperation>,
     ): Promise<HandlerAttemptOutcome<TOperation>> {
         const leaseReference = this.getLeaseReference(entry);
@@ -266,7 +269,7 @@ export class DefaultRunner implements Runner {
 
     private async executeHandlerWithTimeout<TOperation extends AnyOperation>(
         command: Command<TOperation>,
-        handler: OperationHandler<TOperation>,
+        handler: ResolvedOperationHandler<TOperation>,
     ): Promise<OperationResultOf<TOperation>> {
         const timeoutMs = command.options?.timeoutMs;
 
