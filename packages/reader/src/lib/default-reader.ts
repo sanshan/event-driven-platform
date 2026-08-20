@@ -71,7 +71,7 @@ export class DefaultReader implements Reader {
         key: ReadCacheKey,
         value: TResult,
     ): Promise<void> {
-        for (const level of levels.toReversed()) {
+        for (const level of [...levels].reverse()) {
             const writer = level.writer;
 
             if (writer === undefined) {
