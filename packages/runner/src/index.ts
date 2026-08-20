@@ -12,6 +12,8 @@ export type { RunnerOptions } from './lib/runner-options.js';
 
 export type { CreateRunnerOptions } from './lib/create-runner-options.js';
 
+export type { GuardEvaluationRequest, GuardEvaluator } from './lib/guard-evaluator.js';
+
 export { ExecutionAlreadyInProgressError } from './lib/execution-already-in-progress.error.js';
 
 export { ExecutionGuardRejectedError } from './lib/execution-guard-rejected.error.js';
