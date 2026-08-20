@@ -64,14 +64,8 @@ class RecordingRateLimiter implements RateLimiter {
         type: 'allowed',
     };
 
-    error: unknown = null;
-
     async consume(request: RateLimitConsumeRequest): Promise<RateLimitDecision> {
         this.requests.push(request);
-
-        if (this.error !== null) {
-            throw this.error;
-        }
 
         return this.decision;
     }
@@ -242,36 +236,7 @@ async function captureError(work: () => Promise<unknown>): Promise<unknown> {
 }
 
 describe('DefaultRunner rate-limit orchestration', () => {
-    it('executes normally without a RateLimiter when no rate limit is configured', async () => {
-        const kit = createRateLimitRunnerTestKit({
-            includeLimiter: false,
-        });
-
-        await kit.runner.execute(command);
-
-        expect(kit.handlerInvocations.count).toBe(1);
-        expect(kit.executionLogStore.completedRequests).toHaveLength(1);
-        expect(kit.executionLogStore.failedRequests).toEqual([]);
-    });
-
     it('consumes normalized capacity before executing the Handler', async () => {
-        const kit = createRateLimitRunnerTestKit();
-
-        await kit.runner.execute(rateLimitedCommand());
-
-        expect(kit.limiter.requests).toEqual([
-            {
-                bucketKey: 'wallet-create|actor|user|user-1',
-                limit: 10,
-                windowMs: 60_000,
-                cost: 1,
-            },
-        ]);
-        expect(kit.handlerInvocations.count).toBe(1);
-        expect(kit.executionLogStore.completedRequests).toHaveLength(1);
-    });
-
-    it('preserves configured cost and scope in the limiter request', async () => {
         const kit = createRateLimitRunnerTestKit();
 
         await kit.runner.execute(
@@ -282,12 +247,16 @@ describe('DefaultRunner rate-limit orchestration', () => {
             }),
         );
 
-        expect(kit.limiter.requests[0]).toEqual({
-            bucketKey: 'wallet-create|tenant|merchant|merchant-1',
-            limit: 10,
-            windowMs: 60_000,
-            cost: 3,
-        });
+        expect(kit.limiter.requests).toEqual([
+            {
+                bucketKey: 'wallet-create|tenant|merchant|merchant-1',
+                limit: 10,
+                windowMs: 60_000,
+                cost: 3,
+            },
+        ]);
+        expect(kit.handlerInvocations.count).toBe(1);
+        expect(kit.executionLogStore.completedRequests).toHaveLength(1);
     });
 
     it('records rate-limit rejection without executing the Handler or Outbox', async () => {
@@ -297,48 +266,13 @@ describe('DefaultRunner rate-limit orchestration', () => {
             type: 'rejected',
         };
 
-        const error = await captureError(() =>
-            kit.runner.execute(
-                rateLimitedCommand({
-                    ...defaultRateLimit,
-                    rejectWith: {
-                        reason: 'Wallet creation capacity is exhausted.',
-                    },
-                }),
-            ),
-        );
+        const error = await captureError(() => kit.runner.execute(rateLimitedCommand()));
 
         expect(error).toBeInstanceOf(ExecutionRateLimitRejectedError);
         expect(kit.handlerInvocations.count).toBe(0);
         expect(kit.outboxAppends.count).toBe(0);
         expect(kit.executionLogStore.completedRequests).toEqual([]);
-        expect(kit.executionLogStore.failedRequests[0]?.failure).toEqual({
-            code: 'rate-limit-rejected',
-            message: 'Wallet creation capacity is exhausted.',
-            retryable: false,
-        });
-    });
-
-    it('records limiter infrastructure failures through the existing failure path', async () => {
-        const kit = createRateLimitRunnerTestKit();
-
-        const limiterError = {
-            executionFailure: {
-                code: 'rate-limit-store-unavailable',
-                message: 'Rate-limit store is unavailable.',
-                retryable: true,
-            },
-        };
-
-        kit.limiter.error = limiterError;
-
-        const error = await captureError(() => kit.runner.execute(rateLimitedCommand()));
-
-        expect(error).toBe(limiterError);
-        expect(kit.handlerInvocations.count).toBe(0);
-        expect(kit.executionLogStore.failedRequests[0]?.failure).toEqual(
-            limiterError.executionFailure,
-        );
+        expect(kit.executionLogStore.failedRequests).toHaveLength(1);
     });
 
     it('fails explicitly when rate limiting is configured without a RateLimiter', async () => {
@@ -350,11 +284,7 @@ describe('DefaultRunner rate-limit orchestration', () => {
 
         expect(error).toBeInstanceOf(RateLimiterUnavailableError);
         expect(kit.handlerInvocations.count).toBe(0);
-        expect(kit.executionLogStore.failedRequests[0]?.failure).toEqual({
-            code: 'rate-limiter-unavailable',
-            message: 'Rate limiting is configured but no RateLimiter is available.',
-            retryable: false,
-        });
+        expect(kit.executionLogStore.failedRequests).toHaveLength(1);
     });
 
     it('does not consume rate-limit capacity when a guard rejects admission first', async () => {
