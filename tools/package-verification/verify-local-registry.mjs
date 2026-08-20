@@ -50,12 +50,16 @@ const verificationGroups = {
         releasePackages: corePackages,
         installPackages: corePackages,
         baselinePackages: [],
+        localRegistryTarget: 'event-driven-platform:local-registry',
+        storage: './tmp/local-registry/storage',
     },
     execution: {
         fixture: 'fixture-execution',
         releasePackages: executionPackages,
         installPackages: [...corePackages, ...executionPackages],
         baselinePackages: corePackages,
+        localRegistryTarget: 'event-driven-platform:local-registry-offline',
+        storage: './tmp/local-registry-offline/storage',
     },
 };
 
@@ -137,8 +141,8 @@ let stopLocalRegistry;
 
 try {
     stopLocalRegistry = await startLocalRegistry({
-        localRegistryTarget: 'event-driven-platform:local-registry',
-        storage: './tmp/local-registry/storage',
+        localRegistryTarget: verification.localRegistryTarget,
+        storage: verification.storage,
         verbose: false,
     });
 
