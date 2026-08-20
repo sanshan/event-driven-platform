@@ -81,10 +81,28 @@ jobs:
               '@event-driven-platform/outbox-store',
               '@event-driven-platform/runner',
           ];
+          const executionReleaseFiles = [
+              'nx.json',
+              'tools/release/verify-release-state.mjs',
+              'tools/package-verification/project.json',
+              'tools/package-verification/verify-packed-packages.mjs',
+              'tools/package-verification/verify-local-registry.mjs',
+          ];
+          const executionReleaseDirectories = [
+              'tools/package-verification/fixture-execution/',
+          ];
 
           const coreChanged = publicCoreDirectories.some((directory) =>
               changedFiles.some((file) => file.startsWith(directory)),
           );
+          const executionToolingChanged = changedFiles.some(
+              (file) =>
+                  executionReleaseFiles.includes(file) ||
+                  executionReleaseDirectories.some((directory) => file.startsWith(directory)),
+          );
+          const executionChanged =
+              executionToolingChanged ||
+              executionPackages.some((project) => affected.has(project));
 
           fs.appendFileSync(
               process.env.GITHUB_OUTPUT,
@@ -92,7 +110,7 @@ jobs:
           );
           fs.appendFileSync(
               process.env.GITHUB_OUTPUT,
-              `execution_required=${executionPackages.some((project) => affected.has(project))}\n`,
+              `execution_required=${executionChanged}\n`,
           );
           NODE
 
