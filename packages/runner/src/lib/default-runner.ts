@@ -10,8 +10,10 @@ import type { AnyOperation, OperationResultOf } from '@event-driven-platform/ope
 import { isRolledBackOperationRejection } from '@event-driven-platform/operation-result';
 
 import { ExecutionAlreadyInProgressError } from './execution-already-in-progress.error.js';
+import { ExecutionGuardRejectedError } from './execution-guard-rejected.error.js';
 import { ExecutionIntentConflictError } from './execution-intent-conflict.error.js';
 import { ExecutionTransitionRejectedError } from './execution-transition-rejected.error.js';
+import { GuardEvaluatorUnavailableError } from './guard-evaluator-unavailable.error.js';
 import { normalizeExecutionFailure } from './normalize-execution-failure.js';
 import type { RunnerDependencies } from './runner-dependencies.js';
 import type { RunnerExecution } from './runner-execution.js';
@@ -79,6 +81,8 @@ export class DefaultRunner implements Runner {
         };
 
         try {
+            await this.evaluateGuards(command);
+
             const handler = this.dependencies.operationHandlerResolver.resolve(command.operation);
 
             const result = await this.dependencies.executionTransaction.execute(async () => {
@@ -124,6 +128,33 @@ export class DefaultRunner implements Runner {
             await this.recordExecutionFailure(entry, leaseReference, error);
 
             throw error;
+        }
+    }
+
+    private async evaluateGuards<TOperation extends AnyOperation>(
+        command: Command<TOperation>,
+    ): Promise<void> {
+        const guards = command.options?.guards;
+
+        if (guards === undefined || guards.length === 0) {
+            return;
+        }
+
+        const evaluator = this.dependencies.guardEvaluator;
+
+        if (evaluator === undefined) {
+            throw new GuardEvaluatorUnavailableError();
+        }
+
+        for (const guard of guards) {
+            const accepted = await evaluator.evaluate({
+                guard,
+                operation: command.operation,
+            });
+
+            if (!accepted) {
+                throw new ExecutionGuardRejectedError(guard);
+            }
         }
     }
 

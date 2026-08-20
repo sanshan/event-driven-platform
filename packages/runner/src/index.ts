@@ -12,9 +12,15 @@ export type { RunnerOptions } from './lib/runner-options.js';
 
 export type { CreateRunnerOptions } from './lib/create-runner-options.js';
 
+export type { GuardEvaluationRequest, GuardEvaluator } from './lib/guard-evaluator.js';
+
 export { ExecutionAlreadyInProgressError } from './lib/execution-already-in-progress.error.js';
 
+export { ExecutionGuardRejectedError } from './lib/execution-guard-rejected.error.js';
+
 export { ExecutionIntentConflictError } from './lib/execution-intent-conflict.error.js';
+
+export { GuardEvaluatorUnavailableError } from './lib/guard-evaluator-unavailable.error.js';
 
 export { createRunner } from './lib/create-runner.js';
 

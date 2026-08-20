@@ -7,12 +7,16 @@ import type { OperationHandlerResolver } from '@event-driven-platform/operation-
 import type { OutboxRecordFactory } from '@event-driven-platform/outbox';
 import type { OutboxStore } from '@event-driven-platform/outbox-store';
 
+import type { GuardEvaluator } from './guard-evaluator.js';
+
 export interface RunnerDependencies {
     readonly clock: Clock;
 
     readonly executionIdFactory: ExecutionIdFactory;
 
     readonly executionLogStore: ExecutionLogStore;
+
+    readonly guardEvaluator?: GuardEvaluator;
 
     readonly operationHandlerResolver: OperationHandlerResolver;
 
