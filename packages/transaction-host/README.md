@@ -1,11 +1,13 @@
-# transaction-host
+# @event-driven-platform/transaction-host
 
-This library was generated with [Nx](https://nx.dev).
+> **Status: Internal.** This package is not part of the supported public package boundary.
 
-## Building
+Defines the internal host boundary for accessing the transaction associated with the currently active transaction scope.
 
-Run `nx build transaction-host` to build the library.
+## Responsibility
 
-## Running unit tests
+`TransactionHost` exposes transaction access to infrastructure code that is already running inside a managed scope. `TransactionNotActiveError` makes attempts to access a missing active transaction explicit.
 
-Run `nx test transaction-host` to execute the unit tests via [Vitest](https://vitest.dev/).
+## Boundary
+
+The host does not start or commit transactions and is not the public execution transaction port. Transaction lifecycle remains owned by the surrounding transaction implementation/orchestration.
