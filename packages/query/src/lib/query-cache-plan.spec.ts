@@ -1,10 +1,13 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import type { Read } from '@event-driven-platform/read';
+
 import type {
     CacheReadResult,
     CacheReader,
     CacheScope,
     CacheWriter,
+    Query,
     QueryCacheLevels,
     QueryCachePlan,
     ReadCacheKey,
@@ -20,7 +23,16 @@ interface OtherView {
     readonly label: string;
 }
 
+type GetWalletRead = Read<'wallet.get', { readonly walletId: string }, WalletView>;
+type GetWalletQuery = Query<GetWalletRead>;
+
 describe('QueryCachePlan', () => {
+    it('binds a Query cache plan to the associated Read result type', () => {
+        type CachePlan = NonNullable<NonNullable<GetWalletQuery['options']>['cache']>;
+
+        expectTypeOf<CachePlan>().toEqualTypeOf<QueryCachePlan<WalletView>>();
+    });
+
     it('preserves declared cache level order and explicit cache identity parts', () => {
         const key: ReadCacheKey = {
             namespace: 'wallet.get',
