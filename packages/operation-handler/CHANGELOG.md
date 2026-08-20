@@ -1,0 +1,14 @@
+## 0.0.2 (2026-08-20)
+
+### 🚀 Features
+
+- add OperationHandler and OperationHandlerResolver interfaces with corresponding types and documentation ([#6](https://github.com/sanshan/event-driven-platform/pull/6))
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/operation to 0.1.1
+
+### ❤️ Thank You
+
+- Aleksandr Lihih @sanshan
+- sasha @aleksandr-cell

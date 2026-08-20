@@ -443,6 +443,8 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  packages/repository-knowledge-framework/dist/lib/specification/object-types: {}
+
   packages/retry:
     dependencies:
       tslib:

@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/execution-transaction",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Transaction boundary contracts for atomic event-driven platform execution.",
     "type": "module",
     "main": "./dist/index.js",
