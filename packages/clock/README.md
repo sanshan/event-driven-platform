@@ -1,11 +1,20 @@
-# clock
+# @event-driven-platform/clock
 
-This library was generated with [Nx](https://nx.dev).
+Provides the clock abstraction used by execution components that need deterministic access to time.
 
-## Building
+## Installation
 
-Run `nx build clock` to build the library.
+```bash
+pnpm add @event-driven-platform/clock
+```
 
-## Running unit tests
+## API
 
-Run `nx test clock` to execute the unit tests via [Vitest](https://vitest.dev/).
+- `Clock` — time-source contract.
+- `SystemClock` — default implementation backed by the system clock.
+
+Use the abstraction at execution boundaries that need replaceable time, especially where deterministic tests or infrastructure-specific time sources are required.
+
+## Related documentation
+
+See [`docs/execution-public-api.md`](../../docs/execution-public-api.md).
