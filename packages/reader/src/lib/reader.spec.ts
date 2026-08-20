@@ -105,35 +105,4 @@ describe('DefaultReader', () => {
 
         await expect(reader.execute(timedQuery)).rejects.toEqual(new ReadTimedOutError(25));
     });
-
-    it('rejects cached Query execution until cache traversal is implemented', async () => {
-        const reader = new DefaultReader({
-            readHandlerResolver: resolverWith({ status: 'not-found' }),
-        });
-        const cachedQuery: GetWalletQuery = {
-            ...query,
-            options: {
-                cache: {
-                    key: {
-                        namespace: 'wallet.get',
-                        version: '1',
-                        partition: 'tenant:tenant-1',
-                        value: 'wallet:wallet-1',
-                    },
-                    levels: [
-                        {
-                            scope: 'local',
-                            reader: {
-                                read: async () => ({ status: 'miss' }),
-                            },
-                        },
-                    ],
-                },
-            },
-        };
-
-        await expect(reader.execute(cachedQuery)).rejects.toThrow(
-            'Cached Query execution is not implemented yet.',
-        );
-    });
 });
