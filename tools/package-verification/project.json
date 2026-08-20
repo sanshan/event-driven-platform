@@ -12,7 +12,7 @@
         "verify-registry": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "pnpm vitest run --config tools/package-verification/vitest.config.ts"
+                "command": "pnpm vitest run --config tools/package-verification/registry.vitest.config.ts"
             }
         }
     },
