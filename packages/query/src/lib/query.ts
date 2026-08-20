@@ -8,7 +8,7 @@ export interface Query<TRead extends AnyRead> {
 
     readonly context: QueryContext;
 
-    readonly options?: QueryOptions;
+    readonly options?: QueryOptions<ReadResultOf<TRead>>;
 }
 
 export type AnyQuery = Query<AnyRead>;
