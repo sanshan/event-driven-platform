@@ -2,7 +2,6 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { Query } from '@event-driven-platform/query';
 import type { Read } from '@event-driven-platform/read';
-import type { ReadHandler } from '@event-driven-platform/read-handler';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
 import {
@@ -32,7 +31,9 @@ const query: GetWalletQuery = {
         },
         parameters: { walletId: 'wallet-1' },
     },
-    context: {},
+    context: {
+        correlationId: 'correlation-1',
+    },
 };
 
 function resolverWith(
@@ -46,10 +47,10 @@ function resolverWith(
 
 describe('DefaultReader', () => {
     it('executes a no-cache Query through the first resolved handler and preserves result typing', async () => {
-        const first: ReadHandler<GetWalletRead> = {
+        const first = {
             execute: async () => ({ id: 'wallet-1', balance: 10 }),
         };
-        const second: ReadHandler<GetWalletRead> = {
+        const second = {
             execute: async () => ({ id: 'wallet-1', balance: 20 }),
         };
         const reader: Reader = new DefaultReader({
@@ -87,7 +88,7 @@ describe('DefaultReader', () => {
     });
 
     it('applies Query timeout to handler execution', async () => {
-        const handler: ReadHandler<GetWalletRead> = {
+        const handler = {
             execute: async () => ({ id: 'wallet-1', balance: 10 }),
         };
         const readTimeout: ReadTimeout = {
