@@ -24,7 +24,12 @@ type GetWalletQuery = Query<GetWalletRead>;
 
 const query: GetWalletQuery = {
     read: {
-        type: 'wallet.get',
+        name: 'wallet.get',
+        actor: {
+            type: 'user',
+            id: 'user-1',
+            origin: {},
+        },
         parameters: { walletId: 'wallet-1' },
     },
     context: {},
