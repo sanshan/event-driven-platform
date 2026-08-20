@@ -1,3 +1,5 @@
+# Deliberately no uplinks: Execution release verification seeds the exact
+# already-published core tarballs before publishing the Execution group.
 storage: ../tmp/local-registry-offline/storage
 
 packages:
