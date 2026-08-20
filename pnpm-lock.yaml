@@ -443,6 +443,18 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  packages/read-handler:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
+  packages/read-handler-resolver:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
   packages/repository-knowledge-framework/dist/lib/specification/object-types: {}
 
   packages/retry:
