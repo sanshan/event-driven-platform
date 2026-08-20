@@ -1,35 +1,79 @@
-# event-driven-platform
+# Event Driven Platform
 
-Reusable TypeScript building blocks for distributed event-driven systems.
+Reusable TypeScript building blocks for composing distributed, event-driven systems.
 
-## Public packages
+This repository provides explicit domain and execution contracts rather than a complete application framework. Consumers install and compose the packages they need, provide their own domain handlers and infrastructure adapters, and keep business concerns separate from execution infrastructure.
 
-The first public release was **v0.1.0** and contained the foundational write-side domain contracts:
+> **Status:** pre-1.0. The write execution pipeline is implemented and has a reviewed public package boundary. The read side currently contains only draft `Read` and `Query` contracts and is not a complete execution pipeline.
 
-- `@event-driven-platform/types` — shared branded-type primitives;
-- `@event-driven-platform/actor` — actor contracts and factory;
-- `@event-driven-platform/subject` — subject contracts and factory;
-- `@event-driven-platform/aggregate-reference` — typed aggregate references;
-- `@event-driven-platform/tenant-reference` — typed tenant references;
-- `@event-driven-platform/intent` — deterministic operation intent contracts;
-- `@event-driven-platform/event` — event and event-envelope contracts;
-- `@event-driven-platform/operation-result` — operation result contracts;
-- `@event-driven-platform/operation` — atomic domain operation contracts.
+## Architecture at a glance
 
-The next approved public boundary is the write execution pipeline:
+The current write execution architecture is:
 
 ```text
 Operation -> Command -> Runner
 ```
 
-It adds:
+- **Operation** describes one atomic business action and remains unaware of retries, rate limiting, persistence, messaging, and other execution infrastructure.
+- **Command** transports an Operation together with execution context and optional execution policy.
+- **Runner** is the centralized execution engine that coordinates handler resolution, execution logging and idempotency, transactions, execution policies, result persistence, event-envelope creation, and Outbox persistence.
 
-- command policy contracts: `guard`, `rate-limit`, `retry`, `command`;
-- execution identity and persistence contracts: `clock`, `execution`, `execution-log`, `execution-log-store`, `execution-transaction`;
-- handler and Outbox composition contracts: `operation-handler`, `operation-handler-resolver`, `operation-event-envelope-factory`, `outbox`, `outbox-store`;
-- the centralized execution engine: `runner`.
+The read side is intentionally separate and currently **Draft / incomplete**. `Read` and `Query` contracts exist, but there is no complete read execution engine or handler/cache pipeline in the repository today.
 
-Consumers install only the packages they import directly. A typical Runner composition starts with:
+See [Architecture](./docs/architecture/README.md) for the canonical description of responsibilities, lifecycle, invariants, and maturity.
+
+## Public packages
+
+Public packages are small, independently versioned building blocks. Install the packages your application imports directly rather than depending on a repository-wide facade.
+
+### Domain and identity contracts
+
+- [`@event-driven-platform/types`](./packages/types/README.md) — shared branded-type primitives.
+- [`@event-driven-platform/actor`](./packages/actor/README.md) — actor identity contracts.
+- [`@event-driven-platform/subject`](./packages/subject/README.md) — operation subject contracts.
+- [`@event-driven-platform/aggregate-reference`](./packages/aggregate-reference/README.md) — typed aggregate references.
+- [`@event-driven-platform/tenant-reference`](./packages/tenant-reference/README.md) — typed tenant references.
+- [`@event-driven-platform/intent`](./packages/intent/README.md) — deterministic operation intent contracts.
+- [`@event-driven-platform/operation`](./packages/operation/README.md) — atomic business-operation contracts.
+- [`@event-driven-platform/operation-result`](./packages/operation-result/README.md) — typed operation outcomes and emitted events.
+
+### Command and execution policy
+
+- [`@event-driven-platform/guard`](./packages/guard/README.md) — guard policy contracts.
+- [`@event-driven-platform/rate-limit`](./packages/rate-limit/README.md) — rate-limit policy contracts.
+- [`@event-driven-platform/retry`](./packages/retry/README.md) — retry policy contracts.
+- [`@event-driven-platform/command`](./packages/command/README.md) — execution envelope around an Operation.
+
+### Execution state and persistence contracts
+
+- [`@event-driven-platform/clock`](./packages/clock/README.md) — clock abstraction and standard clock implementations.
+- [`@event-driven-platform/execution`](./packages/execution/README.md) — execution identity and attempt contracts.
+- [`@event-driven-platform/execution-log`](./packages/execution-log/README.md) — durable execution-log state and transitions.
+- [`@event-driven-platform/execution-log-store`](./packages/execution-log-store/README.md) — execution-log persistence port.
+- [`@event-driven-platform/execution-transaction`](./packages/execution-transaction/README.md) — transaction boundary used by execution.
+
+### Handlers, events, and Outbox
+
+- [`@event-driven-platform/operation-handler`](./packages/operation-handler/README.md) — typed Operation handler contract.
+- [`@event-driven-platform/operation-handler-resolver`](./packages/operation-handler-resolver/README.md) — handler resolution port.
+- [`@event-driven-platform/event`](./packages/event/README.md) — event and event-envelope contracts.
+- [`@event-driven-platform/operation-event-envelope-factory`](./packages/operation-event-envelope-factory/README.md) — conversion of emitted Operation events into envelopes.
+- [`@event-driven-platform/outbox`](./packages/outbox/README.md) — Outbox record contracts.
+- [`@event-driven-platform/outbox-store`](./packages/outbox-store/README.md) — Outbox persistence port.
+
+### Execution engine
+
+- [`@event-driven-platform/runner`](./packages/runner/README.md) — centralized `Operation -> Command -> Runner` execution engine.
+
+Packages that are incomplete or not approved as consumer-facing remain private and are not part of the supported public surface merely because they exist in the workspace.
+
+For the reviewed write-side package/export boundary and consumer composition model, see [Execution public API boundary](./docs/execution-public-api.md).
+
+## Getting started
+
+Packages are consumed through normal npm dependencies. Install only what your application imports directly.
+
+For example, a Runner-based application commonly starts with:
 
 ```bash
 pnpm add \
@@ -41,35 +85,38 @@ pnpm add \
   @event-driven-platform/outbox-store
 ```
 
-See [docs/execution-public-api.md](./docs/execution-public-api.md) for the complete package boundary and consumer composition model, and [docs/execution-release-readiness.md](./docs/execution-release-readiness.md) for the execution-policy semantics and preserved lifecycle guarantees.
+A consuming application then defines its Operations and handlers, provides implementations/adapters for the required persistence and resolution ports, creates a Runner, and executes Commands through that Runner.
 
-Packages that are not ready for publication remain private in their own package manifests.
+Start with the README of each package you use. For the complete supported composition model, see [Execution public API boundary](./docs/execution-public-api.md).
 
-## Architecture
+## Documentation
 
-The platform keeps the write and read pipelines separate:
-
-```text
-Operation -> Command -> Runner
-Read      -> Query   -> Reader
-```
-
-Operations and Reads are business-oriented. Commands and Queries transport execution/read options. Runner and Reader remain centralized infrastructure-oriented engines.
-
-The read pipeline remains private and incomplete.
-
-## Versioning and releases
-
-Public packages are independently versioned with Nx Release. Nx determines release versions from Conventional Commits and the project graph, updates dependent packages when required, creates project changelogs, and creates package-specific tags.
-
-The repository does not maintain fixed `core`/`execution` release groups or custom release tag namespaces.
-
-See [RELEASING.md](./RELEASING.md) for the release workflow.
+- [Architecture](./docs/architecture/README.md) — canonical high-level architecture, invariants, and maturity status.
+- [Execution public API boundary](./docs/execution-public-api.md) — reviewed public packages, exports, and consumer composition model for the write pipeline.
+- [Execution release readiness](./docs/execution-release-readiness.md) — execution lifecycle semantics and release-readiness evidence.
+- [Release process](./docs/release/README.md) — repository-specific versioning and npm publication procedure validated end to end.
+- [`packages/*/README.md`](./packages) — package-specific purpose, API, usage, and integration guidance.
 
 ## Development
 
-Use Nx for dependency-aware validation:
+The workspace uses pnpm and Nx. Install the repository dependencies from the lockfile:
+
+```bash
+pnpm install --frozen-lockfile
+```
+
+Use Nx for dependency-aware validation of changes:
 
 ```bash
 pnpm nx affected -t lint test typecheck build
 ```
+
+Repository-specific agent/contributor rules are defined in [`AGENTS.md`](./AGENTS.md). Detailed Nx behavior should be derived from the current workspace configuration and Nx tooling rather than duplicated here.
+
+## Releases
+
+Public packages are independently versioned with Nx Release using Conventional Commits and the project dependency graph. A change to one package may therefore also release dependent packages when their dependency metadata must advance.
+
+Release preparation and npm publication are separate steps, and production publication uses the repository's GitHub Actions workflow with npm Trusted Publishing/OIDC.
+
+See [Release process](./docs/release/README.md) for the validated repository-specific procedure.
