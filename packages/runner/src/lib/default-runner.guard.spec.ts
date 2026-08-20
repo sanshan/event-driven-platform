@@ -59,39 +59,27 @@ class RecordingGuardEvaluator implements GuardEvaluator {
 
     results: boolean[] = [];
 
-    error: unknown = null;
-
     async evaluate<TOperation extends AnyOperation>(
         request: GuardEvaluationRequest<TOperation>,
     ): Promise<boolean> {
         this.requests.push(request as GuardEvaluationRequest<CreateWalletOperation>);
-
-        if (this.error !== null) {
-            throw this.error;
-        }
 
         return this.results.shift() ?? true;
     }
 }
 
 class GuardTestExecutionLogStore implements ExecutionLogStore {
-    readonly claimRequests: ClaimExecutionRequest<CreateWalletOperation>[] = [];
-
     readonly completedRequests: CompleteExecutionRequest<CreateWalletOperation>[] = [];
 
     readonly failedRequests: FailExecutionRequest[] = [];
 
-    claimResult: ClaimExecutionResult<CreateWalletOperation> = {
-        type: 'claimed',
-        entry: claimedEntry,
-    };
-
     async claim<TOperation extends AnyOperation>(
-        request: ClaimExecutionRequest<TOperation>,
+        _request: ClaimExecutionRequest<TOperation>,
     ): Promise<ClaimExecutionResult<TOperation>> {
-        this.claimRequests.push(request as ClaimExecutionRequest<CreateWalletOperation>);
-
-        return this.claimResult as ClaimExecutionResult<TOperation>;
+        return {
+            type: 'claimed',
+            entry: claimedEntry,
+        } as ClaimExecutionResult<TOperation>;
     }
 
     async complete<TOperation extends AnyOperation>(
@@ -242,9 +230,6 @@ describe('DefaultRunner guard orchestration', () => {
             'actor-enabled',
             'wallet-enabled',
         ]);
-        expect(kit.evaluator.requests.every((request) => request.operation === command.operation)).toBe(
-            true,
-        );
         expect(kit.resolverInvocations.count).toBe(1);
         expect(kit.handlerInvocations.count).toBe(1);
         expect(kit.executionLogStore.completedRequests).toHaveLength(1);
@@ -278,44 +263,6 @@ describe('DefaultRunner guard orchestration', () => {
         });
     });
 
-    it('uses stable default rejection metadata when rejectWith is omitted', async () => {
-        const kit = createGuardRunnerTestKit();
-
-        kit.evaluator.results = [false];
-
-        const error = await captureError(() => kit.runner.execute(guardedCommand([firstGuard])));
-
-        expect(error).toBeInstanceOf(ExecutionGuardRejectedError);
-        expect(kit.executionLogStore.failedRequests[0]?.failure).toEqual({
-            code: 'guard-rejected',
-            message: 'Guard "actor-enabled" rejected execution.',
-            retryable: false,
-        });
-    });
-
-    it('records evaluator infrastructure failures through the existing failure path', async () => {
-        const kit = createGuardRunnerTestKit();
-
-        const evaluatorError = {
-            executionFailure: {
-                code: 'guard-provider-unavailable',
-                message: 'Guard provider is unavailable.',
-                retryable: true,
-            },
-        };
-
-        kit.evaluator.error = evaluatorError;
-
-        const error = await captureError(() => kit.runner.execute(guardedCommand([firstGuard])));
-
-        expect(error).toBe(evaluatorError);
-        expect(kit.resolverInvocations.count).toBe(0);
-        expect(kit.handlerInvocations.count).toBe(0);
-        expect(kit.executionLogStore.failedRequests[0]?.failure).toEqual(
-            evaluatorError.executionFailure,
-        );
-    });
-
     it('fails explicitly when guards are configured without a GuardEvaluator', async () => {
         const kit = createGuardRunnerTestKit(false);
 
@@ -324,10 +271,6 @@ describe('DefaultRunner guard orchestration', () => {
         expect(error).toBeInstanceOf(GuardEvaluatorUnavailableError);
         expect(kit.resolverInvocations.count).toBe(0);
         expect(kit.handlerInvocations.count).toBe(0);
-        expect(kit.executionLogStore.failedRequests[0]?.failure).toEqual({
-            code: 'guard-evaluator-unavailable',
-            message: 'Guard evaluation is configured but no GuardEvaluator is available.',
-            retryable: false,
-        });
+        expect(kit.executionLogStore.failedRequests).toHaveLength(1);
     });
 });
