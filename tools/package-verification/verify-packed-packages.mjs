@@ -7,8 +7,9 @@ import { fileURLToPath } from 'node:url';
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(currentDirectory, '../..');
 const fixtureSource = resolve(currentDirectory, 'fixture');
+const groupName = process.argv[2] ?? 'core';
 
-const releasePackages = [
+const corePackages = [
     ['@event-driven-platform/types', 'packages/types'],
     ['@event-driven-platform/actor', 'packages/actor'],
     ['@event-driven-platform/subject', 'packages/subject'],
@@ -19,6 +20,38 @@ const releasePackages = [
     ['@event-driven-platform/operation-result', 'packages/operation-result'],
     ['@event-driven-platform/operation', 'packages/operation'],
 ];
+
+const executionPackages = [
+    ['@event-driven-platform/guard', 'packages/guard'],
+    ['@event-driven-platform/rate-limit', 'packages/rate-limit'],
+    ['@event-driven-platform/retry', 'packages/retry'],
+    ['@event-driven-platform/command', 'packages/command'],
+    ['@event-driven-platform/clock', 'packages/clock'],
+    ['@event-driven-platform/execution', 'packages/execution'],
+    ['@event-driven-platform/execution-log', 'packages/execution-log'],
+    ['@event-driven-platform/execution-log-store', 'packages/execution-log-store'],
+    ['@event-driven-platform/execution-transaction', 'packages/execution-transaction'],
+    ['@event-driven-platform/operation-handler', 'packages/operation-handler'],
+    ['@event-driven-platform/operation-handler-resolver', 'packages/operation-handler-resolver'],
+    [
+        '@event-driven-platform/operation-event-envelope-factory',
+        'packages/operation-event-envelope-factory',
+    ],
+    ['@event-driven-platform/outbox', 'packages/outbox'],
+    ['@event-driven-platform/outbox-store', 'packages/outbox-store'],
+    ['@event-driven-platform/runner', 'packages/runner'],
+];
+
+const packageGroups = {
+    core: corePackages,
+    execution: [...corePackages, ...executionPackages],
+};
+
+const releasePackages = packageGroups[groupName];
+
+if (!releasePackages) {
+    throw new Error(`Unknown package verification group: ${groupName}.`);
+}
 
 function run(command, args, cwd) {
     execFileSync(command, args, {
@@ -91,3 +124,5 @@ const installedManifest = JSON.parse(readFileSync(join(fixtureDirectory, 'packag
 if (Object.keys(installedManifest.dependencies).length !== releasePackages.length) {
     throw new Error('Package verification fixture does not contain the complete release set.');
 }
+
+console.log(`Verified packed packages for ${groupName}.`);
