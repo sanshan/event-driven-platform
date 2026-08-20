@@ -42,6 +42,7 @@
         "version": {
             "conventionalCommits": true,
             "adjustSemverBumpsForZeroMajorVersion": true,
+            "fallbackCurrentVersionResolver": "disk",
             "preVersionCommand": "pnpm nx run-many -t build"
         },
         "changelog": {
