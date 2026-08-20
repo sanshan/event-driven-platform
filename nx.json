@@ -47,7 +47,8 @@
         },
         "changelog": {
             "workspaceChangelog": false,
-            "projectChangelogs": true
+            "projectChangelogs": true,
+            "automaticFromRef": true
         },
         "git": {
             "commitMessage": "chore(release): publish"
