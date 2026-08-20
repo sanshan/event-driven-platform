@@ -6,7 +6,10 @@ import {
     DefaultExecutionIdFactory,
     type ExecutionLeaseOwnerId,
 } from '@event-driven-platform/execution';
-import type { ExecutionLogStore } from '@event-driven-platform/execution-log-store';
+import type {
+    ClaimExecutionRequest,
+    ExecutionLogStore,
+} from '@event-driven-platform/execution-log-store';
 import type { ExecutionTransaction } from '@event-driven-platform/execution-transaction';
 import { DefaultEventIdFactory } from '@event-driven-platform/event';
 import { DefaultIntentFactory } from '@event-driven-platform/intent';
@@ -110,15 +113,11 @@ let outboxAppendCount = 0;
 const clock = new SystemClock();
 
 const executionLogStore = {
-    async claim(request: {
-        executionId: unknown;
-        operation: VerificationOperation;
-        correlationId: string;
-        leaseOwnerId: ExecutionLeaseOwnerId;
-        leaseDurationMs: number;
-        requestedAt: Date;
-    }) {
+    async claim(request: ClaimExecutionRequest<VerificationOperation>) {
         claimCount += 1;
+        const expiresAt = new Date(
+            Date.parse(request.requestedAt) + request.leaseDurationMs,
+        ).toISOString();
 
         return {
             type: 'claimed',
@@ -137,7 +136,7 @@ const executionLogStore = {
                     ownerId: request.leaseOwnerId,
                     version: claimCount,
                     acquiredAt: request.requestedAt,
-                    expiresAt: new Date(request.requestedAt.getTime() + request.leaseDurationMs),
+                    expiresAt,
                 },
             },
         };
