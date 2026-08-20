@@ -18,7 +18,13 @@
         "verify-registry": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "node tools/package-verification/verify-local-registry.mjs"
+                "command": "node tools/package-verification/verify-local-registry.mjs core"
+            }
+        },
+        "verify-execution-registry": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node tools/package-verification/verify-local-registry.mjs execution"
             }
         }
     },

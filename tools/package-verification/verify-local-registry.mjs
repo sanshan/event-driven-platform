@@ -9,11 +9,11 @@ import { releasePublish, releaseVersion } from 'nx/release';
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(currentDirectory, '../..');
-const fixtureSource = resolve(currentDirectory, 'fixture');
 const registry = 'http://localhost:4873';
 const version = '0.1.0';
+const groupName = process.argv[2] ?? 'core';
 
-const releasePackages = [
+const corePackages = [
     '@event-driven-platform/types',
     '@event-driven-platform/actor',
     '@event-driven-platform/subject',
@@ -24,6 +24,45 @@ const releasePackages = [
     '@event-driven-platform/operation-result',
     '@event-driven-platform/operation',
 ];
+
+const executionPackages = [
+    '@event-driven-platform/guard',
+    '@event-driven-platform/rate-limit',
+    '@event-driven-platform/retry',
+    '@event-driven-platform/command',
+    '@event-driven-platform/clock',
+    '@event-driven-platform/execution',
+    '@event-driven-platform/execution-log',
+    '@event-driven-platform/execution-log-store',
+    '@event-driven-platform/execution-transaction',
+    '@event-driven-platform/operation-handler',
+    '@event-driven-platform/operation-handler-resolver',
+    '@event-driven-platform/operation-event-envelope-factory',
+    '@event-driven-platform/outbox',
+    '@event-driven-platform/outbox-store',
+    '@event-driven-platform/runner',
+];
+
+const verificationGroups = {
+    core: {
+        fixture: 'fixture',
+        releasePackages: corePackages,
+        installPackages: corePackages,
+    },
+    execution: {
+        fixture: 'fixture-execution',
+        releasePackages: executionPackages,
+        installPackages: [...corePackages, ...executionPackages],
+    },
+};
+
+const verification = verificationGroups[groupName];
+
+if (!verification) {
+    throw new Error(`Unknown local-registry verification group: ${groupName}.`);
+}
+
+const fixtureSource = resolve(currentDirectory, verification.fixture);
 
 function run(command, args, cwd) {
     execFileSync(command, args, {
@@ -47,12 +86,13 @@ try {
 
     run(
         'pnpm',
-        ['nx', 'run-many', '-t', 'build', '--projects', releasePackages.join(',')],
+        ['nx', 'run-many', '-t', 'build', '--projects', verification.installPackages.join(',')],
         workspaceRoot,
     );
 
     const { projectsVersionData, releaseGraph } = await releaseVersion({
         specifier: version,
+        groups: [groupName],
         stageChanges: false,
         gitCommit: false,
         gitTag: false,
@@ -63,17 +103,18 @@ try {
     });
 
     const versionedProjects = Object.keys(projectsVersionData).sort();
-    const expectedProjects = [...releasePackages].sort();
+    const expectedProjects = [...verification.releasePackages].sort();
 
     if (JSON.stringify(versionedProjects) !== JSON.stringify(expectedProjects)) {
         throw new Error(
-            `Nx Release versioned an unexpected project set: ${versionedProjects.join(', ')}`,
+            `Nx Release versioned an unexpected project set for ${groupName}: ${versionedProjects.join(', ')}`,
         );
     }
 
     const publishResults = await releasePublish({
         releaseGraph,
         versionData: projectsVersionData,
+        groups: [groupName],
         tag: 'local',
         firstRelease: true,
     });
@@ -82,7 +123,7 @@ try {
 
     if (JSON.stringify(publishedProjects) !== JSON.stringify(expectedProjects)) {
         throw new Error(
-            `Nx Release published an unexpected project set: ${publishedProjects.join(', ')}`,
+            `Nx Release published an unexpected project set for ${groupName}: ${publishedProjects.join(', ')}`,
         );
     }
 
@@ -97,14 +138,14 @@ try {
     cpSync(fixtureSource, fixtureDirectory, { recursive: true });
 
     const dependencies = Object.fromEntries(
-        releasePackages.map((packageName) => [packageName, version]),
+        verification.installPackages.map((packageName) => [packageName, version]),
     );
 
     writeFileSync(
         join(fixtureDirectory, 'package.json'),
         `${JSON.stringify(
             {
-                name: 'event-driven-platform-local-registry-verification',
+                name: `event-driven-platform-${groupName}-local-registry-verification`,
                 private: true,
                 type: 'module',
                 dependencies,
@@ -127,7 +168,7 @@ try {
     );
     run('node', [join(fixtureDirectory, 'dist/index.js')], fixtureDirectory);
 
-    for (const packageName of releasePackages) {
+    for (const packageName of verification.installPackages) {
         const manifestPath = join(
             fixtureDirectory,
             'node_modules',
@@ -142,6 +183,8 @@ try {
             );
         }
     }
+
+    console.log(`Verified local-registry release lifecycle for ${groupName}.`);
 } finally {
     if (stopLocalRegistry) {
         await stopLocalRegistry();

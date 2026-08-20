@@ -107,6 +107,10 @@ jobs:
         if: steps.public-packages.outputs.execution_required == 'true'
         run: pnpm nx run package-verification:verify-execution
 
+      - name: Verify affected Execution packages through local registry
+        if: steps.public-packages.outputs.execution_required == 'true'
+        run: pnpm nx run package-verification:verify-execution-registry
+
       - name: Verify published public packages
         if: steps.public-packages.outputs.core_required == 'true'
         run: pnpm nx run package-verification:verify-registry
