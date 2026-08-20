@@ -10,7 +10,15 @@ import type { OperationHandlerResolver } from '@event-driven-platform/operation-
 import type { OutboxRecordFactory } from '@event-driven-platform/outbox';
 import type { OutboxStore } from '@event-driven-platform/outbox-store';
 
-import type { RunnerDependencies } from '../index.js';
+import {
+    DefaultExecutionTimeout,
+    DefaultRetryDelay,
+    type ExecutionTimeout,
+    type GuardEvaluator,
+    type RateLimiter,
+    type RetryDelay,
+    type RunnerDependencies,
+} from '../index.js';
 
 type GuardOption = NonNullable<CommandOptions['guards']>[number];
 type RateLimitOption = NonNullable<CommandOptions['rateLimit']>;
@@ -28,7 +36,26 @@ describe('Execution release contract', () => {
         expectTypeOf<RunnerDependencies['outboxStore']>().toEqualTypeOf<OutboxStore>();
     });
 
-    it('keeps execution policies on CommandOptions without expanding Runner dependencies', () => {
+    it('keeps Runner policy runtime ports public without creating additional packages', () => {
+        expectTypeOf<RunnerDependencies['guardEvaluator']>().toEqualTypeOf<
+            GuardEvaluator | undefined
+        >();
+        expectTypeOf<RunnerDependencies['rateLimiter']>().toEqualTypeOf<
+            RateLimiter | undefined
+        >();
+        expectTypeOf<RunnerDependencies['executionTimeout']>().toEqualTypeOf<
+            ExecutionTimeout | undefined
+        >();
+        expectTypeOf<RunnerDependencies['retryDelay']>().toEqualTypeOf<RetryDelay | undefined>();
+
+        const timeout: ExecutionTimeout = new DefaultExecutionTimeout();
+        const retryDelay: RetryDelay = new DefaultRetryDelay();
+
+        expect(timeout).toBeInstanceOf(DefaultExecutionTimeout);
+        expect(retryDelay).toBeInstanceOf(DefaultRetryDelay);
+    });
+
+    it('keeps execution policies on CommandOptions', () => {
         const guard: GuardOption = {
             name: 'wallet-enabled',
             params: {
