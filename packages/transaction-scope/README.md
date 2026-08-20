@@ -1,11 +1,13 @@
-# transaction-scope
+# @event-driven-platform/transaction-scope
 
-This library was generated with [Nx](https://nx.dev).
+> **Status: Internal.** This package is not part of the supported public package boundary.
 
-## Building
+Defines the transaction-scope abstraction used by internal transaction infrastructure to associate work with an active transaction context.
 
-Run `nx build transaction-scope` to build the library.
+## Responsibility
 
-## Running unit tests
+`TransactionScope` owns the lifecycle boundary for entering and accessing transaction-scoped state. The package also exposes the typed error used when code attempts to activate a scope that is already active.
 
-Run `nx test transaction-scope` to execute the unit tests via [Vitest](https://vitest.dev/).
+## Boundary
+
+This is an internal infrastructure abstraction, not the consumer-facing Runner transaction port. Public execution composition depends on `@event-driven-platform/execution-transaction`; this package supports repository implementations behind that boundary.
