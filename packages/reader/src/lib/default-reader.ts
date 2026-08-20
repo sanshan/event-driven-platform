@@ -59,9 +59,11 @@ export class DefaultReader implements Reader {
             return localHit.value;
         }
 
-        return this.localReadInFlight.run(cachePlan.key, () =>
+        const flight = this.localReadInFlight.run(cachePlan.key, () =>
             this.executeLocalLeader(query, cachePlan, localEndIndex),
         );
+
+        return this.awaitWithQueryTimeout(flight, query.options?.timeoutMs);
     }
 
     private async executeLocalLeader<TRead extends AnyRead>(
@@ -100,7 +102,7 @@ export class DefaultReader implements Reader {
             return downstreamHit.value;
         }
 
-        const sourceResult = await this.executeSource(query);
+        const sourceResult = await this.executeSourceWithoutTimeout(query);
 
         await this.populateLevels(cachePlan.levels, cachePlan.key, sourceResult);
 
@@ -157,18 +159,30 @@ export class DefaultReader implements Reader {
     private async executeSource<TRead extends AnyRead>(
         query: Query<TRead>,
     ): Promise<ReadResultOf<TRead>> {
+        return this.awaitWithQueryTimeout(
+            this.executeSourceWithoutTimeout(query),
+            query.options?.timeoutMs,
+        );
+    }
+
+    private async executeSourceWithoutTimeout<TRead extends AnyRead>(
+        query: Query<TRead>,
+    ): Promise<ReadResultOf<TRead>> {
         const resolution = this.dependencies.readHandlerResolver.resolve(query.read);
         const handler = this.resolveHandler(resolution);
-        const timeoutMs = query.options?.timeoutMs;
 
+        return handler.execute(query.read);
+    }
+
+    private async awaitWithQueryTimeout<TResult>(
+        work: Promise<TResult>,
+        timeoutMs: number | undefined,
+    ): Promise<TResult> {
         if (timeoutMs === undefined) {
-            return handler.execute(query.read);
+            return work;
         }
 
-        const timedExecution = await this.readTimeout.execute(
-            () => handler.execute(query.read),
-            timeoutMs,
-        );
+        const timedExecution = await this.readTimeout.execute(() => work, timeoutMs);
 
         if (timedExecution.type === 'timed-out') {
             throw new ReadTimedOutError(timeoutMs);
