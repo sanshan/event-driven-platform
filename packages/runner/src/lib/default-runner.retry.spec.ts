@@ -211,7 +211,9 @@ function createRetryTestKit(options?: {
     };
 
     const outboxStore: OutboxStore = {
-        async append(): Promise<void> {},
+        async append(): Promise<void> {
+            return;
+        },
     };
 
     const guardEvaluator: GuardEvaluator =
