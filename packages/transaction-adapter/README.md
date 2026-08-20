@@ -1,11 +1,13 @@
-# transaction-adapter
+# @event-driven-platform/transaction-adapter
 
-This library was generated with [Nx](https://nx.dev).
+> **Status: Internal.** This package is not part of the supported public package boundary.
 
-## Building
+Defines the internal adapter contract used to connect transaction-scope infrastructure to a concrete transaction implementation.
 
-Run `nx build transaction-adapter` to build the library.
+## Responsibility
 
-## Running unit tests
+`TransactionAdapter` provides the operations required by the internal transaction layer to begin and control a concrete transaction while keeping higher-level execution code independent of a database client or ORM.
 
-Run `nx test transaction-adapter` to execute the unit tests via [Vitest](https://vitest.dev/).
+## Boundary
+
+This is repository infrastructure, not a supported consumer API. External applications integrate Runner through the public `@event-driven-platform/execution-transaction` contract rather than depending on this adapter package.
