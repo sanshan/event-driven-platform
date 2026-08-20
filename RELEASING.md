@@ -1,131 +1,118 @@
 # Releasing
 
-Nx Release manages two independent fixed public release groups:
+Nx Release is the source of truth for package versioning and publishing.
 
-- `core` — the foundational write-side contracts, tagged as `v{version}`;
-- `execution` — the `Operation -> Command -> Runner` execution package set, tagged as `execution-v{version}`.
+Packages are released independently. The workspace does not maintain custom release groups or calculate package versions itself.
 
-The exact project lists are owned by `release.groups` in `nx.json`. Packages outside those approved groups must remain private.
+## Release configuration
 
-## Core release
+Nx discovers package projects through the workspace and targets `packages/*` for release management.
 
-The initial core release is **v0.1.0**.
+`nx.json` configures:
 
-Preview a core release before making changes:
+- `projectsRelationship: independent`;
+- Conventional Commits for automatic version selection;
+- project-level changelogs;
+- standard Nx dependency-aware updates between packages.
 
-```bash
-pnpm nx release <version> --groups=core --dry-run
+Public/private publication intent remains package-local in each `package.json`. Packages that are not ready for npm must keep `private: true`.
+
+Nx uses its standard independent tag format:
+
+```text
+{projectName}@{version}
 ```
 
-For the first core release, `--first-release` is also required.
+No repository-specific tag namespaces are used.
 
-Prepare a verified core release without publishing locally:
+## Prepare a release
 
-```bash
-pnpm nx release <version> --groups=core --skip-publish
-```
-
-Push the resulting release commit and `v<version>` tag. The tag triggers `.github/workflows/publish.yml` for the `core` group.
-
-## First Execution release
-
-The first Execution release is prepared independently from the already released core.
-
-Preview the first Execution release:
+Always preview the release first:
 
 ```bash
-pnpm nx release 0.1.0 --groups=execution --first-release --dry-run
+pnpm nx release --dry-run --skip-publish
 ```
 
-The preview must version exactly the projects listed in `release.groups.execution.projects`, leave the core release group unchanged, and use the `execution-v0.1.0` tag namespace.
+Nx determines which packages have releasable changes and calculates each version independently from Conventional Commits.
 
-After the Epic release-readiness review is merged to a green `main`, prepare the release without publishing from the local command:
+Prepare the release without publishing from the local machine:
 
 ```bash
-pnpm nx release 0.1.0 --groups=execution --first-release --skip-publish
+pnpm nx release --skip-publish
 ```
 
-Review the generated package versions, internal dependency ranges, changelogs, release commit, and tag before pushing them. Push the release commit and `execution-v0.1.0` tag only after that review. The tag triggers `.github/workflows/publish.yml` for the `execution` group.
+Review the generated package versions, internal dependency updates, project changelogs, release commit, and package tags, then push them:
+
+```bash
+git push
+git push --tags
+```
+
+Do not manually calculate package version bumps. Do not manually maintain a list of packages to release.
+
+## First independent release
+
+The repository previously used a fixed `v0.1.0` release for the initial public core, so package-specific independent release tags do not yet exist.
+
+For the first release after switching to independent versioning, use Nx's standard first-release mode:
+
+```bash
+pnpm nx release --first-release --dry-run --skip-publish
+```
+
+After reviewing the Nx output, prepare it with:
+
+```bash
+pnpm nx release --first-release --skip-publish
+```
+
+This is a one-time transition. Future releases must omit `--first-release`.
 
 ## Versioning
 
-Version selection follows Conventional Commits.
+Version selection follows Conventional Commits and is performed by Nx Release.
 
-While a public API is in the `0.x` series:
+With `adjustSemverBumpsForZeroMajorVersion` enabled, Nx applies its pre-1.0 semver adjustment rules automatically.
 
-- breaking changes (`!` or `BREAKING CHANGE`) bump the minor version;
-- `feat` bumps the patch version;
-- `fix` bumps the patch version.
+Nx also handles dependency-aware version updates for independently versioned packages. Repository scripts must not reproduce this logic.
 
-Projects inside each fixed release group share one version. The `core` and `execution` groups are versioned independently and use distinct tag namespaces.
+## Package artifacts
 
-## Internal dependencies
+Source manifests use pnpm workspace dependencies. CI packs every public package and installs the resulting tarballs into an isolated fixture to verify that published artifacts are consumable without workspace source resolution.
 
-`workspace:*` remains in source manifests. pnpm resolves workspace protocols to publishable ranges when packages are packed or published. Package and local-registry verification must confirm the resulting published dependency graph.
-
-The Execution release lifecycle additionally verifies compatibility with the already published core `0.1.0` packages from an isolated consumer installation.
-
-## Changelogs
-
-Nx Release generates project changelogs for public package projects. Workspace-level changelog generation is disabled.
-
-## Verification before production release
-
-For Execution changes, CI verifies:
-
-- affected lint, test, typecheck, and build targets;
-- the exact approved public/private release boundary;
-- packed core + Execution artifacts in an isolated consumer;
-- publication of exactly the Execution group through Nx Release to a local Verdaccio registry;
-- installation and strict TypeScript compilation without workspace source resolution;
-- representative ESM execution of `Operation -> Command -> Runner` with guard, rate-limit, timeout, and retry configuration;
-- compatibility with the existing public core.
-
-The final release-readiness review must also run a release dry run for `--groups=execution` and verify the generated project/version set before a production tag is pushed.
+This verification checks package output; it does not decide versions or which packages Nx should release.
 
 ## Production publishing
 
-Production publishing is tag-triggered. `.github/workflows/publish.yml` resolves the release group from the tag namespace:
+Independent releases create one tag per released project. GitHub does not reliably trigger tag-push workflows when more than three tags are pushed together, so production publishing follows the Nx-documented `workflow_dispatch` approach.
 
-- `v<version>` -> `core`;
-- `execution-v<version>` -> `execution`.
+After the release commit and tags have been pushed:
 
-Before publishing, the workflow verifies that:
+1. Open the **Publish** GitHub Actions workflow.
+2. Run it from `main`.
+3. Approve the `npm-production` environment when required.
 
-- the tagged commit is contained in `main`;
-- the tag version matches every package manifest in the selected release group;
-- the selected Nx release group still contains exactly its approved package set;
-- every package outside the approved core and Execution boundaries remains private.
-
-The workflow then builds only the selected release group and runs:
+The workflow builds package projects and runs only:
 
 ```bash
-pnpm nx release publish --groups=<core|execution> --access=public
+pnpm nx release publish
 ```
 
-The `npm-production` GitHub environment should require maintainer approval before publishing.
+Nx determines which versioned packages need publication and skips versions that already exist in the registry.
 
 ### Authentication
 
 Production publishing uses npm Trusted Publishing (OIDC) only.
 
-Each published package must trust:
+Each public package must trust:
 
 - repository: `sanshan/event-driven-platform`;
 - workflow file: `publish.yml`;
 - environment: `npm-production`;
 - allowed action: `npm publish`.
 
-Before the first Execution release, Trusted Publishing must be configured in npm for every package in `release.groups.execution.projects`.
-
-The workflow grants only `contents: read` and `id-token: write`, and pins Node/npm versions compatible with npm Trusted Publishing.
-
-No long-lived npm token is required by the publish workflow. For maximum protection, package publishing access should require two-factor authentication and disallow bypass-2FA tokens. Trusted Publishing continues to work with this setting and automatically provides npm provenance.
+The workflow grants only `contents: read` and `id-token: write`. No long-lived npm token is required.
 
 ### Recovery
 
-Do not create a new version or tag to recover from a partial publishing failure. Fix only authentication or registry availability issues, then rerun the workflow for the same release tag. Verify registry state before retrying; Nx Release publishing checks package versions in the registry and avoids republishing versions that already exist.
-
-## Registry
-
-The registry is supplied by the release environment. Package manifests do not pin a registry, so the same Nx Release configuration can be used with the local registry and the production registry.
+If production publishing is interrupted, do not create replacement versions. Fix the external failure and rerun the **Publish** workflow from the same release commit. Nx Release checks registry state and does not need repository-specific retry logic.

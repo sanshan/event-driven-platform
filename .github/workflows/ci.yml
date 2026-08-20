@@ -48,89 +48,35 @@ jobs:
           CHANGED_FILES="$(git diff --name-only "$NX_BASE" "$NX_HEAD")" \
           node <<'NODE'
           const fs = require('node:fs');
+          const path = require('node:path');
 
           const affected = new Set(JSON.parse(process.env.AFFECTED));
-          const changedFiles = (process.env.CHANGED_FILES ?? '')
-              .split('\n')
+          const changedFiles = (process.env.CHANGED_FILES ?? '').split('\n').filter(Boolean);
+          const packagesRoot = path.join(process.cwd(), 'packages');
+          const publicProjects = fs
+              .readdirSync(packagesRoot, { withFileTypes: true })
+              .filter((entry) => entry.isDirectory())
+              .map((entry) => {
+                  const manifest = JSON.parse(
+                      fs.readFileSync(path.join(packagesRoot, entry.name, 'package.json'), 'utf8'),
+                  );
+                  return manifest.private === true ? null : manifest.name;
+              })
               .filter(Boolean);
-          const publicCoreDirectories = [
-              'packages/types/',
-              'packages/actor/',
-              'packages/subject/',
-              'packages/aggregate-reference/',
-              'packages/tenant-reference/',
-              'packages/intent/',
-              'packages/event/',
-              'packages/operation-result/',
-              'packages/operation/',
-          ];
-          const executionPackages = [
-              '@event-driven-platform/guard',
-              '@event-driven-platform/rate-limit',
-              '@event-driven-platform/retry',
-              '@event-driven-platform/command',
-              '@event-driven-platform/clock',
-              '@event-driven-platform/execution',
-              '@event-driven-platform/execution-log',
-              '@event-driven-platform/execution-log-store',
-              '@event-driven-platform/execution-transaction',
-              '@event-driven-platform/operation-handler',
-              '@event-driven-platform/operation-handler-resolver',
-              '@event-driven-platform/operation-event-envelope-factory',
-              '@event-driven-platform/outbox',
-              '@event-driven-platform/outbox-store',
-              '@event-driven-platform/runner',
-          ];
-          const executionReleaseFiles = [
-              'nx.json',
-              'package.json',
-              '.verdaccio/config-offline.yml',
-              'tools/release/verify-release-state.mjs',
-              'tools/package-verification/project.json',
-              'tools/package-verification/verify-packed-packages.mjs',
-              'tools/package-verification/verify-local-registry.mjs',
-          ];
-          const executionReleaseDirectories = [
-              'tools/package-verification/fixture-execution/',
-          ];
-
-          const coreChanged = publicCoreDirectories.some((directory) =>
-              changedFiles.some((file) => file.startsWith(directory)),
-          );
-          const executionToolingChanged = changedFiles.some(
+          const verificationToolingChanged = changedFiles.some(
               (file) =>
-                  executionReleaseFiles.includes(file) ||
-                  executionReleaseDirectories.some((directory) => file.startsWith(directory)),
+                  file === 'nx.json' ||
+                  file === 'package.json' ||
+                  file === 'tools/package-verification/project.json' ||
+                  file === 'tools/package-verification/verify-packed-packages.mjs' ||
+                  file.startsWith('tools/package-verification/fixture-execution/'),
           );
-          const executionChanged =
-              executionToolingChanged ||
-              executionPackages.some((project) => affected.has(project));
+          const required =
+              verificationToolingChanged || publicProjects.some((project) => affected.has(project));
 
-          fs.appendFileSync(
-              process.env.GITHUB_OUTPUT,
-              `core_required=${coreChanged}\n`,
-          );
-          fs.appendFileSync(
-              process.env.GITHUB_OUTPUT,
-              `execution_required=${executionChanged}\n`,
-          );
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `required=${required}\n`);
           NODE
 
-      - name: Verify Execution release boundary
-        if: steps.public-packages.outputs.execution_required == 'true'
-        shell: bash
-        run: |
-          VERSION="$(node -p "require('./packages/runner/package.json').version")"
-          node tools/release/verify-release-state.mjs "$VERSION" execution
-
-      - name: Verify affected Execution package artifacts
-        if: steps.public-packages.outputs.execution_required == 'true'
-        run: pnpm nx run package-verification:verify-execution
-
-      - name: Verify affected Execution packages through local registry
-        if: steps.public-packages.outputs.execution_required == 'true'
-        run: pnpm nx run package-verification:verify-execution-registry
-
-      - name: Verify published public packages
-        if: steps.public-packages.outputs.core_required == 'true'
-        run: pnpm nx run package-verification:verify-registry
+      - name: Verify packed public packages
+        if: steps.public-packages.outputs.required == 'true'
+        run: pnpm nx run package-verification:verify

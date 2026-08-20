@@ -37,6 +37,8 @@
         }
     },
     "release": {
+        "projects": ["packages/*"],
+        "projectsRelationship": "independent",
         "version": {
             "conventionalCommits": true,
             "adjustSemverBumpsForZeroMajorVersion": true
@@ -46,51 +48,7 @@
             "projectChangelogs": true
         },
         "git": {
-            "commitMessage": "chore(release): publish {version}"
-        },
-        "groups": {
-            "core": {
-                "projects": [
-                    "@event-driven-platform/types",
-                    "@event-driven-platform/actor",
-                    "@event-driven-platform/subject",
-                    "@event-driven-platform/aggregate-reference",
-                    "@event-driven-platform/tenant-reference",
-                    "@event-driven-platform/intent",
-                    "@event-driven-platform/event",
-                    "@event-driven-platform/operation-result",
-                    "@event-driven-platform/operation"
-                ],
-                "projectsRelationship": "fixed",
-                "releaseTag": {
-                    "pattern": "v{version}",
-                    "requireSemver": true
-                }
-            },
-            "execution": {
-                "projects": [
-                    "@event-driven-platform/guard",
-                    "@event-driven-platform/rate-limit",
-                    "@event-driven-platform/retry",
-                    "@event-driven-platform/command",
-                    "@event-driven-platform/clock",
-                    "@event-driven-platform/execution",
-                    "@event-driven-platform/execution-log",
-                    "@event-driven-platform/execution-log-store",
-                    "@event-driven-platform/execution-transaction",
-                    "@event-driven-platform/operation-handler",
-                    "@event-driven-platform/operation-handler-resolver",
-                    "@event-driven-platform/operation-event-envelope-factory",
-                    "@event-driven-platform/outbox",
-                    "@event-driven-platform/outbox-store",
-                    "@event-driven-platform/runner"
-                ],
-                "projectsRelationship": "fixed",
-                "releaseTag": {
-                    "pattern": "execution-v{version}",
-                    "requireSemver": true
-                }
-            }
+            "commitMessage": "chore(release): publish"
         }
     }
 }
