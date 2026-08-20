@@ -80,6 +80,7 @@ function queryFor(
 describe('DefaultReader process-local inflight', () => {
     it('collapses identical same-instance keys to one shared traversal and source execution', async () => {
         const source = deferred<WalletView>();
+        const sourceStarted = deferred<void>();
         let sharedReads = 0;
         let sourceExecutions = 0;
         const query = queryFor('wallet-1', {
@@ -93,6 +94,7 @@ describe('DefaultReader process-local inflight', () => {
         const handler = {
             execute: async () => {
                 sourceExecutions += 1;
+                sourceStarted.resolve();
                 return source.promise;
             },
         };
@@ -102,8 +104,7 @@ describe('DefaultReader process-local inflight', () => {
 
         const requests = Array.from({ length: 50 }, () => reader.execute(query));
 
-        await Promise.resolve();
-        await Promise.resolve();
+        await sourceStarted.promise;
 
         expect(sharedReads).toBe(1);
         expect(sourceExecutions).toBe(1);
@@ -118,10 +119,15 @@ describe('DefaultReader process-local inflight', () => {
     it('does not serialize unrelated keys behind each other', async () => {
         const first = deferred<WalletView>();
         const second = deferred<WalletView>();
+        const bothStarted = deferred<void>();
         const started: string[] = [];
         const handler = {
             execute: async (read: GetWalletRead) => {
                 started.push(read.parameters.walletId);
+                if (started.length === 2) {
+                    bothStarted.resolve();
+                }
+
                 return read.parameters.walletId === 'wallet-1' ? first.promise : second.promise;
             },
         };
@@ -132,8 +138,7 @@ describe('DefaultReader process-local inflight', () => {
         const firstRequest = reader.execute(queryFor('wallet-1'));
         const secondRequest = reader.execute(queryFor('wallet-2'));
 
-        await Promise.resolve();
-        await Promise.resolve();
+        await bothStarted.promise;
 
         expect(started).toEqual(['wallet-1', 'wallet-2']);
 
