@@ -9,46 +9,28 @@ import { ExecutionTransactionOutcomes } from '@event-driven-platform/execution-t
 import type { AnyOperation, OperationResultOf } from '@event-driven-platform/operation';
 import { isRolledBackOperationRejection } from '@event-driven-platform/operation-result';
 
-import { buildRateLimitBucketKey } from './build-rate-limit-bucket-key.js';
-import { calculateRetryDelay } from './calculate-retry-delay.js';
-import { DefaultExecutionTimeout } from './default-execution-timeout.js';
-import { DefaultRetryDelay } from './default-retry-delay.js';
-import { ExecutionAlreadyInProgressError } from './execution-already-in-progress.error.js';
-import { ExecutionGuardRejectedError } from './execution-guard-rejected.error.js';
-import { ExecutionIntentConflictError } from './execution-intent-conflict.error.js';
-import { ExecutionRateLimitRejectedError } from './execution-rate-limit-rejected.error.js';
-import { ExecutionTimedOutError } from './execution-timed-out.error.js';
-import type { ExecutionTimeout } from './execution-timeout.js';
-import { ExecutionTransitionRejectedError } from './execution-transition-rejected.error.js';
-import { GuardEvaluatorUnavailableError } from './guard-evaluator-unavailable.error.js';
-import { normalizeExecutionFailure } from './normalize-execution-failure.js';
-import { RateLimiterUnavailableError } from './rate-limiter-unavailable.error.js';
-import type { RetryDelay } from './retry-delay.js';
+import type { HandlerAttemptOutcome } from '../attempt/handler-attempt-outcome.js';
+import type { ResolvedOperationHandler } from '../attempt/resolved-operation-handler.js';
+import { normalizeExecutionFailure } from '../failure/normalize-execution-failure.js';
+import { ExecutionGuardRejectedError } from '../guard/execution-guard-rejected.error.js';
+import { GuardEvaluatorUnavailableError } from '../guard/guard-evaluator-unavailable.error.js';
+import { buildRateLimitBucketKey } from '../rate-limit/build-rate-limit-bucket-key.js';
+import { ExecutionRateLimitRejectedError } from '../rate-limit/execution-rate-limit-rejected.error.js';
+import { RateLimiterUnavailableError } from '../rate-limit/rate-limiter-unavailable.error.js';
+import { calculateRetryDelay } from '../retry/calculate-retry-delay.js';
+import { DefaultRetryDelay } from '../retry/default-retry-delay.js';
+import type { RetryDelay } from '../retry/retry-delay.js';
+import { DefaultExecutionTimeout } from '../timeout/default-execution-timeout.js';
+import { ExecutionTimedOutError } from '../timeout/execution-timed-out.error.js';
+import type { ExecutionTimeout } from '../timeout/execution-timeout.js';
+import { ExecutionAlreadyInProgressError } from '../transition/execution-already-in-progress.error.js';
+import { ExecutionIntentConflictError } from '../transition/execution-intent-conflict.error.js';
+import { ExecutionTransitionRejectedError } from '../transition/execution-transition-rejected.error.js';
 import type { RunnerDependencies } from './runner-dependencies.js';
 import type { RunnerExecution } from './runner-execution.js';
 import type { RunnerOptions } from './runner-options.js';
 import type { RunnerRuntime } from './runner-runtime.js';
 import type { Runner } from './runner.js';
-
-interface ResolvedOperationHandler<TOperation extends AnyOperation> {
-    execute(operation: TOperation): Promise<OperationResultOf<TOperation>>;
-}
-
-interface FailedHandlerAttempt<TOperation extends AnyOperation> {
-    readonly type: 'failed';
-    readonly entry: InProgressExecutionLogEntry<TOperation>;
-    readonly error: unknown;
-    readonly failureRecorded: boolean;
-}
-
-interface CompletedHandlerAttempt<TOperation extends AnyOperation> {
-    readonly type: 'completed';
-    readonly execution: RunnerExecution<TOperation>;
-}
-
-type HandlerAttemptOutcome<TOperation extends AnyOperation> =
-    | FailedHandlerAttempt<TOperation>
-    | CompletedHandlerAttempt<TOperation>;
 
 export class DefaultRunner implements Runner {
     private readonly executionTimeout: ExecutionTimeout;

@@ -8,9 +8,3 @@ export interface GuardEvaluationRequest<TOperation extends AnyOperation> {
 
     readonly operation: TOperation;
 }
-
-export interface GuardEvaluator {
-    evaluate<TOperation extends AnyOperation>(
-        request: GuardEvaluationRequest<TOperation>,
-    ): Promise<boolean>;
-}

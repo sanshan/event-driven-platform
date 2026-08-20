@@ -11,10 +11,3 @@ export interface ExecutionTimedOut {
 export type ExecutionTimeoutResult<TResult> =
     | ExecutionCompletedBeforeTimeout<TResult>
     | ExecutionTimedOut;
-
-export interface ExecutionTimeout {
-    execute<TResult>(
-        work: () => Promise<TResult>,
-        timeoutMs: number,
-    ): Promise<ExecutionTimeoutResult<TResult>>;
-}

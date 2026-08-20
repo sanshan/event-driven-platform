@@ -1,4 +1,5 @@
-import type { ExecutionTimeout, ExecutionTimeoutResult } from './execution-timeout.js';
+import type { ExecutionTimeoutResult } from './execution-timeout-result.js';
+import type { ExecutionTimeout } from './execution-timeout.js';
 
 export class DefaultExecutionTimeout implements ExecutionTimeout {
     execute<TResult>(
