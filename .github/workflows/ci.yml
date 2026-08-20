@@ -44,20 +44,25 @@ jobs:
         id: public-packages
         shell: bash
         run: |
-          AFFECTED="$(pnpm nx show projects --affected --json)" node <<'NODE'
+          AFFECTED="$(pnpm nx show projects --affected --json)" \
+          CHANGED_FILES="$(git diff --name-only "$NX_BASE" "$NX_HEAD")" \
+          node <<'NODE'
           const fs = require('node:fs');
 
           const affected = new Set(JSON.parse(process.env.AFFECTED));
-          const publicCorePackages = [
-              '@event-driven-platform/types',
-              '@event-driven-platform/actor',
-              '@event-driven-platform/subject',
-              '@event-driven-platform/aggregate-reference',
-              '@event-driven-platform/tenant-reference',
-              '@event-driven-platform/intent',
-              '@event-driven-platform/event',
-              '@event-driven-platform/operation-result',
-              '@event-driven-platform/operation',
+          const changedFiles = (process.env.CHANGED_FILES ?? '')
+              .split('\n')
+              .filter(Boolean);
+          const publicCoreDirectories = [
+              'packages/types/',
+              'packages/actor/',
+              'packages/subject/',
+              'packages/aggregate-reference/',
+              'packages/tenant-reference/',
+              'packages/intent/',
+              'packages/event/',
+              'packages/operation-result/',
+              'packages/operation/',
           ];
           const executionPackages = [
               '@event-driven-platform/guard',
@@ -77,9 +82,13 @@ jobs:
               '@event-driven-platform/runner',
           ];
 
+          const coreChanged = publicCoreDirectories.some((directory) =>
+              changedFiles.some((file) => file.startsWith(directory)),
+          );
+
           fs.appendFileSync(
               process.env.GITHUB_OUTPUT,
-              `core_required=${publicCorePackages.some((project) => affected.has(project))}\n`,
+              `core_required=${coreChanged}\n`,
           );
           fs.appendFileSync(
               process.env.GITHUB_OUTPUT,
