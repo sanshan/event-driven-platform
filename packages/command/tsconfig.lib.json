@@ -33,6 +33,9 @@
             "path": "../subject/tsconfig.lib.json"
         },
         {
+            "path": "../operation-result/tsconfig.lib.json"
+        },
+        {
             "path": "../intent/tsconfig.lib.json"
         },
         {
