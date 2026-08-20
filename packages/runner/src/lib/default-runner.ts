@@ -10,10 +10,13 @@ import type { AnyOperation, OperationResultOf } from '@event-driven-platform/ope
 import { isRolledBackOperationRejection } from '@event-driven-platform/operation-result';
 
 import { buildRateLimitBucketKey } from './build-rate-limit-bucket-key.js';
+import { DefaultExecutionTimeout } from './default-execution-timeout.js';
 import { ExecutionAlreadyInProgressError } from './execution-already-in-progress.error.js';
 import { ExecutionGuardRejectedError } from './execution-guard-rejected.error.js';
 import { ExecutionIntentConflictError } from './execution-intent-conflict.error.js';
 import { ExecutionRateLimitRejectedError } from './execution-rate-limit-rejected.error.js';
+import { ExecutionTimedOutError } from './execution-timed-out.error.js';
+import type { ExecutionTimeout } from './execution-timeout.js';
 import { ExecutionTransitionRejectedError } from './execution-transition-rejected.error.js';
 import { GuardEvaluatorUnavailableError } from './guard-evaluator-unavailable.error.js';
 import { normalizeExecutionFailure } from './normalize-execution-failure.js';
@@ -25,11 +28,15 @@ import type { RunnerRuntime } from './runner-runtime.js';
 import type { Runner } from './runner.js';
 
 export class DefaultRunner implements Runner {
+    private readonly executionTimeout: ExecutionTimeout;
+
     constructor(
         private readonly dependencies: RunnerDependencies,
         private readonly runtime: RunnerRuntime,
         private readonly options: RunnerOptions,
-    ) {}
+    ) {
+        this.executionTimeout = dependencies.executionTimeout ?? new DefaultExecutionTimeout();
+    }
 
     async execute<TOperation extends AnyOperation>(
         command: Command<TOperation>,
@@ -90,7 +97,23 @@ export class DefaultRunner implements Runner {
             const handler = this.dependencies.operationHandlerResolver.resolve(command.operation);
 
             const result = await this.dependencies.executionTransaction.execute(async () => {
-                const operationResult = await handler.execute(command.operation);
+                const timeoutMs = command.options?.timeoutMs;
+                let operationResult: OperationResultOf<TOperation>;
+
+                if (timeoutMs === undefined) {
+                    operationResult = await handler.execute(command.operation);
+                } else {
+                    const timedExecution = await this.executionTimeout.execute(
+                        () => handler.execute(command.operation),
+                        timeoutMs,
+                    );
+
+                    if (timedExecution.type === 'timed-out') {
+                        throw new ExecutionTimedOutError(timeoutMs);
+                    }
+
+                    operationResult = timedExecution.result;
+                }
 
                 if (isRolledBackOperationRejection(operationResult)) {
                     return ExecutionTransactionOutcomes.rollback(operationResult);
@@ -129,7 +152,12 @@ export class DefaultRunner implements Runner {
                 result,
             };
         } catch (error: unknown) {
-            await this.recordExecutionFailure(entry, leaseReference, error);
+            await this.recordExecutionFailure(
+                entry,
+                leaseReference,
+                error,
+                error instanceof ExecutionTimedOutError ? 'timed-out' : 'failed',
+            );
 
             throw error;
         }
@@ -213,6 +241,7 @@ export class DefaultRunner implements Runner {
         entry: InProgressExecutionLogEntry<TOperation>,
         lease: ExecutionLeaseReference,
         error: unknown,
+        status: 'failed' | 'timed-out',
     ): Promise<void> {
         try {
             await this.dependencies.executionTransaction.execute(async () => {
@@ -220,7 +249,7 @@ export class DefaultRunner implements Runner {
                     executionId: entry.executionId,
                     attemptId: entry.latestAttempt.attemptId,
                     lease,
-                    status: 'failed',
+                    status,
                     failure: normalizeExecutionFailure(error),
                     finishedAt: this.dependencies.clock.now(),
                 });
