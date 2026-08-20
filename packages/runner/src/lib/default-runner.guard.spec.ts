@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { CommandOptions } from '@event-driven-platform/command';
 import type { ExecutionIdFactory } from '@event-driven-platform/execution';
-import type {
-    AnyExecutionLogEntry,
-    InProgressExecutionLogEntry,
-} from '@event-driven-platform/execution-log';
+import type { AnyExecutionLogEntry } from '@event-driven-platform/execution-log';
 import type {
     ClaimExecutionRequest,
     ClaimExecutionResult,
@@ -15,7 +12,10 @@ import type {
     FailExecutionRequest,
     FailExecutionResult,
 } from '@event-driven-platform/execution-log-store';
-import type { ExecutionTransaction } from '@event-driven-platform/execution-transaction';
+import type {
+    ExecutionTransaction,
+    ExecutionTransactionWork,
+} from '@event-driven-platform/execution-transaction';
 import type { AnyOperation } from '@event-driven-platform/operation';
 import type { OperationEventEnvelopeFactory } from '@event-driven-platform/operation-event-envelope-factory';
 import type { OperationHandler } from '@event-driven-platform/operation-handler';
@@ -158,7 +158,7 @@ function createGuardRunnerTestKit(includeEvaluator = true): GuardRunnerTestKit {
     };
 
     const executionTransaction: ExecutionTransaction = {
-        async execute<TResult>(work): Promise<TResult> {
+        async execute<TResult>(work: ExecutionTransactionWork<TResult>): Promise<TResult> {
             const outcome = await work();
 
             return outcome.result;
