@@ -1,11 +1,24 @@
-# rate-limit
+# @event-driven-platform/rate-limit
 
-This library was generated with [Nx](https://nx.dev).
+Defines Command-level rate-limit policy options for write execution.
 
-## Building
+## Installation
 
-Run `nx build rate-limit` to build the library.
+```bash
+pnpm add @event-driven-platform/rate-limit
+```
 
-## Running unit tests
+## API
 
-Run `nx test rate-limit` to execute the unit tests via [Vitest](https://vitest.dev/).
+- `RateLimitOptions` — rate-limit configuration carried by a Command.
+- `RateLimitScope` — supported scope contract used by rate-limit configuration.
+
+Rate-limit enforcement belongs to Runner. Consumers that enable the policy provide a `RateLimiter` implementation through Runner dependencies.
+
+## Architectural boundary
+
+This package describes policy only. Operations do not know about rate limiting and must not implement it themselves.
+
+## Related documentation
+
+See [`docs/execution-public-api.md`](../../docs/execution-public-api.md).
