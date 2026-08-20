@@ -1,10 +1,12 @@
+import type { CommandOptions } from '@event-driven-platform/command';
 import type { ExecutionFailure } from '@event-driven-platform/execution';
-import type { GuardOptions } from '@event-driven-platform/guard';
+
+type ConfiguredGuard = NonNullable<CommandOptions['guards']>[number];
 
 export class ExecutionGuardRejectedError extends Error {
     readonly executionFailure: ExecutionFailure;
 
-    constructor(readonly guard: GuardOptions) {
+    constructor(readonly guard: ConfiguredGuard) {
         const message = guard.rejectWith?.reason ?? `Guard "${guard.name}" rejected execution.`;
 
         super(message);
