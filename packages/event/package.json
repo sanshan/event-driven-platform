@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/event",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "description": "Versioned domain event contracts and identifiers for the event-driven platform.",
     "type": "module",
     "main": "./dist/index.js",
