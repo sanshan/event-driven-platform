@@ -1,7 +1,23 @@
-# subject
+# @event-driven-platform/subject
 
-This library was generated with [Nx](https://nx.dev).
+Defines the subject metadata used to identify what platform work acts on.
 
-## Running unit tests
+## Installation
 
-Run `nx test subject` to execute the unit tests via [Vitest](https://vitest.dev/).
+```bash
+pnpm add @event-driven-platform/subject
+```
+
+## Role
+
+A `Subject` identifies the business subject associated with an Operation while remaining independent of persistence and transport concerns.
+
+## API
+
+- `Subject`, `SubjectDescriptor` — subject contracts.
+- `SubjectFactory` — construction contract.
+- `DefaultSubjectFactory` — default validated factory implementation.
+
+## Related documentation
+
+See [`docs/architecture/README.md`](../../docs/architecture/README.md) for the platform architecture.
