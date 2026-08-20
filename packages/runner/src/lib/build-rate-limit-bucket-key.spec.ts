@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { CommandOptions } from '@event-driven-platform/command';
 
 import { operation } from '../../test/runner-test-kit.js';
-import { buildRateLimitBucketKey } from './build-rate-limit-bucket-key.js';
+import { buildRateLimitBucketKey } from './rate-limit/build-rate-limit-bucket-key.js';
 
 type ConfiguredRateLimit = NonNullable<CommandOptions['rateLimit']>;
 
