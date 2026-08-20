@@ -67,7 +67,10 @@ jobs:
               (file) =>
                   file === 'nx.json' ||
                   file === 'package.json' ||
+                  file === 'tools/start-local-registry.ts' ||
                   file === 'tools/package-verification/project.json' ||
+                  file === 'tools/package-verification/vitest.config.ts' ||
+                  file === 'tools/package-verification/verify-local-registry.spec.ts' ||
                   file === 'tools/package-verification/verify-packed-packages.mjs' ||
                   file.startsWith('tools/package-verification/fixture-execution/'),
           );
@@ -80,3 +83,7 @@ jobs:
       - name: Verify packed public packages
         if: steps.public-packages.outputs.required == 'true'
         run: pnpm nx run package-verification:verify
+
+      - name: Verify public packages through Verdaccio
+        if: steps.public-packages.outputs.required == 'true'
+        run: pnpm nx run package-verification:verify-registry
