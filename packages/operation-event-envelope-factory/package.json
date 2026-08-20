@@ -1,11 +1,17 @@
 {
     "name": "@event-driven-platform/operation-event-envelope-factory",
     "version": "0.0.1",
-    "private": true,
+    "description": "Factory contracts and defaults for wrapping Operation events in execution-aware envelopes.",
     "type": "module",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.js.map",
+        "dist/**/*.d.ts",
+        "dist/**/*.d.ts.map"
+    ],
     "exports": {
         "./package.json": "./package.json",
         ".": {
@@ -13,6 +19,15 @@
             "import": "./dist/index.js",
             "default": "./dist/index.js"
         }
+    },
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sanshan/event-driven-platform.git",
+        "directory": "packages/operation-event-envelope-factory"
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "dependencies": {
         "@event-driven-platform/clock": "workspace:*",
