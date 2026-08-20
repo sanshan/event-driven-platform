@@ -8,10 +8,13 @@ export interface Query<TRead extends AnyRead> {
 
     readonly context: QueryContext;
 
-    readonly options?: QueryOptions;
+    readonly options?: QueryOptions<ReadResultOf<TRead>>;
 }
 
-export type AnyQuery = Query<AnyRead>;
+export interface AnyQuery {
+    readonly read: AnyRead;
 
-export type QueryResultOf<TQuery extends AnyQuery> =
-    TQuery extends Query<infer TRead> ? ReadResultOf<TRead> : never;
+    readonly context: QueryContext;
+}
+
+export type QueryResultOf<TQuery extends AnyQuery> = ReadResultOf<TQuery['read']>;
