@@ -41,7 +41,8 @@
         "projectsRelationship": "independent",
         "version": {
             "conventionalCommits": true,
-            "adjustSemverBumpsForZeroMajorVersion": true
+            "adjustSemverBumpsForZeroMajorVersion": true,
+            "preVersionCommand": "pnpm nx run-many -t build"
         },
         "changelog": {
             "workspaceChangelog": false,
