@@ -1,11 +1,30 @@
-# read-handler
+# @event-driven-platform/read-handler
 
-This library was generated with [Nx](https://nx.dev).
+> **Status: Draft / internal.** This package is not part of the supported public package boundary.
 
-## Building
+Defines the typed source-read handler contract for the incomplete read side.
 
-Run `nx build read-handler` to build the library.
+## Role
 
-## Running unit tests
+`ReadHandler<TRead>` executes exactly one source-specific read responsibility and returns the result type associated with `TRead`.
 
-Run `nx test read-handler` to execute the unit tests via [Vitest](https://vitest.dev/).
+```ts
+interface ReadHandler<TRead extends AnyRead> {
+    execute(read: TRead): Promise<ReadResultOf<TRead>>;
+}
+```
+
+A handler is not a read orchestrator. It does not resolve other handlers, traverse caches, write caches, coordinate in-flight requests, or invoke Reader.
+
+## Architectural boundary
+
+- one handler reads from one source;
+- handlers remain typed to the Read result;
+- cache writes are outside this contract;
+- multiple handlers may exist for the same Read and are selected/composed through the resolver boundary.
+
+The repository does not yet contain a complete Reader execution pipeline. This README documents only the contract implemented by this package.
+
+## Related documentation
+
+See the **Draft read side** section of [`docs/architecture/README.md`](../../docs/architecture/README.md).
