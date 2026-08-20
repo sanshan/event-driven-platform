@@ -1,3 +1,9 @@
+## 0.0.3 (2026-08-20)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/outbox to 0.0.3
+
 ## 0.0.2 (2026-08-20)
 
 ### 🚀 Features

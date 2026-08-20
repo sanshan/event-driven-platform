@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/clock",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Clock abstraction for deterministic event-driven platform execution infrastructure.",
     "type": "module",
     "main": "./dist/index.js",

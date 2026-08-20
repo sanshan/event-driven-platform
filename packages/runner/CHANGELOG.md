@@ -1,3 +1,12 @@
+## 0.0.3 (2026-08-20)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/operation-event-envelope-factory to 0.0.3
+- Updated @event-driven-platform/outbox-store to 0.0.3
+- Updated @event-driven-platform/outbox to 0.0.3
+- Updated @event-driven-platform/clock to 0.0.3
+
 ## 0.0.2 (2026-08-20)
 
 ### 🚀 Features
