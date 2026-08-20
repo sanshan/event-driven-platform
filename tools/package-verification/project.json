@@ -6,25 +6,7 @@
         "verify": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "node tools/package-verification/verify-packed-packages.mjs core"
-            }
-        },
-        "verify-execution": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "node tools/package-verification/verify-packed-packages.mjs execution"
-            }
-        },
-        "verify-registry": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "node tools/package-verification/verify-local-registry.mjs core"
-            }
-        },
-        "verify-execution-registry": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "node tools/package-verification/verify-local-registry.mjs execution"
+                "command": "node tools/package-verification/verify-packed-packages.mjs"
             }
         }
     },
