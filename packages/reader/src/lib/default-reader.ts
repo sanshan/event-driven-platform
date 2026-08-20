@@ -35,8 +35,7 @@ export class DefaultReader implements Reader {
         query: Query<TRead>,
         cachePlan: QueryCachePlan<ReadResultOf<TRead>>,
     ): Promise<ReadResultOf<TRead>> {
-        for (let index = 0; index < cachePlan.levels.length; index += 1) {
-            const level = cachePlan.levels[index];
+        for (const [index, level] of cachePlan.levels.entries()) {
             const cacheResult = await this.readCacheLevel(level, cachePlan.key);
 
             if (cacheResult?.status !== 'hit') {
@@ -72,8 +71,8 @@ export class DefaultReader implements Reader {
         key: ReadCacheKey,
         value: TResult,
     ): Promise<void> {
-        for (let index = levels.length - 1; index >= 0; index -= 1) {
-            const writer = levels[index].writer;
+        for (const level of levels.toReversed()) {
+            const writer = level.writer;
 
             if (writer === undefined) {
                 continue;
