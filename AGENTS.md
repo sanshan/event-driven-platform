@@ -18,7 +18,7 @@ Read side:
 Read -> Query -> Reader
 ```
 
-Do not merge Operation and Command, merge Read and Query, allow Operations to publish messages or execute other Operations, allow Read Handlers to write caches, bypass Runner, or bypass Reader. Use repository documentation as the source of truth for deeper architectural semantics rather than duplicating it here.
+Do not merge Operation and Command, merge Read and Query, allow Operations to publish messages or execute other Operations, allow Read Handlers to write caches, bypass Runner, or bypass Reader. Use [`docs/architecture/README.md`](docs/architecture/README.md) as the canonical source for deeper architectural semantics rather than duplicating them here.
 
 ## Evidence Before Assumptions
 
