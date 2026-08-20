@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Query, QueryCacheLevel, ReadCacheKey } from '@event-driven-platform/query';
+import type { CacheReader, Query, ReadCacheKey } from '@event-driven-platform/query';
 import type { Read } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
@@ -25,31 +25,26 @@ function resolverWith(
 
 function deferred<TResult>() {
     let resolve!: (value: TResult) => void;
-    let reject!: (reason?: unknown) => void;
-    const promise = new Promise<TResult>((promiseResolve, promiseReject) => {
+    const promise = new Promise<TResult>((promiseResolve) => {
         resolve = promiseResolve;
-        reject = promiseReject;
     });
 
-    return { promise, resolve, reject };
+    return { promise, resolve };
 }
 
 function queryFor(
     walletId: string,
-    keyValue = `wallet:${walletId}`,
-    timeoutMs?: number,
+    options: {
+        readonly keyValue?: string;
+        readonly timeoutMs?: number;
+        readonly reader?: CacheReader<WalletView>;
+    } = {},
 ): GetWalletQuery {
     const key: ReadCacheKey = {
         namespace: 'wallet.get',
         version: '1',
         partition: 'tenant:tenant-1',
-        value: keyValue,
-    };
-    const sharedMiss: QueryCacheLevel<WalletView> = {
-        scope: 'shared',
-        reader: {
-            read: async () => ({ status: 'miss' }),
-        },
+        value: options.keyValue ?? `wallet:${walletId}`,
     };
 
     return {
@@ -66,10 +61,17 @@ function queryFor(
             correlationId: `correlation:${walletId}`,
         },
         options: {
-            ...(timeoutMs === undefined ? {} : { timeoutMs }),
+            ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
             cache: {
                 key,
-                levels: [sharedMiss],
+                levels: [
+                    {
+                        scope: 'shared',
+                        reader: options.reader ?? {
+                            read: async () => ({ status: 'miss' }),
+                        },
+                    },
+                ],
             },
         },
     };
@@ -80,34 +82,14 @@ describe('DefaultReader process-local inflight', () => {
         const source = deferred<WalletView>();
         let sharedReads = 0;
         let sourceExecutions = 0;
-        const query = queryFor('wallet-1');
-        const sharedLevel = query.options?.cache?.levels[0];
-
-        if (sharedLevel === undefined) {
-            throw new Error('test cache level is missing');
-        }
-
-        const coalescedQuery: GetWalletQuery = {
-            ...query,
-            options: {
-                ...query.options,
-                cache: {
-                    ...query.options?.cache,
-                    key: query.options!.cache!.key,
-                    levels: [
-                        {
-                            ...sharedLevel,
-                            reader: {
-                                read: async () => {
-                                    sharedReads += 1;
-                                    return { status: 'miss' };
-                                },
-                            },
-                        },
-                    ],
+        const query = queryFor('wallet-1', {
+            reader: {
+                read: async () => {
+                    sharedReads += 1;
+                    return { status: 'miss' };
                 },
             },
-        };
+        });
         const handler = {
             execute: async () => {
                 sourceExecutions += 1;
@@ -118,7 +100,7 @@ describe('DefaultReader process-local inflight', () => {
             readHandlerResolver: resolverWith({ status: 'resolved', handlers: [handler] }),
         });
 
-        const requests = Array.from({ length: 50 }, () => reader.execute(coalescedQuery));
+        const requests = Array.from({ length: 50 }, () => reader.execute(query));
 
         await Promise.resolve();
         await Promise.resolve();
@@ -218,8 +200,12 @@ describe('DefaultReader process-local inflight', () => {
             readTimeout,
         });
 
-        const short = reader.execute(queryFor('wallet-1', 'wallet:shared', 10));
-        const long = reader.execute(queryFor('wallet-1', 'wallet:shared', 1000));
+        const short = reader.execute(
+            queryFor('wallet-1', { keyValue: 'wallet:shared', timeoutMs: 10 }),
+        );
+        const long = reader.execute(
+            queryFor('wallet-1', { keyValue: 'wallet:shared', timeoutMs: 1000 }),
+        );
 
         await expect(short).rejects.toEqual(new ReadTimedOutError(10));
         expect(sourceExecutions).toBe(1);
@@ -230,10 +216,9 @@ describe('DefaultReader process-local inflight', () => {
         expect(sourceExecutions).toBe(1);
         expect(timeoutCalls).toBe(2);
 
-        await expect(reader.execute(queryFor('wallet-1', 'wallet:shared'))).resolves.toEqual({
-            id: 'wallet-1',
-            balance: 40,
-        });
+        await expect(
+            reader.execute(queryFor('wallet-1', { keyValue: 'wallet:shared' })),
+        ).resolves.toEqual({ id: 'wallet-1', balance: 40 });
         expect(sourceExecutions).toBe(2);
     });
 });
