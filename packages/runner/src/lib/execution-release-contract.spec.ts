@@ -5,15 +5,16 @@ import type { CommandOptions } from '@event-driven-platform/command';
 import type { ExecutionIdFactory } from '@event-driven-platform/execution';
 import type { ExecutionLogStore } from '@event-driven-platform/execution-log-store';
 import type { ExecutionTransaction } from '@event-driven-platform/execution-transaction';
-import type { GuardOptions } from '@event-driven-platform/guard';
 import type { OperationEventEnvelopeFactory } from '@event-driven-platform/operation-event-envelope-factory';
 import type { OperationHandlerResolver } from '@event-driven-platform/operation-handler-resolver';
 import type { OutboxRecordFactory } from '@event-driven-platform/outbox';
 import type { OutboxStore } from '@event-driven-platform/outbox-store';
-import type { RateLimitOptions } from '@event-driven-platform/rate-limit';
-import type { RetryOptions } from '@event-driven-platform/retry';
 
 import type { RunnerDependencies } from '../index.js';
+
+type GuardOption = NonNullable<CommandOptions['guards']>[number];
+type RateLimitOption = NonNullable<CommandOptions['rateLimit']>;
+type RetryOption = NonNullable<CommandOptions['retry']>;
 
 describe('Execution release contract', () => {
     it('keeps Runner composition dependencies available through package-root contracts', () => {
@@ -27,8 +28,8 @@ describe('Execution release contract', () => {
         expectTypeOf<RunnerDependencies['outboxStore']>().toEqualTypeOf<OutboxStore>();
     });
 
-    it('keeps execution policies on CommandOptions', () => {
-        const guard: GuardOptions = {
+    it('keeps execution policies on CommandOptions without expanding Runner dependencies', () => {
+        const guard: GuardOption = {
             name: 'wallet-enabled',
             params: {
                 feature: 'wallets',
@@ -39,7 +40,7 @@ describe('Execution release contract', () => {
             },
         };
 
-        const rateLimit: RateLimitOptions = {
+        const rateLimit: RateLimitOption = {
             key: 'wallet-create',
             scope: 'actor',
             limit: 10,
@@ -50,7 +51,7 @@ describe('Execution release contract', () => {
             },
         };
 
-        const retry: RetryOptions = {
+        const retry: RetryOption = {
             maxAttempts: 3,
             strategy: {
                 type: 'fixed',
