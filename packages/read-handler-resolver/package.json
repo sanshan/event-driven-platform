@@ -15,6 +15,8 @@
         }
     },
     "dependencies": {
-        "tslib": "^2.3.0"
+        "@event-driven-platform/read": "workspace:*",
+        "@event-driven-platform/read-handler": "workspace:*",
+        "tslib": "catalog:"
     }
 }
