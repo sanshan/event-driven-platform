@@ -1,57 +1,20 @@
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+    cpSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    readdirSync,
+    writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(currentDirectory, '../..');
-const fixtureSource = resolve(currentDirectory, 'fixture');
-const groupName = process.argv[2] ?? 'core';
-
-const corePackages = [
-    ['@event-driven-platform/types', 'packages/types'],
-    ['@event-driven-platform/actor', 'packages/actor'],
-    ['@event-driven-platform/subject', 'packages/subject'],
-    ['@event-driven-platform/aggregate-reference', 'packages/aggregate-reference'],
-    ['@event-driven-platform/tenant-reference', 'packages/tenant-reference'],
-    ['@event-driven-platform/intent', 'packages/intent'],
-    ['@event-driven-platform/event', 'packages/event'],
-    ['@event-driven-platform/operation-result', 'packages/operation-result'],
-    ['@event-driven-platform/operation', 'packages/operation'],
-];
-
-const executionPackages = [
-    ['@event-driven-platform/guard', 'packages/guard'],
-    ['@event-driven-platform/rate-limit', 'packages/rate-limit'],
-    ['@event-driven-platform/retry', 'packages/retry'],
-    ['@event-driven-platform/command', 'packages/command'],
-    ['@event-driven-platform/clock', 'packages/clock'],
-    ['@event-driven-platform/execution', 'packages/execution'],
-    ['@event-driven-platform/execution-log', 'packages/execution-log'],
-    ['@event-driven-platform/execution-log-store', 'packages/execution-log-store'],
-    ['@event-driven-platform/execution-transaction', 'packages/execution-transaction'],
-    ['@event-driven-platform/operation-handler', 'packages/operation-handler'],
-    ['@event-driven-platform/operation-handler-resolver', 'packages/operation-handler-resolver'],
-    [
-        '@event-driven-platform/operation-event-envelope-factory',
-        'packages/operation-event-envelope-factory',
-    ],
-    ['@event-driven-platform/outbox', 'packages/outbox'],
-    ['@event-driven-platform/outbox-store', 'packages/outbox-store'],
-    ['@event-driven-platform/runner', 'packages/runner'],
-];
-
-const packageGroups = {
-    core: corePackages,
-    execution: [...corePackages, ...executionPackages],
-};
-
-const releasePackages = packageGroups[groupName];
-
-if (!releasePackages) {
-    throw new Error(`Unknown package verification group: ${groupName}.`);
-}
+const fixtureSource = resolve(currentDirectory, 'fixture-execution');
+const packagesRoot = resolve(workspaceRoot, 'packages');
 
 function run(command, args, cwd) {
     execFileSync(command, args, {
@@ -65,31 +28,55 @@ function listTarballs(directory) {
     return new Set(readdirSync(directory).filter((entry) => entry.endsWith('.tgz')));
 }
 
+function findPublicPackages() {
+    return readdirSync(packagesRoot, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => {
+            const packageDirectory = join(packagesRoot, entry.name);
+            const manifestPath = join(packageDirectory, 'package.json');
+            const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+
+            return {
+                name: manifest.name,
+                directory: packageDirectory,
+                private: manifest.private === true,
+            };
+        })
+        .filter((entry) => !entry.private);
+}
+
+const publicPackages = findPublicPackages();
+
+if (publicPackages.length === 0) {
+    throw new Error('No public packages found for verification.');
+}
+
 const temporaryRoot = mkdtempSync(join(tmpdir(), 'event-driven-platform-packages-'));
 const artifactsDirectory = join(temporaryRoot, 'artifacts');
 const fixtureDirectory = join(temporaryRoot, 'fixture');
 
 mkdirSync(artifactsDirectory, { recursive: true });
 
-const projectNames = releasePackages.map(([name]) => name).join(',');
-
-run('pnpm', ['nx', 'run-many', '-t', 'build', '--projects', projectNames], workspaceRoot);
+run(
+    'pnpm',
+    ['nx', 'run-many', '-t', 'build', '--projects', publicPackages.map(({ name }) => name).join(',')],
+    workspaceRoot,
+);
 
 const tarballs = new Map();
 
-for (const [packageName, packageDirectory] of releasePackages) {
-    const packageRoot = resolve(workspaceRoot, packageDirectory);
+for (const { name, directory } of publicPackages) {
     const before = listTarballs(artifactsDirectory);
 
-    run('pnpm', ['pack', '--pack-destination', artifactsDirectory], packageRoot);
+    run('pnpm', ['pack', '--pack-destination', artifactsDirectory], directory);
 
     const created = [...listTarballs(artifactsDirectory)].filter((entry) => !before.has(entry));
 
     if (created.length !== 1) {
-        throw new Error(`Expected exactly one tarball for ${packageName}, received ${created.length}.`);
+        throw new Error(`Expected exactly one tarball for ${name}, received ${created.length}.`);
     }
 
-    tarballs.set(packageName, join(artifactsDirectory, created[0]));
+    tarballs.set(name, join(artifactsDirectory, created[0]));
 }
 
 cpSync(fixtureSource, fixtureDirectory, { recursive: true });
@@ -121,8 +108,8 @@ run('node', [join(fixtureDirectory, 'dist/index.js')], fixtureDirectory);
 
 const installedManifest = JSON.parse(readFileSync(join(fixtureDirectory, 'package.json'), 'utf8'));
 
-if (Object.keys(installedManifest.dependencies).length !== releasePackages.length) {
-    throw new Error('Package verification fixture does not contain the complete release set.');
+if (Object.keys(installedManifest.dependencies).length !== publicPackages.length) {
+    throw new Error('Package verification fixture does not contain every public package.');
 }
 
-console.log(`Verified packed packages for ${groupName}.`);
+console.log(`Verified ${publicPackages.length} packed public package(s).`);
