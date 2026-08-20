@@ -1,0 +1,15 @@
+storage: ../tmp/local-registry-offline/storage
+
+packages:
+  '**':
+    access: $all
+    publish: $all
+    unpublish: $all
+
+log:
+  type: stdout
+  format: pretty
+  level: warn
+
+publish:
+  allow_offline: true
