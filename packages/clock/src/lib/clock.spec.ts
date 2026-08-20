@@ -1,18 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { type Clock, SystemClock } from '../index.js';
-
-class FixedClock implements Clock {
-    constructor(private readonly value: string) {}
-
-    now(): string {
-        return this.value;
-    }
-}
+import { FixedClock, SystemClock } from '../index.js';
 
 describe('Clock', () => {
-    it('provides the current timestamp through an abstraction', () => {
-        const clock: Clock = new FixedClock('2026-07-18T10:00:00.000Z');
+    it('provides a configured timestamp through FixedClock', () => {
+        const clock = new FixedClock('2026-07-18T10:00:00.000Z');
 
         expect(clock.now()).toBe('2026-07-18T10:00:00.000Z');
     });
