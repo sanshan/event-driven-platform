@@ -1,11 +1,24 @@
-# tenant-reference
+# @event-driven-platform/tenant-reference
 
-This library was generated with [Nx](https://nx.dev).
+Defines typed tenant references for multi-tenant platform metadata.
 
-## Building
+## Installation
 
-Run `nx build tenant-reference` to build the library.
+```bash
+pnpm add @event-driven-platform/tenant-reference
+```
 
-## Running unit tests
+## Role
 
-Run `nx test tenant-reference` to execute the unit tests via [Vitest](https://vitest.dev/).
+`TenantReference` represents tenant identity as a reusable contract without coupling domain or execution code to a tenant persistence model.
+
+## API
+
+- `TenantReference`, `AnyTenantReference` — tenant reference contracts.
+- `TenantReferenceDescriptor` — construction input.
+- `TenantReferenceFactory` — factory contract.
+- `DefaultTenantReferenceFactory` — default validated factory.
+
+## Related documentation
+
+See [`docs/architecture/README.md`](../../docs/architecture/README.md).
