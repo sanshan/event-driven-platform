@@ -21,6 +21,7 @@
         "@event-driven-platform/execution-log": "workspace:*",
         "@event-driven-platform/execution-log-store": "workspace:*",
         "@event-driven-platform/execution-transaction": "workspace:*",
+        "@event-driven-platform/guard": "workspace:*",
         "@event-driven-platform/operation": "workspace:*",
         "@event-driven-platform/operation-result": "workspace:*",
         "@event-driven-platform/operation-event-envelope-factory": "workspace:*",
