@@ -57,7 +57,7 @@ pnpm add \
   @event-driven-platform/outbox-store
 ```
 
-The Execution group has its own fixed release version and `execution-v{version}` git tag namespace. Its declared dependencies remain compatible with the separately versioned public core.
+Each package has its own version under the repository's independent Nx Release configuration. Consumers rely on the dependency ranges published in package manifests rather than a shared core/Execution version.
 
 ## Runner public surface
 
@@ -109,10 +109,10 @@ A consuming repository is expected to:
 
 Operations remain unaware of retries, rate limiting, guards, timeout, persistence, messaging, and Outbox infrastructure. OperationHandlers execute one Operation against the domain transaction boundary and do not orchestrate other Operations.
 
-The repository's release verification installs the package set into an isolated project, typechecks against the installed declarations, and executes a representative ESM `Operation -> Command -> Runner` flow with guards, rate limiting, timeout, and retry enabled. This verification is intentionally independent of workspace source resolution.
+The repository's package verification installs public package artifacts into an isolated project, typechecks against the installed declarations, and executes a representative ESM `Operation -> Command -> Runner` flow with guards, rate limiting, timeout, and retry enabled. This verification is intentionally independent of workspace source resolution.
 
 ## Packages intentionally outside this release
 
 Packages unrelated to constructing or executing the write pipeline remain private. In particular, the incomplete read-side packages and any repository-specific infrastructure implementations are not made public merely because they exist in the workspace.
 
-The release boundary must not be expanded during publication or final verification without reopening the appropriate release-boundary review.
+The public boundary must not be expanded without explicit review of the relevant package contracts and runtime behavior.
