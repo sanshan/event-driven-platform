@@ -41,29 +41,72 @@ jobs:
         run: pnpm nx affected -t lint test typecheck build
 
       - name: Detect affected public packages
-        id: public-core
+        id: public-packages
         shell: bash
         run: |
-          AFFECTED="$(pnpm nx show projects --affected --json)" node <<'NODE'
+          AFFECTED="$(pnpm nx show projects --affected --json)" \
+          CHANGED_FILES="$(git diff --name-only "$NX_BASE" "$NX_HEAD")" \
+          node <<'NODE'
           const fs = require('node:fs');
 
           const affected = new Set(JSON.parse(process.env.AFFECTED));
-          const publicPackages = [
-              '@event-driven-platform/types',
-              '@event-driven-platform/actor',
-              '@event-driven-platform/subject',
-              '@event-driven-platform/aggregate-reference',
-              '@event-driven-platform/tenant-reference',
-              '@event-driven-platform/intent',
-              '@event-driven-platform/event',
-              '@event-driven-platform/operation-result',
-              '@event-driven-platform/operation',
+          const changedFiles = (process.env.CHANGED_FILES ?? '')
+              .split('\n')
+              .filter(Boolean);
+          const publicCoreDirectories = [
+              'packages/types/',
+              'packages/actor/',
+              'packages/subject/',
+              'packages/aggregate-reference/',
+              'packages/tenant-reference/',
+              'packages/intent/',
+              'packages/event/',
+              'packages/operation-result/',
+              'packages/operation/',
           ];
-          const required = publicPackages.some((project) => affected.has(project));
+          const executionPackages = [
+              '@event-driven-platform/guard',
+              '@event-driven-platform/rate-limit',
+              '@event-driven-platform/retry',
+              '@event-driven-platform/command',
+              '@event-driven-platform/clock',
+              '@event-driven-platform/execution',
+              '@event-driven-platform/execution-log',
+              '@event-driven-platform/execution-log-store',
+              '@event-driven-platform/execution-transaction',
+              '@event-driven-platform/operation-handler',
+              '@event-driven-platform/operation-handler-resolver',
+              '@event-driven-platform/operation-event-envelope-factory',
+              '@event-driven-platform/outbox',
+              '@event-driven-platform/outbox-store',
+              '@event-driven-platform/runner',
+          ];
 
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `required=${required}\n`);
+          const coreChanged = publicCoreDirectories.some((directory) =>
+              changedFiles.some((file) => file.startsWith(directory)),
+          );
+
+          fs.appendFileSync(
+              process.env.GITHUB_OUTPUT,
+              `core_required=${coreChanged}\n`,
+          );
+          fs.appendFileSync(
+              process.env.GITHUB_OUTPUT,
+              `execution_required=${executionPackages.some((project) => affected.has(project))}\n`,
+          );
           NODE
 
+      - name: Verify Execution release boundary
+        if: steps.public-packages.outputs.execution_required == 'true'
+        shell: bash
+        run: |
+          VERSION="$(node -p "require('./packages/runner/package.json').version")"
+          node tools/release/verify-release-state.mjs "$VERSION" execution
+
+      - name: Verify affected Execution package artifacts
+        if: steps.public-packages.outputs.execution_required == 'true'
+        run: pnpm nx run package-verification:verify-execution
+
       - name: Verify published public packages
-        if: steps.public-core.outputs.required == 'true'
+        if: steps.public-packages.outputs.core_required == 'true'
         run: pnpm nx run package-verification:verify-registry
