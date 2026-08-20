@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { DefaultExecutionTimeout } from './default-execution-timeout.js';
+import { DefaultExecutionTimeout } from './timeout/default-execution-timeout.js';
 
 afterEach(() => {
     vi.useRealTimers();
