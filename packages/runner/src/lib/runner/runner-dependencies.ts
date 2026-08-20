@@ -7,12 +7,25 @@ import type { OperationHandlerResolver } from '@event-driven-platform/operation-
 import type { OutboxRecordFactory } from '@event-driven-platform/outbox';
 import type { OutboxStore } from '@event-driven-platform/outbox-store';
 
+import type { GuardEvaluator } from '../guard/guard-evaluator.js';
+import type { RateLimiter } from '../rate-limit/rate-limiter.js';
+import type { RetryDelay } from '../retry/retry-delay.js';
+import type { ExecutionTimeout } from '../timeout/execution-timeout.js';
+
 export interface RunnerDependencies {
     readonly clock: Clock;
 
     readonly executionIdFactory: ExecutionIdFactory;
 
     readonly executionLogStore: ExecutionLogStore;
+
+    readonly executionTimeout?: ExecutionTimeout;
+
+    readonly guardEvaluator?: GuardEvaluator;
+
+    readonly rateLimiter?: RateLimiter;
+
+    readonly retryDelay?: RetryDelay;
 
     readonly operationHandlerResolver: OperationHandlerResolver;
 
