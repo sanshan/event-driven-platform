@@ -87,6 +87,13 @@ jobs:
           );
           NODE
 
+      - name: Verify Execution release boundary
+        if: steps.public-packages.outputs.execution_required == 'true'
+        shell: bash
+        run: |
+          VERSION="$(node -p "require('./packages/runner/package.json').version")"
+          node tools/release/verify-release-state.mjs "$VERSION" execution
+
       - name: Verify affected Execution package artifacts
         if: steps.public-packages.outputs.execution_required == 'true'
         run: pnpm nx run package-verification:verify-execution
