@@ -50,8 +50,15 @@ describe('ReadHandlerResolver', () => {
     });
 
     it('binds resolver output to the input Read type', () => {
-        type Resolution = ReturnType<ReadHandlerResolver['resolve']>;
+        const resolver: ReadHandlerResolver = {
+            resolve: <TRead extends Read<string, unknown, unknown>>(
+                _read: TRead,
+            ): ReadHandlerResolution<TRead> => ({ status: 'not-found' }),
+        };
 
-        expectTypeOf<Resolution>().toMatchTypeOf<ReadHandlerResolution<Read<string, unknown, unknown>>>();
+        const read = {} as GetWalletRead;
+        const resolution = resolver.resolve(read);
+
+        expectTypeOf(resolution).toEqualTypeOf<ReadHandlerResolution<GetWalletRead>>();
     });
 });
