@@ -59,18 +59,22 @@ The `npm-production` GitHub environment should require maintainer approval befor
 
 ### Authentication
 
-Prefer npm Trusted Publishing (OIDC). Configure each published package to trust:
+Production publishing uses npm Trusted Publishing (OIDC) only.
+
+Each published package must trust:
 
 - repository: `sanshan/event-driven-platform`;
 - workflow file: `publish.yml`;
 - environment: `npm-production`;
 - allowed action: `npm publish`.
 
-Trusted publishing requires npm CLI 11.5.1+ and Node 22.14.0+. The workflow pins versions that satisfy these requirements and grants only `contents: read` and `id-token: write`.
+The workflow grants only `contents: read` and `id-token: write`, and pins Node/npm versions compatible with npm Trusted Publishing.
 
-For the initial publication only, the packages do not yet exist on npm and therefore cannot have trusted publishers configured in advance. `NPM_ACCESS_TOKEN` may be configured as a bootstrap credential. After v0.1.0 is published, configure trusted publishing for all nine packages, verify OIDC publishing, then remove the bootstrap token.
+No long-lived npm token is required by the publish workflow. The bootstrap token used for the initial `v0.1.0` publication must be removed from the `npm-production` GitHub environment and revoked in npm after Trusted Publishing is configured for all public packages.
 
-Trusted publishing automatically provides npm provenance. `NPM_CONFIG_PROVENANCE=true` remains enabled so token-based bootstrap publishing also requests provenance.
+For maximum protection, package publishing access should require two-factor authentication and disallow bypass-2FA tokens. Trusted Publishing continues to work with this setting.
+
+Trusted Publishing automatically provides npm provenance.
 
 ### Recovery
 

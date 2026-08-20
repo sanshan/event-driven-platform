@@ -54,6 +54,3 @@ jobs:
 
       - name: Publish public core
         run: pnpm nx release publish --groups=core --access=public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
