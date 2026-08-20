@@ -7,6 +7,7 @@ import type { OperationHandlerResolver } from '@event-driven-platform/operation-
 import type { OutboxRecordFactory } from '@event-driven-platform/outbox';
 import type { OutboxStore } from '@event-driven-platform/outbox-store';
 
+import type { ExecutionTimeout } from './execution-timeout.js';
 import type { GuardEvaluator } from './guard-evaluator.js';
 import type { RateLimiter } from './rate-limiter.js';
 
@@ -16,6 +17,8 @@ export interface RunnerDependencies {
     readonly executionIdFactory: ExecutionIdFactory;
 
     readonly executionLogStore: ExecutionLogStore;
+
+    readonly executionTimeout?: ExecutionTimeout;
 
     readonly guardEvaluator?: GuardEvaluator;
 
