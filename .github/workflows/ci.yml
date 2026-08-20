@@ -69,7 +69,7 @@ jobs:
                   file === 'package.json' ||
                   file === 'tools/start-local-registry.ts' ||
                   file === 'tools/package-verification/project.json' ||
-                  file === 'tools/package-verification/vitest.config.ts' ||
+                  file === 'tools/package-verification/registry.vitest.config.ts' ||
                   file === 'tools/package-verification/verify-local-registry.spec.ts' ||
                   file === 'tools/package-verification/verify-packed-packages.mjs' ||
                   file.startsWith('tools/package-verification/fixture-execution/'),
