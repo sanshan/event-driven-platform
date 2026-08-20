@@ -12,7 +12,8 @@ Nx discovers package projects through the workspace and targets `packages/*` for
 
 - `projectsRelationship: independent`;
 - Conventional Commits for automatic version selection;
-- project-level changelogs;
+- `fallbackCurrentVersionResolver: disk` so packages without an independent release tag can transition from the version already stored in their manifest;
+- project-level changelogs with `automaticFromRef` so a package without a previous independent tag can derive its initial changelog range from git history;
 - standard Nx dependency-aware updates between packages.
 
 Public/private publication intent remains package-local in each `package.json`. Packages that are not ready for npm must keep `private: true`.
@@ -33,7 +34,7 @@ Always preview the release first:
 pnpm nx release --dry-run --skip-publish
 ```
 
-Nx determines which packages have releasable changes and calculates each version independently from Conventional Commits.
+Nx determines which projects have releasable changes and calculates each version independently from Conventional Commits.
 
 Prepare the release without publishing from the local machine:
 
@@ -50,23 +51,16 @@ git push --tags
 
 Do not manually calculate package version bumps. Do not manually maintain a list of packages to release.
 
-## First independent release
+## Transition from the fixed v0.1.0 release
 
-The repository previously used a fixed `v0.1.0` release for the initial public core, so package-specific independent release tags do not yet exist.
+The repository previously used a single fixed `v0.1.0` tag for the initial public core, so the first independent release starts without package-specific tags.
 
-For the first release after switching to independent versioning, use Nx's standard first-release mode:
+This transition is handled by normal Nx Release configuration rather than `--first-release`:
 
-```bash
-pnpm nx release --first-release --dry-run --skip-publish
-```
+- `fallbackCurrentVersionResolver: disk` uses each manifest's current version when no matching `{projectName}@{version}` tag exists;
+- `changelog.automaticFromRef: true` lets Nx derive the initial project changelog range when no previous matching package tag exists.
 
-After reviewing the Nx output, prepare it with:
-
-```bash
-pnpm nx release --first-release --skip-publish
-```
-
-This is a one-time transition. Future releases must omit `--first-release`.
+Run the same normal dry-run and release commands shown above. After the first independent release, package-specific tags become the normal version history automatically.
 
 ## Versioning
 
@@ -84,7 +78,7 @@ CI follows the Nx local-registry testing pattern.
 
 An isolated consumer then installs its declared dependencies from Verdaccio, compiles against the published declarations, and executes the representative ESM `Operation -> Command -> Runner` flow.
 
-The same verification runs on every CI execution. Nx Release remains responsible for deciding which workspace projects are publishable; the consumer fixture only declares packages that it directly imports.
+The same verification runs on every CI execution. Nx Release remains responsible for release versioning; `private: true` remains the package-level publication boundary, and the consumer fixture only declares packages that it directly imports.
 
 ## Production publishing
 
@@ -96,17 +90,17 @@ After the release commit and tags have been pushed:
 2. Run it from `main`.
 3. Approve the `npm-production` environment when required.
 
-The workflow builds package projects and runs only:
+The workflow builds package projects and runs:
 
 ```bash
 pnpm nx release publish
 ```
 
-Nx determines which versioned packages need publication and skips versions that already exist in the registry.
+Nx publishes publishable package versions prepared by the release state. Packages with `private: true` are not published.
 
 ### Authentication
 
-Production publishing uses npm Trusted Publishing (OIDC) only.
+The permanent production authentication model is npm Trusted Publishing (OIDC).
 
 Each public package must trust:
 
@@ -115,7 +109,7 @@ Each public package must trust:
 - environment: `npm-production`;
 - allowed action: `npm publish`.
 
-The workflow grants only `contents: read` and `id-token: write`. No long-lived npm token is required.
+For the one-time bootstrap release in issue #54, the same Publish workflow temporarily receives a short-lived granular npm token through `NODE_AUTH_TOKEN` so it can create packages that do not yet exist on npm. After those packages exist and have Trusted Publishing configured, the temporary token is removed from GitHub, revoked in npm, and the workflow returns to OIDC-only publishing.
 
 ### Recovery
 
