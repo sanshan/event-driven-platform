@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*.*.*'
+      - 'execution-v*.*.*'
 
 permissions:
   contents: read
@@ -11,7 +12,7 @@ permissions:
 
 jobs:
   publish:
-    name: Publish public core
+    name: Publish release group
     runs-on: ubuntu-latest
     environment: npm-production
 
@@ -40,17 +41,42 @@ jobs:
           git fetch origin main
           git merge-base --is-ancestor "$GITHUB_SHA" origin/main
 
+      - name: Resolve release group
+        id: release
+        shell: bash
+        run: |
+          case "$GITHUB_REF_NAME" in
+            execution-v*.*.*)
+              echo "group=execution" >> "$GITHUB_OUTPUT"
+              echo "version=${GITHUB_REF_NAME#execution-v}" >> "$GITHUB_OUTPUT"
+              ;;
+            v*.*.*)
+              echo "group=core" >> "$GITHUB_OUTPUT"
+              echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unsupported release tag: $GITHUB_REF_NAME" >&2
+              exit 1
+              ;;
+          esac
+
       - name: Verify release state
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          node tools/release/verify-release-state.mjs "$VERSION"
+          node tools/release/verify-release-state.mjs \
+            "${{ steps.release.outputs.version }}" \
+            "${{ steps.release.outputs.group }}"
 
-      - name: Build public core
+      - name: Build release group
         shell: bash
         run: |
-          PROJECTS="$(node -e "const fs=require('node:fs');const nx=JSON.parse(fs.readFileSync('nx.json','utf8'));process.stdout.write(nx.release.groups.core.projects.join(','))")"
+          GROUP="${{ steps.release.outputs.group }}"
+          PROJECTS="$(GROUP="$GROUP" node -e "const fs=require('node:fs');const nx=JSON.parse(fs.readFileSync('nx.json','utf8'));process.stdout.write(nx.release.groups[process.env.GROUP].projects.join(','))")"
           pnpm nx run-many -t build --projects="$PROJECTS"
 
-      - name: Publish public core
-        run: pnpm nx release publish --groups=core --access=public
+      - name: Publish release group
+        shell: bash
+        run: |
+          pnpm nx release publish \
+            --groups="${{ steps.release.outputs.group }}" \
+            --access=public
