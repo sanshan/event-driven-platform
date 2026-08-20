@@ -1,11 +1,22 @@
-# execution-transaction
+# @event-driven-platform/execution-transaction
 
-This library was generated with [Nx](https://nx.dev).
+Defines the transaction boundary Runner uses to execute domain work and persistence work atomically.
 
-## Building
+## Installation
 
-Run `nx build execution-transaction` to build the library.
+```bash
+pnpm add @event-driven-platform/execution-transaction
+```
 
-## Running unit tests
+## API
 
-Run `nx test execution-transaction` to execute the unit tests via [Vitest](https://vitest.dev/).
+- `ExecutionTransaction` — consumer-provided transaction contract.
+- `ExecutionTransactionWork` — work executed inside the transaction boundary.
+- `ExecutionTransactionOutcome` — commit/rollback outcome union.
+- `ExecutionTransactionOutcomes` and exported type guards — supported outcome construction and narrowing helpers.
+
+Consumers adapt their database/unit-of-work mechanism to this port. Runner owns when the transaction is used and how its outcome affects execution.
+
+## Related documentation
+
+See [`docs/execution-public-api.md`](../../docs/execution-public-api.md).
