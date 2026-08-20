@@ -1,11 +1,28 @@
-# execution-log-store
+# @event-driven-platform/execution-log-store
 
-This library was generated with [Nx](https://nx.dev).
+Defines the persistence port Runner uses to claim and transition durable execution-log records.
 
-## Building
+## Installation
 
-Run `nx build execution-log-store` to build the library.
+```bash
+pnpm add @event-driven-platform/execution-log-store
+```
 
-## Running unit tests
+## API
 
-Run `nx test execution-log-store` to execute the unit tests via [Vitest](https://vitest.dev/).
+`ExecutionLogStore` is the consumer-implemented persistence contract. Its operations cover:
+
+- claiming an execution by intent;
+- completing an in-progress execution;
+- recording a failed attempt;
+- reporting typed transition outcomes such as completed-existing, already-in-progress, intent-conflict, lease-conflict, and invalid-state cases.
+
+Consumers provide an adapter implementing this contract; Runner interprets the typed transition results.
+
+## Architectural boundary
+
+Persistence adapters implement storage semantics only. They do not reproduce Runner orchestration, retries, guards, rate limiting, or Outbox behavior.
+
+## Related documentation
+
+See [`docs/execution-public-api.md`](../../docs/execution-public-api.md).

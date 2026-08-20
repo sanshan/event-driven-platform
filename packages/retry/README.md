@@ -1,11 +1,24 @@
-# retry
+# @event-driven-platform/retry
 
-This library was generated with [Nx](https://nx.dev).
+Defines retry policies that a Command can request from Runner.
 
-## Building
+## Installation
 
-Run `nx build retry` to build the library.
+```bash
+pnpm add @event-driven-platform/retry
+```
 
-## Running unit tests
+## API
 
-Run `nx test retry` to execute the unit tests via [Vitest](https://vitest.dev/).
+- `RetryOptions` — Command retry configuration.
+- `RetryStrategy` — retry strategy contract.
+- `FixedRetryStrategy` and `ExponentialRetryStrategy` — supported strategy shapes.
+- `DefaultFixedRetryStrategyFactory` and `DefaultExponentialRetryStrategyFactory` — default factories.
+
+## Role
+
+Retry is execution policy, not Operation behavior. Runner interprets retry options and controls attempts; Operations and handlers do not implement retry loops.
+
+## Related documentation
+
+See [`docs/execution-public-api.md`](../../docs/execution-public-api.md).

@@ -1,11 +1,24 @@
-# aggregate-reference
+# @event-driven-platform/aggregate-reference
 
-This library was generated with [Nx](https://nx.dev).
+Defines typed references to domain aggregates without exposing aggregate implementations.
 
-## Building
+## Installation
 
-Run `nx build aggregate-reference` to build the library.
+```bash
+pnpm add @event-driven-platform/aggregate-reference
+```
 
-## Running unit tests
+## Role
 
-Run `nx test aggregate-reference` to execute the unit tests via [Vitest](https://vitest.dev/).
+`AggregateReference` carries stable aggregate identity across platform contracts while keeping execution primitives independent of domain aggregate classes and persistence models.
+
+## API
+
+- `AggregateReference`, `AnyAggregateReference` — reference contracts.
+- `AggregateReferenceDescriptor` — serializable construction input.
+- `AggregateReferenceFactory` — construction contract.
+- `DefaultAggregateReferenceFactory` — default validated factory.
+
+## Related documentation
+
+See [`docs/architecture/README.md`](../../docs/architecture/README.md).

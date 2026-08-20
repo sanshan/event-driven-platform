@@ -1,11 +1,25 @@
-# query
+# @event-driven-platform/query
 
-This library was generated with [Nx](https://nx.dev).
+> **Status: Draft / internal.** This package is not part of the supported public package boundary.
 
-## Building
+Defines the current `Query` transport contract for the incomplete read side.
 
-Run `nx build query` to build the library.
+## Role
 
-## Running unit tests
+`Query` carries a `Read` together with read-execution options and context. It is intentionally separate from the business-oriented Read itself.
 
-Run `nx test query` to execute the unit tests via [Vitest](https://vitest.dev/).
+The repository does not yet contain a complete read execution engine. This README describes only the Query abstraction that exists today and does not document planned behavior.
+
+## API
+
+- `Query` — current read transport contract.
+- `QueryOptions` — current execution-option contract.
+- `QueryContext` — current query context contract.
+
+## Architectural boundary
+
+Query contains no business logic and must not collapse into Read.
+
+## Related documentation
+
+See the **Draft read side** section of [`docs/architecture/README.md`](../../docs/architecture/README.md).

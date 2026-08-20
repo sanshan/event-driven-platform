@@ -1,11 +1,28 @@
-# operation-result
+# @event-driven-platform/operation-result
 
-This library was generated with [Nx](https://nx.dev).
+Defines typed outcomes produced by Operation handlers and persisted by the execution pipeline.
 
-## Building
+## Installation
 
-Run `nx build operation-result` to build the library.
+```bash
+pnpm add @event-driven-platform/operation-result
+```
 
-## Running unit tests
+## API
 
-Run `nx test operation-result` to execute the unit tests via [Vitest](https://vitest.dev/).
+`OperationResult` represents either a successful result or a rejection. The package provides:
+
+- `OperationResults` factories for constructing supported outcomes;
+- `SuccessfulOperationResult`;
+- committed and rolled-back rejection contracts;
+- type guards such as `isSuccessfulOperationResult` and `isOperationRejection`.
+
+Prefer the exported factories and type guards over recreating result shapes manually.
+
+## Role
+
+Operation handlers return these outcomes. Runner interprets and persists them as part of execution; an Operation itself does not persist its result.
+
+## Related documentation
+
+See [`docs/architecture/README.md`](../../docs/architecture/README.md).
