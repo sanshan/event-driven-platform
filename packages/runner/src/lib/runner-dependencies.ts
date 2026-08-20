@@ -10,6 +10,7 @@ import type { OutboxStore } from '@event-driven-platform/outbox-store';
 import type { ExecutionTimeout } from './execution-timeout.js';
 import type { GuardEvaluator } from './guard-evaluator.js';
 import type { RateLimiter } from './rate-limiter.js';
+import type { RetryDelay } from './retry-delay.js';
 
 export interface RunnerDependencies {
     readonly clock: Clock;
@@ -23,6 +24,8 @@ export interface RunnerDependencies {
     readonly guardEvaluator?: GuardEvaluator;
 
     readonly rateLimiter?: RateLimiter;
+
+    readonly retryDelay?: RetryDelay;
 
     readonly operationHandlerResolver: OperationHandlerResolver;
 

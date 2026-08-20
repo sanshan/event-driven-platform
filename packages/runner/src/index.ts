@@ -29,7 +29,11 @@ export type {
     RateLimitRejected,
 } from './lib/rate-limiter.js';
 
+export type { RetryDelay } from './lib/retry-delay.js';
+
 export { DefaultExecutionTimeout } from './lib/default-execution-timeout.js';
+
+export { DefaultRetryDelay } from './lib/default-retry-delay.js';
 
 export { ExecutionAlreadyInProgressError } from './lib/execution-already-in-progress.error.js';
 
