@@ -1,7 +1,15 @@
-# scoped-execution-transaction
+# @event-driven-platform/scoped-execution-transaction
 
-This library was generated with [Nx](https://nx.dev).
+> **Status: Internal.** This package is not part of the supported public package boundary.
 
-## Running unit tests
+Provides the repository's scoped implementation layer for running `ExecutionTransaction` work with an active transaction scope.
 
-Run `nx test scoped-execution-transaction` to execute the unit tests via [Vitest](https://vitest.dev/).
+## Responsibility
+
+`ScopedExecutionTransaction` bridges the public execution-transaction contract to the repository's transaction-scope abstractions. It executes work inside the scope and translates commit/rollback behavior into the execution transaction outcome model.
+
+`RollbackExecutionTransactionSignal` is an internal control signal used by this implementation.
+
+## Boundary
+
+This package is implementation infrastructure. External consumers should depend on `@event-driven-platform/execution-transaction` and provide/adapt their own implementation rather than treating this package as a supported public API.
