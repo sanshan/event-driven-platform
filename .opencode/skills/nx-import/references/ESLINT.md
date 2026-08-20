@@ -45,7 +45,7 @@ This causes `Parsing error: ESLint was configured to run on X using parserOption
 
 **Fix**: Add `ignorePatterns` to the `.eslintrc.*` config:
 
-```text
+```json
 // .eslintrc.json
 {
     "ignorePatterns": ["dist/**"]
@@ -89,7 +89,7 @@ The same applies to `eslint.config.js` in a CJS project (no `"type": "module"`) 
 
 **Fix**: Upgrade `typescript-eslint` from `^7.0.0` to `^8.0.0` directly in the affected workspace package's `package.json`. The `tseslint.config()` API and `tseslint.configs.recommended` are identical between v7 and v8 — no config changes needed.
 
-```text
+```json
 // packages/my-package/package.json
 {
     "devDependencies": {
