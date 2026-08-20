@@ -5,7 +5,6 @@ import { join, resolve } from 'node:path';
 
 import { describe, it } from 'vitest';
 
-const workspaceRoot = resolve(import.meta.dirname, '../..');
 const fixtureSource = resolve(import.meta.dirname, 'fixture-execution');
 const registry = 'http://localhost:4873';
 const e2eVersion = '0.0.0-e2e';
@@ -55,6 +54,9 @@ describe('published workspace packages', () => {
                     dependencies: Object.fromEntries(
                         consumerDependencies.map((packageName) => [packageName, e2eVersion]),
                     ),
+                    devDependencies: {
+                        typescript: '~5.9.2',
+                    },
                 },
                 null,
                 4,
@@ -66,11 +68,7 @@ describe('published workspace packages', () => {
             ['install', '--frozen-lockfile=false', `--registry=${registry}`],
             fixtureDirectory,
         );
-        run(
-            'pnpm',
-            ['exec', 'tsc', '--project', join(fixtureDirectory, 'tsconfig.json')],
-            workspaceRoot,
-        );
+        run('pnpm', ['exec', 'tsc', '--project', 'tsconfig.json'], fixtureDirectory);
         run('node', [join(fixtureDirectory, 'dist/index.js')], fixtureDirectory);
     });
 });
