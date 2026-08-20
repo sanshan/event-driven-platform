@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,7 @@ import { releasePublish, releaseVersion } from 'nx/release';
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(currentDirectory, '../..');
 const registry = 'http://localhost:4873';
+const publicRegistry = 'https://registry.npmjs.org';
 const version = '0.1.0';
 const groupName = process.argv[2] ?? 'core';
 
@@ -48,11 +49,13 @@ const verificationGroups = {
         fixture: 'fixture',
         releasePackages: corePackages,
         installPackages: corePackages,
+        baselinePackages: [],
     },
     execution: {
         fixture: 'fixture-execution',
         releasePackages: executionPackages,
         installPackages: [...corePackages, ...executionPackages],
+        baselinePackages: corePackages,
     },
 };
 
@@ -72,8 +75,63 @@ function run(command, args, cwd) {
     });
 }
 
+function runAndCapture(command, args, cwd) {
+    return execFileSync(command, args, {
+        cwd,
+        env: process.env,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'inherit'],
+    });
+}
+
+function seedPublishedBaseline(packages, destination) {
+    if (packages.length === 0) {
+        return;
+    }
+
+    mkdirSync(destination, { recursive: true });
+
+    for (const packageName of packages) {
+        const packOutput = runAndCapture(
+            'npm',
+            [
+                'pack',
+                `${packageName}@${version}`,
+                '--json',
+                '--pack-destination',
+                destination,
+                `--registry=${publicRegistry}`,
+            ],
+            workspaceRoot,
+        );
+        const packResult = JSON.parse(packOutput);
+        const filename = packResult.at(0)?.filename;
+
+        if (!filename) {
+            throw new Error(`npm pack did not return a tarball for ${packageName}@${version}.`);
+        }
+
+        run(
+            'npm',
+            [
+                'publish',
+                join(destination, filename),
+                `--registry=${registry}`,
+                '--access=public',
+                '--tag=baseline',
+            ],
+            workspaceRoot,
+        );
+    }
+
+    console.log(
+        `Seeded ${packages.length} already-published core package(s) into the local registry.`,
+    );
+}
+
 const temporaryRoot = mkdtempSync(join(tmpdir(), 'event-driven-platform-registry-'));
 const fixtureDirectory = join(temporaryRoot, 'fixture');
+const baselineDirectory = join(temporaryRoot, 'baseline');
 
 let stopLocalRegistry;
 
@@ -83,6 +141,8 @@ try {
         storage: './tmp/local-registry/storage',
         verbose: false,
     });
+
+    seedPublishedBaseline(verification.baselinePackages, baselineDirectory);
 
     run(
         'pnpm',
