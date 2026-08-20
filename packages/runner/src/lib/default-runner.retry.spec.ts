@@ -11,7 +11,10 @@ import type {
     FailExecutionRequest,
     FailExecutionResult,
 } from '@event-driven-platform/execution-log-store';
-import type { ExecutionTransaction } from '@event-driven-platform/execution-transaction';
+import type {
+    ExecutionTransaction,
+    ExecutionTransactionWork,
+} from '@event-driven-platform/execution-transaction';
 import type { AnyOperation } from '@event-driven-platform/operation';
 import type { OperationEventEnvelopeFactory } from '@event-driven-platform/operation-event-envelope-factory';
 import type { OperationHandler } from '@event-driven-platform/operation-handler';
@@ -22,6 +25,7 @@ import type { OutboxStore } from '@event-driven-platform/outbox-store';
 import {
     createRunner,
     type ExecutionTimeout,
+    type ExecutionTimeoutResult,
     type GuardEvaluator,
     type RateLimiter,
     type RetryDelay,
@@ -186,7 +190,7 @@ function createRetryTestKit(options?: {
     const rateLimitCalls = { count: 0 };
 
     const executionTransaction: ExecutionTransaction = {
-        async execute<TResult>(work): Promise<TResult> {
+        async execute<TResult>(work: ExecutionTransactionWork<TResult>): Promise<TResult> {
             const outcome = await work();
             return outcome.result;
         },
@@ -265,9 +269,7 @@ function createRetryTestKit(options?: {
     };
 }
 
-function retryCommand(maxAttempts: number, strategy?: CreateWalletCommand['options'] extends infer T ? never : never): CreateWalletCommand {
-    void strategy;
-
+function retryCommand(maxAttempts: number): CreateWalletCommand {
     return {
         ...command,
         options: {
@@ -418,7 +420,9 @@ describe('DefaultRunner retry orchestration', () => {
     it('retries a timed-out handler attempt and records the first attempt as timed-out', async () => {
         let timeoutInvocation = 0;
         const executionTimeout: ExecutionTimeout = {
-            async execute<TResult>(work) {
+            async execute<TResult>(
+                work: () => Promise<TResult>,
+            ): Promise<ExecutionTimeoutResult<TResult>> {
                 timeoutInvocation += 1;
 
                 if (timeoutInvocation === 1) {
