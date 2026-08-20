@@ -159,19 +159,35 @@ export class DefaultReader implements Reader {
     private async executeSource<TRead extends AnyRead>(
         query: Query<TRead>,
     ): Promise<ReadResultOf<TRead>> {
-        return this.awaitWithQueryTimeout(
-            this.executeSourceWithoutTimeout(query),
-            query.options?.timeoutMs,
-        );
+        const work = this.resolveSourceWork(query);
+        const timeoutMs = query.options?.timeoutMs;
+
+        if (timeoutMs === undefined) {
+            return work();
+        }
+
+        const timedExecution = await this.readTimeout.execute(work, timeoutMs);
+
+        if (timedExecution.type === 'timed-out') {
+            throw new ReadTimedOutError(timeoutMs);
+        }
+
+        return timedExecution.result;
     }
 
-    private async executeSourceWithoutTimeout<TRead extends AnyRead>(
+    private executeSourceWithoutTimeout<TRead extends AnyRead>(
         query: Query<TRead>,
     ): Promise<ReadResultOf<TRead>> {
+        return this.resolveSourceWork(query)();
+    }
+
+    private resolveSourceWork<TRead extends AnyRead>(
+        query: Query<TRead>,
+    ): () => Promise<ReadResultOf<TRead>> {
         const resolution = this.dependencies.readHandlerResolver.resolve(query.read);
         const handler = this.resolveHandler(resolution);
 
-        return handler.execute(query.read);
+        return () => handler.execute(query.read);
     }
 
     private async awaitWithQueryTimeout<TResult>(
