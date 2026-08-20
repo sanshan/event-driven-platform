@@ -7,10 +7,13 @@ import type {
 } from '@event-driven-platform/execution-log-store';
 import { ExecutionTransactionOutcomes } from '@event-driven-platform/execution-transaction';
 import type { AnyOperation, OperationResultOf } from '@event-driven-platform/operation';
+import type { OperationHandler } from '@event-driven-platform/operation-handler';
 import { isRolledBackOperationRejection } from '@event-driven-platform/operation-result';
 
 import { buildRateLimitBucketKey } from './build-rate-limit-bucket-key.js';
+import { calculateRetryDelay } from './calculate-retry-delay.js';
 import { DefaultExecutionTimeout } from './default-execution-timeout.js';
+import { DefaultRetryDelay } from './default-retry-delay.js';
 import { ExecutionAlreadyInProgressError } from './execution-already-in-progress.error.js';
 import { ExecutionGuardRejectedError } from './execution-guard-rejected.error.js';
 import { ExecutionIntentConflictError } from './execution-intent-conflict.error.js';
@@ -21,14 +24,33 @@ import { ExecutionTransitionRejectedError } from './execution-transition-rejecte
 import { GuardEvaluatorUnavailableError } from './guard-evaluator-unavailable.error.js';
 import { normalizeExecutionFailure } from './normalize-execution-failure.js';
 import { RateLimiterUnavailableError } from './rate-limiter-unavailable.error.js';
+import type { RetryDelay } from './retry-delay.js';
 import type { RunnerDependencies } from './runner-dependencies.js';
 import type { RunnerExecution } from './runner-execution.js';
 import type { RunnerOptions } from './runner-options.js';
 import type { RunnerRuntime } from './runner-runtime.js';
 import type { Runner } from './runner.js';
 
+interface FailedHandlerAttempt<TOperation extends AnyOperation> {
+    readonly type: 'failed';
+    readonly entry: InProgressExecutionLogEntry<TOperation>;
+    readonly error: unknown;
+    readonly failureRecorded: boolean;
+}
+
+interface CompletedHandlerAttempt<TOperation extends AnyOperation> {
+    readonly type: 'completed';
+    readonly execution: RunnerExecution<TOperation>;
+}
+
+type HandlerAttemptOutcome<TOperation extends AnyOperation> =
+    | FailedHandlerAttempt<TOperation>
+    | CompletedHandlerAttempt<TOperation>;
+
 export class DefaultRunner implements Runner {
     private readonly executionTimeout: ExecutionTimeout;
+
+    private readonly retryDelay: RetryDelay;
 
     constructor(
         private readonly dependencies: RunnerDependencies,
@@ -36,6 +58,7 @@ export class DefaultRunner implements Runner {
         private readonly options: RunnerOptions,
     ) {
         this.executionTimeout = dependencies.executionTimeout ?? new DefaultExecutionTimeout();
+        this.retryDelay = dependencies.retryDelay ?? new DefaultRetryDelay();
     }
 
     async execute<TOperation extends AnyOperation>(
@@ -53,14 +76,7 @@ export class DefaultRunner implements Runner {
             command.operation.intent.id,
         );
 
-        const claim = await this.dependencies.executionLogStore.claim({
-            executionId,
-            operation: command.operation,
-            correlationId: command.context.correlationId,
-            leaseOwnerId: this.runtime.leaseOwnerId,
-            leaseDurationMs: this.options.leaseDurationMs,
-            requestedAt: this.dependencies.clock.now(),
-        });
+        const claim = await this.claimExecution(command, executionId);
 
         switch (claim.type) {
             case 'completed':
@@ -81,39 +97,116 @@ export class DefaultRunner implements Runner {
         }
     }
 
+    private claimExecution<TOperation extends AnyOperation>(
+        command: Command<TOperation>,
+        executionId: InProgressExecutionLogEntry<TOperation>['executionId'],
+    ) {
+        return this.dependencies.executionLogStore.claim({
+            executionId,
+            operation: command.operation,
+            correlationId: command.context.correlationId,
+            leaseOwnerId: this.runtime.leaseOwnerId,
+            leaseDurationMs: this.options.leaseDurationMs,
+            requestedAt: this.dependencies.clock.now(),
+        });
+    }
+
     private async executeClaimed<TOperation extends AnyOperation>(
         command: Command<TOperation>,
         entry: InProgressExecutionLogEntry<TOperation>,
     ): Promise<RunnerExecution<TOperation>> {
-        const leaseReference: ExecutionLeaseReference = {
-            ownerId: entry.lease.ownerId,
-            version: entry.lease.version,
-        };
+        const leaseReference = this.getLeaseReference(entry);
 
         try {
             await this.evaluateGuards(command);
             await this.enforceRateLimit(command);
+        } catch (error: unknown) {
+            await this.recordExecutionFailure(entry, leaseReference, error, 'failed');
 
-            const handler = this.dependencies.operationHandlerResolver.resolve(command.operation);
+            throw error;
+        }
 
+        let handler: OperationHandler<TOperation>;
+
+        try {
+            handler = this.dependencies.operationHandlerResolver.resolve(command.operation);
+        } catch (error: unknown) {
+            await this.recordExecutionFailure(entry, leaseReference, error, 'failed');
+
+            throw error;
+        }
+
+        return this.executeHandlerAttempts(command, handler, entry);
+    }
+
+    private async executeHandlerAttempts<TOperation extends AnyOperation>(
+        command: Command<TOperation>,
+        handler: OperationHandler<TOperation>,
+        initialEntry: InProgressExecutionLogEntry<TOperation>,
+    ): Promise<RunnerExecution<TOperation>> {
+        let entry = initialEntry;
+        let handlerAttemptNumber = 1;
+
+        while (true) {
+            const outcome = await this.executeHandlerAttempt(command, handler, entry);
+
+            if (outcome.type === 'completed') {
+                return outcome.execution;
+            }
+
+            const retry = command.options?.retry;
+            const failure = normalizeExecutionFailure(outcome.error);
+            const canRetry =
+                outcome.failureRecorded &&
+                retry !== undefined &&
+                failure.retryable &&
+                handlerAttemptNumber < retry.maxAttempts;
+
+            if (!canRetry) {
+                throw outcome.error;
+            }
+
+            const retryNumber = handlerAttemptNumber;
+            const delayMs = calculateRetryDelay(retry.strategy, retryNumber);
+
+            if (delayMs > 0) {
+                await this.retryDelay.wait(delayMs);
+            }
+
+            const claim = await this.claimExecution(command, entry.executionId);
+
+            switch (claim.type) {
+                case 'completed':
+                    return {
+                        executionId: claim.entry.executionId,
+                        resultSource: 'stored',
+                        result: claim.entry.result,
+                    };
+
+                case 'already-in-progress':
+                    throw new ExecutionAlreadyInProgressError(claim.entry.executionId);
+
+                case 'intent-conflict':
+                    throw new ExecutionIntentConflictError(claim.entry.executionId);
+
+                case 'claimed':
+                    entry = claim.entry;
+                    handlerAttemptNumber += 1;
+                    break;
+            }
+        }
+    }
+
+    private async executeHandlerAttempt<TOperation extends AnyOperation>(
+        command: Command<TOperation>,
+        handler: OperationHandler<TOperation>,
+        entry: InProgressExecutionLogEntry<TOperation>,
+    ): Promise<HandlerAttemptOutcome<TOperation>> {
+        const leaseReference = this.getLeaseReference(entry);
+
+        try {
             const result = await this.dependencies.executionTransaction.execute(async () => {
-                const timeoutMs = command.options?.timeoutMs;
-                let operationResult: OperationResultOf<TOperation>;
-
-                if (timeoutMs === undefined) {
-                    operationResult = await handler.execute(command.operation);
-                } else {
-                    const timedExecution = await this.executionTimeout.execute(
-                        () => handler.execute(command.operation),
-                        timeoutMs,
-                    );
-
-                    if (timedExecution.type === 'timed-out') {
-                        throw new ExecutionTimedOutError(timeoutMs);
-                    }
-
-                    operationResult = timedExecution.result;
-                }
+                const operationResult = await this.executeHandlerWithTimeout(command, handler);
 
                 if (isRolledBackOperationRejection(operationResult)) {
                     return ExecutionTransactionOutcomes.rollback(operationResult);
@@ -147,20 +240,59 @@ export class DefaultRunner implements Runner {
             }
 
             return {
-                executionId: entry.executionId,
-                resultSource: 'executed',
-                result,
+                type: 'completed',
+                execution: {
+                    executionId: entry.executionId,
+                    resultSource: 'executed',
+                    result,
+                },
             };
         } catch (error: unknown) {
-            await this.recordExecutionFailure(
+            const failureRecorded = await this.recordExecutionFailure(
                 entry,
                 leaseReference,
                 error,
                 error instanceof ExecutionTimedOutError ? 'timed-out' : 'failed',
             );
 
-            throw error;
+            return {
+                type: 'failed',
+                entry,
+                error,
+                failureRecorded,
+            };
         }
+    }
+
+    private async executeHandlerWithTimeout<TOperation extends AnyOperation>(
+        command: Command<TOperation>,
+        handler: OperationHandler<TOperation>,
+    ): Promise<OperationResultOf<TOperation>> {
+        const timeoutMs = command.options?.timeoutMs;
+
+        if (timeoutMs === undefined) {
+            return handler.execute(command.operation);
+        }
+
+        const timedExecution = await this.executionTimeout.execute(
+            () => handler.execute(command.operation),
+            timeoutMs,
+        );
+
+        if (timedExecution.type === 'timed-out') {
+            throw new ExecutionTimedOutError(timeoutMs);
+        }
+
+        return timedExecution.result;
+    }
+
+    private getLeaseReference<TOperation extends AnyOperation>(
+        entry: InProgressExecutionLogEntry<TOperation>,
+    ): ExecutionLeaseReference {
+        return {
+            ownerId: entry.lease.ownerId,
+            version: entry.lease.version,
+        };
     }
 
     private async evaluateGuards<TOperation extends AnyOperation>(
@@ -242,7 +374,7 @@ export class DefaultRunner implements Runner {
         lease: ExecutionLeaseReference,
         error: unknown,
         status: 'failed' | 'timed-out',
-    ): Promise<void> {
+    ): Promise<boolean> {
         try {
             await this.dependencies.executionTransaction.execute(async () => {
                 const failureResult = await this.dependencies.executionLogStore.fail<TOperation>({
@@ -258,6 +390,8 @@ export class DefaultRunner implements Runner {
 
                 return ExecutionTransactionOutcomes.commit(undefined);
             });
+
+            return true;
         } catch {
             /*
              * Failure recording must not replace the original
@@ -266,6 +400,7 @@ export class DefaultRunner implements Runner {
              * The active lease will eventually expire and allow
              * another Runner to reclaim the execution.
              */
+            return false;
         }
     }
 
