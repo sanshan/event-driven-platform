@@ -1,11 +1,21 @@
-# operation-handler-resolver
+# @event-driven-platform/operation-handler-resolver
 
-This library was generated with [Nx](https://nx.dev).
+Defines the application integration port Runner uses to resolve the handler for an Operation.
 
-## Building
+## Installation
 
-Run `nx build operation-handler-resolver` to build the library.
+```bash
+pnpm add @event-driven-platform/operation-handler-resolver
+```
 
-## Running unit tests
+## API
 
-Run `nx test operation-handler-resolver` to execute the unit tests via [Vitest](https://vitest.dev/).
+`OperationHandlerResolver` resolves the `OperationHandler` responsible for a concrete Operation. Applications implement this port using their composition mechanism or dependency-injection container.
+
+## Architectural boundary
+
+Resolution maps Operations to handlers; it does not execute Operations or own execution policy. Runner remains the only execution engine.
+
+## Related documentation
+
+See [`docs/execution-public-api.md`](../../docs/execution-public-api.md).
