@@ -1,11 +1,21 @@
-# outbox
+# @event-driven-platform/outbox
 
-This library was generated with [Nx](https://nx.dev).
+Defines the durable Outbox record model used to persist event envelopes as part of write execution.
 
-## Building
+## Installation
 
-Run `nx build outbox` to build the library.
+```bash
+pnpm add @event-driven-platform/outbox
+```
 
-## Running unit tests
+## API
 
-Run `nx test outbox` to execute the unit tests via [Vitest](https://vitest.dev/).
+The package provides `OutboxRecord`, `OutboxRecordId`, the `OutboxRecordFactory` contract, and `DefaultOutboxRecordFactory` for constructing records from event envelopes.
+
+## Role
+
+Runner persists Outbox records in the execution transaction. Publishing those records to messaging infrastructure is outside Operations and outside this package.
+
+## Related documentation
+
+See [`docs/architecture/README.md`](../../docs/architecture/README.md).
