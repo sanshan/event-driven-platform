@@ -1,11 +1,24 @@
-# event
+# @event-driven-platform/event
 
-This library was generated with [Nx](https://nx.dev).
+Defines domain event contracts and the event envelope used to carry execution metadata with emitted events.
 
-## Building
+## Installation
 
-Run `nx build event` to build the library.
+```bash
+pnpm add @event-driven-platform/event
+```
 
-## Running unit tests
+## API
 
-Run `nx test event` to execute the unit tests via [Vitest](https://vitest.dev/).
+- `Event`, `AnyEvent` — domain event contracts.
+- `EventId` and `DefaultEventIdFactory` — deterministic event identity contracts and default factory.
+- `EventEnvelope`, `AnyEventEnvelope` — event plus metadata envelope.
+- `EventActor` and `EventSubject` — envelope metadata contracts.
+
+## Role
+
+Operations may produce events as part of their result. Operations do not publish them. Runner persists event envelopes to the Outbox through the execution pipeline.
+
+## Related documentation
+
+See [`docs/architecture/README.md`](../../docs/architecture/README.md).
