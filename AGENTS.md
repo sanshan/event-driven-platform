@@ -8,17 +8,15 @@ Before modifying any file, check the target directory and its ancestor directori
 
 This repository is a reusable platform for distributed event-driven systems. Architectural clarity, explicit boundaries, composability, determinism, observability, and testability are preferred over framework convenience or local shortcuts.
 
-Preserve the intentional execution pipelines:
+Preserve the implemented write-side execution pipeline:
 
 ```text
-Write side:
 Operation -> Command -> Runner
-
-Read side:
-Read -> Query -> Reader
 ```
 
-Do not merge Operation and Command, merge Read and Query, allow Operations to publish messages or execute other Operations, allow Read Handlers to write caches, bypass Runner, or bypass Reader. Use [`docs/architecture/README.md`](docs/architecture/README.md) as the canonical source for deeper architectural semantics rather than duplicating them here.
+The read side is currently draft and incomplete. The repository currently defines separate `Read` and `Query` contracts, but it does not yet contain a complete read execution pipeline comparable to the write side. Do not invent or assume a `Reader`, read-handler pipeline, cache traversal, cache population mechanism, or other absent read-side component as current architecture.
+
+Do not merge Operation and Command, merge Read and Query, allow Operations to publish messages or execute other Operations, or bypass Runner. Use [`docs/architecture/README.md`](docs/architecture/README.md) as the canonical source for deeper architectural semantics and current maturity status rather than duplicating or extrapolating architecture here.
 
 ## Evidence Before Assumptions
 
