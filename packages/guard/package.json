@@ -15,6 +15,7 @@
         }
     },
     "dependencies": {
+        "@event-driven-platform/operation": "workspace:*",
         "tslib": "^2.3.0"
     }
 }
