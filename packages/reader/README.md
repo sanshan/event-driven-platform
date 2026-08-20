@@ -51,15 +51,29 @@ Cache IO is fail-open in this stage of the Reader pipeline:
 
 Observability for degraded cache reads/writes belongs to the later Reader observability task; the current failure policy is deterministic but intentionally does not add metrics/tracing yet.
 
+## Process-local in-flight coalescing
+
+Cached Queries use their deterministic `ReadCacheKey` as the process-local single-flight identity.
+
+Reader first checks the leading `local` cache levels normally. After those levels miss, only one local leader for that key continues into shared cache traversal and source execution. Followers in the same Reader process await the leader's in-flight Promise directly rather than repeating the downstream path.
+
+The local leader re-checks the leading local levels after acquiring the flight. This preserves the double-check invariant for work that may have been satisfied while requests were racing to become leader.
+
+Flights are removed immediately after the underlying downstream Promise settles, whether it succeeds or fails. There is no durable execution state, lease, fencing token, Redis dependency, or cross-process guarantee in this mechanism.
+
+Different keys use independent flights and remain concurrent.
+
 ## Timeout
 
-`QueryOptions.timeoutMs` currently bounds source-handler execution through the `ReadTimeout` capability. The default implementation reports `ReadTimedOutError` when that timeout expires.
+For a no-cache Query, `QueryOptions.timeoutMs` continues to bound source-handler execution through the `ReadTimeout` capability.
 
-The current Query contract does not carry an abort signal, so cancellation propagation is not introduced by this package yet. Cache IO/wait budget integration belongs to later pipeline work.
+For a cached Query that joins process-local in-flight work, each caller applies its own timeout while awaiting the shared downstream Promise. A short-timeout follower can therefore time out without cancelling or failing the leader or longer-lived followers. The underlying flight remains active until its downstream work settles, preventing a timed-out caller from creating duplicate work while the original request is still running.
+
+The current Query contract does not carry an abort signal, so explicit cancellation propagation is not introduced yet. Distributed wait budgeting and full end-to-end timeout budgeting remain later read-pipeline work.
 
 ## Current boundary
 
-Process-local single-flight, distributed coordination, concrete InMemory/Redis adapters, TTL policy and full observability are not implemented here and remain separate later tasks in the read-pipeline Epic.
+Distributed coordination, concrete InMemory/Redis adapters, TTL policy and full observability are not implemented here and remain separate later tasks in the read-pipeline Epic.
 
 Reader contains orchestration only; it does not add business logic and it does not mutate Read or Query.
 
