@@ -1,11 +1,23 @@
-# read
+# @event-driven-platform/read
 
-This library was generated with [Nx](https://nx.dev).
+> **Status: Draft / internal.** This package is not part of the supported public package boundary.
 
-## Building
+Defines the business-oriented `Read` contract for the incomplete read side of the platform.
 
-Run `nx build read` to build the library.
+## Role
 
-## Running unit tests
+A Read describes an intent to obtain data and carries business-facing read metadata/parameters. It is intentionally separate from `Query`, which carries read execution concerns.
 
-Run `nx test read` to execute the unit tests via [Vitest](https://vitest.dev/).
+The read execution pipeline is not complete in the current repository. This README documents only the implemented `Read` contract and does not imply a future execution API.
+
+## API
+
+`Read` is the package's current exported contract, including its type-level association with the expected result.
+
+## Architectural boundary
+
+Reads remain business-oriented and must not acquire cache, storage, or infrastructure responsibilities.
+
+## Related documentation
+
+See the **Draft read side** section of [`docs/architecture/README.md`](../../docs/architecture/README.md).
