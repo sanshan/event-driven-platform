@@ -443,6 +443,27 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  packages/read-handler:
+    dependencies:
+      '@event-driven-platform/read':
+        specifier: workspace:*
+        version: link:../read
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+
+  packages/read-handler-resolver:
+    dependencies:
+      '@event-driven-platform/read':
+        specifier: workspace:*
+        version: link:../read
+      '@event-driven-platform/read-handler':
+        specifier: workspace:*
+        version: link:../read-handler
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+
   packages/repository-knowledge-framework/dist/lib/specification/object-types: {}
 
   packages/retry:

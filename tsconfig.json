@@ -94,6 +94,12 @@
         },
         {
             "path": "./packages/runner"
+        },
+        {
+            "path": "./packages/read-handler"
+        },
+        {
+            "path": "./packages/read-handler-resolver"
         }
     ]
 }
