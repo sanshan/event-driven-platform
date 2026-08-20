@@ -1,4 +1,4 @@
-import type { Query } from '@event-driven-platform/query';
+import type { Query, QueryCacheLevel, QueryCachePlan, ReadCacheKey } from '@event-driven-platform/query';
 import type { AnyRead, ReadResultOf } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
@@ -22,10 +22,73 @@ export class DefaultReader implements Reader {
     }
 
     async execute<TRead extends AnyRead>(query: Query<TRead>): Promise<ReadResultOf<TRead>> {
-        if (query.options?.cache !== undefined) {
-            throw new Error('Cached Query execution is not implemented yet.');
+        const cachePlan = query.options?.cache;
+
+        if (cachePlan === undefined) {
+            return this.executeSource(query);
         }
 
+        return this.executeCached(query, cachePlan);
+    }
+
+    private async executeCached<TRead extends AnyRead>(
+        query: Query<TRead>,
+        cachePlan: QueryCachePlan<ReadResultOf<TRead>>,
+    ): Promise<ReadResultOf<TRead>> {
+        for (const [index, level] of cachePlan.levels.entries()) {
+            const cacheResult = await this.readCacheLevel(level, cachePlan.key);
+
+            if (cacheResult?.status !== 'hit') {
+                continue;
+            }
+
+            await this.populateLevels(
+                cachePlan.levels.slice(0, index),
+                cachePlan.key,
+                cacheResult.value,
+            );
+
+            return cacheResult.value;
+        }
+
+        const sourceResult = await this.executeSource(query);
+
+        await this.populateLevels(cachePlan.levels, cachePlan.key, sourceResult);
+
+        return sourceResult;
+    }
+
+    private async readCacheLevel<TResult>(level: QueryCacheLevel<TResult>, key: ReadCacheKey) {
+        try {
+            return await level.reader.read(key);
+        } catch {
+            return undefined;
+        }
+    }
+
+    private async populateLevels<TResult>(
+        levels: readonly QueryCacheLevel<TResult>[],
+        key: ReadCacheKey,
+        value: TResult,
+    ): Promise<void> {
+        for (const level of [...levels].reverse()) {
+            const writer = level.writer;
+
+            if (writer === undefined) {
+                continue;
+            }
+
+            try {
+                await writer.write(key, value);
+            } catch {
+                // Cache population is an optimization and must not replace a successful read result.
+            }
+        }
+    }
+
+    private async executeSource<TRead extends AnyRead>(
+        query: Query<TRead>,
+    ): Promise<ReadResultOf<TRead>> {
         const resolution = this.dependencies.readHandlerResolver.resolve(query.read);
         const handler = this.resolveHandler(resolution);
         const timeoutMs = query.options?.timeoutMs;
