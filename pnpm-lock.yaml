@@ -454,6 +454,9 @@ importers:
 
   packages/read-execution-coordinator-redis:
     dependencies:
+      '@event-driven-platform/read-execution-coordinator':
+        specifier: workspace:*
+        version: link:../read-execution-coordinator
       redis:
         specifier: ^6.2.1
         version: 6.2.1
