@@ -41,6 +41,16 @@ jobs:
         run: pnpm nx run-many -t build --projects='packages/*'
 
       - name: Publish packages
-        run: pnpm nx release publish --parallel=1
+        shell: bash
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          mapfile -t projects < <(pnpm nx show projects --with-target=nx-release-publish)
+
+          for project in "${projects[@]}"; do
+            echo "Publishing ${project}"
+            pnpm nx release publish --projects="${project}" --parallel=1
+            sleep 5
+          done
