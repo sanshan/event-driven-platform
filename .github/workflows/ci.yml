@@ -55,7 +55,13 @@ jobs:
             echo "reader=false" >> "$GITHUB_OUTPUT"
           fi
 
-          if grep -Eq '^@event-driven-platform/(read-execution-coordinator-redis|reader)$' <<< "$affected"; then
+          if grep -Fxq '@event-driven-platform/read-cache-redis' <<< "$affected"; then
+            echo "cache=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "cache=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if grep -Eq '^@event-driven-platform/(read-execution-coordinator-redis|reader|read-cache-redis)$' <<< "$affected"; then
             echo "required=true" >> "$GITHUB_OUTPUT"
           else
             echo "required=false" >> "$GITHUB_OUTPUT"
@@ -94,6 +100,12 @@ jobs:
         env:
           READ_COORDINATOR_REDIS_URL: redis://127.0.0.1:6379
         run: pnpm nx run @event-driven-platform/reader:test:integration
+
+      - name: Verify Redis cache integration
+        if: steps.redis-integration.outputs.cache == 'true'
+        env:
+          READ_CACHE_REDIS_URL: redis://127.0.0.1:6379
+        run: pnpm nx run @event-driven-platform/read-cache-redis:test:integration
 
       - name: Stop Redis integration service
         if: always() && steps.redis-integration.outputs.required == 'true'
