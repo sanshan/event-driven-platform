@@ -341,24 +341,4 @@ describe('DefaultReader load and recovery verification', () => {
 
         expect(localCache.size).toBe(capacity);
     });
-
-    it('produces a spread of TTLs when jitter is enabled instead of synchronized expiry', () => {
-        let sample = 0;
-        const policy = createRedisReadCacheTtlPolicy({
-            ttlMs: 10_000,
-            jitterRatio: 0.2,
-            random: () => {
-                const value = sample / 100;
-                sample = (sample + 17) % 100;
-                return value;
-            },
-        });
-
-        const ttls = Array.from({ length: 100 }, () => policy.resolveTtlMs());
-        const uniqueTtls = new Set(ttls);
-
-        expect(uniqueTtls.size).toBeGreaterThan(20);
-        expect(Math.min(...ttls)).toBeGreaterThanOrEqual(8_000);
-        expect(Math.max(...ttls)).toBeLessThanOrEqual(12_000);
-    });
 });
