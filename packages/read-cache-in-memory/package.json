@@ -1,11 +1,17 @@
 {
     "name": "@event-driven-platform/read-cache-in-memory",
     "version": "0.0.1",
-    "private": true,
+    "description": "Bounded in-memory Read cache adapter for the event-driven platform.",
     "type": "module",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.js.map",
+        "dist/**/*.d.ts",
+        "dist/**/*.d.ts.map"
+    ],
     "exports": {
         "./package.json": "./package.json",
         ".": {
@@ -13,6 +19,15 @@
             "import": "./dist/index.js",
             "default": "./dist/index.js"
         }
+    },
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sanshan/event-driven-platform.git",
+        "directory": "packages/read-cache-in-memory"
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "dependencies": {
         "@event-driven-platform/query": "workspace:*",
