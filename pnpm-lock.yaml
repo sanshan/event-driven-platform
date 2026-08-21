@@ -454,6 +454,9 @@ importers:
 
   packages/read-execution-coordinator-redis:
     dependencies:
+      '@event-driven-platform/query':
+        specifier: workspace:*
+        version: link:../query
       '@event-driven-platform/read-execution-coordinator':
         specifier: workspace:*
         version: link:../read-execution-coordinator
