@@ -13,6 +13,16 @@ import type {
 import type { ReadCacheKey } from '@event-driven-platform/query';
 import type { RedisClientType } from 'redis';
 
+const claimScript = `
+if redis.call('EXISTS', KEYS[1]) == 1 then
+  return {0}
+end
+local version = redis.call('INCR', KEYS[2])
+local lease = cjson.encode({ARGV[1], version})
+redis.call('PSETEX', KEYS[1], ARGV[2], lease)
+return {1, version}
+`;
+
 const renewScript = `
 local current = redis.call('GET', KEYS[1])
 if current ~= ARGV[1] then
@@ -39,7 +49,6 @@ export interface RedisReadExecutionCoordinatorOptions {
 export class RedisReadExecutionCoordinator implements ReadExecutionCoordinator {
     private readonly keyPrefix: string;
     private readonly subscriber: RedisClientType;
-    private versionCounter = 0;
 
     constructor(
         private readonly client: RedisClientType,
@@ -63,18 +72,23 @@ export class RedisReadExecutionCoordinator implements ReadExecutionCoordinator {
 
     async claim(request: ClaimReadExecutionRequest): Promise<ClaimReadExecutionResult> {
         try {
-            const lease = this.createLease(request.ownerId);
-            const value = this.serializeLease(lease);
-            const result = await this.client.set(this.leaseKey(request.key), value, {
-                NX: true,
-                PX: request.leaseDurationMs,
+            const result = await this.client.eval(claimScript, {
+                keys: [this.leaseKey(request.key), this.versionKey(request.key)],
+                arguments: [request.ownerId, String(request.leaseDurationMs)],
             });
+            const [acquired, version] = result as [number, number?];
 
-            if (result !== 'OK') {
+            if (Number(acquired) !== 1 || version === undefined) {
                 return { status: 'already-in-progress' };
             }
 
-            return { status: 'acquired', lease };
+            return {
+                status: 'acquired',
+                lease: {
+                    ownerId: request.ownerId,
+                    version: Number(version),
+                },
+            };
         } catch (error) {
             return this.unavailable(error);
         }
@@ -96,7 +110,7 @@ export class RedisReadExecutionCoordinator implements ReadExecutionCoordinator {
                 return { status: 'released' };
             }
 
-            return await this.waitForRelease(channel, request);
+            return await this.waitForRelease(channel, leaseKey, request);
         } catch (error) {
             return this.unavailable(error);
         }
@@ -136,6 +150,7 @@ export class RedisReadExecutionCoordinator implements ReadExecutionCoordinator {
 
     private async waitForRelease(
         channel: string,
+        leaseKey: string,
         request: WaitForReadExecutionRequest,
     ): Promise<WaitForReadExecutionResult> {
         return new Promise((resolve) => {
@@ -159,19 +174,26 @@ export class RedisReadExecutionCoordinator implements ReadExecutionCoordinator {
 
             request.signal?.addEventListener('abort', onAbort, { once: true });
 
-            void this.subscriber.subscribe(channel, onMessage).catch((error: unknown) => {
-                finish(this.unavailable(error));
-            });
+            void this.subscriber
+                .subscribe(channel, onMessage)
+                .then(async () => {
+                    const exists = await this.client.exists(leaseKey);
+                    if (exists === 0) {
+                        finish({ status: 'released' });
+                    }
+                })
+                .catch((error: unknown) => {
+                    finish(this.unavailable(error));
+                });
         });
-    }
-
-    private createLease(ownerId: string): ReadExecutionLeaseReference {
-        this.versionCounter += 1;
-        return { ownerId, version: this.versionCounter };
     }
 
     private leaseKey(key: ReadCacheKey): string {
         return `${this.keyPrefix}:lease:${this.identity(key)}`;
+    }
+
+    private versionKey(key: ReadCacheKey): string {
+        return `${this.keyPrefix}:version:${this.identity(key)}`;
     }
 
     private channelKey(key: ReadCacheKey): string {
