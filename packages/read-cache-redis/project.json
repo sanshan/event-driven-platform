@@ -7,8 +7,12 @@
     "// targets": "to see all targets run: nx show project @event-driven-platform/read-cache-redis --web",
     "targets": {
         "test:integration": {
+            "executor": "nx:run-commands",
             "cache": false,
-            "command": "vitest run --config vitest.integration.config.mts"
+            "options": {
+                "command": "vitest run --config vitest.integration.config.mts",
+                "cwd": "packages/read-cache-redis"
+            }
         }
     }
 }
