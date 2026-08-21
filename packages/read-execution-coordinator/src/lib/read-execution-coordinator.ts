@@ -18,7 +18,6 @@ export type ClaimReadExecutionResult =
       }
     | {
           readonly status: 'already-in-progress';
-          readonly leaseExpiresAt: string;
       }
     | {
           readonly status: 'unavailable';
