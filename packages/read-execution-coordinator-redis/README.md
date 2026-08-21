@@ -1,11 +1,73 @@
-# read-execution-coordinator-redis
+# @event-driven-platform/read-execution-coordinator-redis
 
-This library was generated with [Nx](https://nx.dev).
+> **Status: Draft / internal.** This package is not yet part of the supported public package boundary.
 
-## Building
+Redis implementation of `@event-driven-platform/read-execution-coordinator`.
 
-Run `nx build read-execution-coordinator-redis` to build the library.
+## Role
 
-## Running unit tests
+This package implements transient cross-instance read-execution ownership. It does not execute Reads, transport read results, write application caches, or persist durable read execution history.
 
-Run `nx test read-execution-coordinator-redis` to execute the unit tests via [Vitest](https://vitest.dev/).
+## Ownership model
+
+Each effective `ReadCacheKey` maps to:
+
+- a lease key with bounded Redis TTL;
+- a monotonic Redis-backed ownership generation counter;
+- a release notification channel used only to wake followers.
+
+Claim is atomic in Redis. If no active lease exists, Redis increments the generation and installs the lease with `PSETEX` in one Lua script. The returned lease reference contains the caller `ownerId` and Redis-issued generation.
+
+Renewal and release use atomic compare-and-mutate Lua scripts. Both compare the complete serialized lease reference before extending or deleting the lease. A stale owner therefore cannot renew or delete a lease created by a later generation.
+
+Generation counters intentionally outlive individual lease TTLs so a reclaimed lease receives a strictly newer generation. They contain no read result or business data.
+
+## Follower waiting
+
+Followers use Redis Pub/Sub rather than busy polling. The adapter owns one duplicated subscriber connection, because node-redis subscriptions require a dedicated connection under RESP2.
+
+The wait algorithm performs a cache-independent double check around subscription:
+
+```text
+lease EXISTS?
+-> if absent: released
+-> subscribe release channel
+-> lease EXISTS again
+-> if absent: released
+-> otherwise await release notification / timeout / cancellation
+```
+
+The second existence check closes the lost-wakeup race where release happens while the subscription is being established.
+
+Release publishes only after an ownership-checked delete succeeds. A stale owner cannot wake followers by releasing another owner's lease.
+
+Lease expiry itself does not publish. A follower whose wait budget expires returns `timed-out`; Reader integration decides when to re-check shared cache and re-contend. This package does not perform Reader orchestration.
+
+## Availability semantics
+
+Redis/client/script failures are translated to the coordinator contract's explicit `unavailable` outcome. This package does not choose Reader's fail-open/fail-closed policy.
+
+## Lifecycle
+
+The command Redis client is supplied by the consumer and remains consumer-owned. `RedisReadExecutionCoordinator` creates one duplicated subscriber connection internally:
+
+- `connect()` connects the subscriber;
+- `wait()` also connects it lazily if needed;
+- `close()` closes only the internally owned subscriber connection.
+
+## Integration tests
+
+Real Redis integration tests are enabled when `READ_COORDINATOR_REDIS_URL` is defined. They use multiple independent Redis clients/coordinator instances and cover contention, renewal, expiry/reclaim, stale release, follower wake-up and timeout.
+
+Example:
+
+```bash
+READ_COORDINATOR_REDIS_URL=redis://localhost:6379 \
+  pnpm nx test @event-driven-platform/read-execution-coordinator-redis
+```
+
+Without that environment variable, the real-Redis suite is skipped so ordinary unit/type/build validation does not require an externally running Redis instance. CI or release verification that claims Redis integration coverage must run the suite with a real Redis service.
+
+## Current boundary
+
+Reader integration, shared-cache rendezvous behavior, Redis cache adapters, InMemory cache adapters, full observability, load/chaos verification and release-readiness remain separate Epic #72 tasks.
