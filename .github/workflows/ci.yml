@@ -107,9 +107,16 @@ jobs:
           READ_CACHE_REDIS_URL: redis://127.0.0.1:6379
         run: pnpm nx run @event-driven-platform/read-cache-redis:test:integration
 
+      - name: Verify packages through Verdaccio with Redis read composition
+        if: steps.redis-integration.outputs.required == 'true'
+        env:
+          READ_PACKAGE_VERIFICATION_REDIS_URL: redis://127.0.0.1:6379
+        run: pnpm nx run package-verification:verify-registry
+
+      - name: Verify packages through Verdaccio
+        if: steps.redis-integration.outputs.required != 'true'
+        run: pnpm nx run package-verification:verify-registry
+
       - name: Stop Redis integration service
         if: always() && steps.redis-integration.outputs.required == 'true'
         run: docker rm --force read-coordinator-redis || true
-
-      - name: Verify packages through Verdaccio
-        run: pnpm nx run package-verification:verify-registry
