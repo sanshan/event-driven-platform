@@ -55,7 +55,7 @@ Packages are independently versioned through Nx Release. Consumers rely on publi
 
 ### `@event-driven-platform/read`
 
-Defines the reusable business-oriented `Read` contract and its result typing. A Read contains actor, subject, and read parameters. It does not contain cache, timeout, storage, Redis, or other execution infrastructure.
+Defines the reusable business-oriented `Read` contract and its result typing. A Read contains its name, actor, read parameters, and a type-only association with the expected result. It does not contain cache, timeout, storage, Redis, or other execution infrastructure.
 
 ### `@event-driven-platform/query`
 
