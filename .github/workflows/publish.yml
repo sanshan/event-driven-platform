@@ -51,6 +51,25 @@ jobs:
 
           for project in "${projects[@]}"; do
             echo "Publishing ${project}"
-            pnpm nx release publish --projects="${project}" --parallel=1
-            sleep 5
+
+            published=false
+            for attempt in 1 2 3 4; do
+              if pnpm nx release publish --projects="${project}" --parallel=1; then
+                published=true
+                break
+              fi
+
+              if [ "${attempt}" -lt 4 ]; then
+                delay=$((60 * 2 ** (attempt - 1)))
+                echo "Publish attempt ${attempt} failed for ${project}; retrying in ${delay}s"
+                sleep "${delay}"
+              fi
+            done
+
+            if [ "${published}" != true ]; then
+              echo "Failed to publish ${project} after 4 attempts"
+              exit 1
+            fi
+
+            sleep 20
           done
