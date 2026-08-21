@@ -73,7 +73,7 @@ export class RedisReadExecutionCoordinator implements ReadExecutionCoordinator {
     async claim(request: ClaimReadExecutionRequest): Promise<ClaimReadExecutionResult> {
         try {
             const result = await this.client.eval(claimScript, {
-                keys: [this.leaseKey(request.key), this.versionKey(request.key)],
+                keys: [this.leaseKey(request.key), this.generationKey()],
                 arguments: [request.ownerId, String(request.leaseDurationMs)],
             });
             const [acquired, version] = result as [number, number?];
@@ -192,8 +192,8 @@ export class RedisReadExecutionCoordinator implements ReadExecutionCoordinator {
         return `${this.keyPrefix}:lease:${this.identity(key)}`;
     }
 
-    private versionKey(key: ReadCacheKey): string {
-        return `${this.keyPrefix}:version:${this.identity(key)}`;
+    private generationKey(): string {
+        return `${this.keyPrefix}:generation`;
     }
 
     private channelKey(key: ReadCacheKey): string {
