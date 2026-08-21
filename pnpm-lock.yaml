@@ -496,12 +496,22 @@ importers:
       '@event-driven-platform/read':
         specifier: workspace:*
         version: link:../read
+      '@event-driven-platform/read-execution-coordinator':
+        specifier: workspace:*
+        version: link:../read-execution-coordinator
       '@event-driven-platform/read-handler-resolver':
         specifier: workspace:*
         version: link:../read-handler-resolver
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/read-execution-coordinator-redis':
+        specifier: workspace:*
+        version: link:../read-execution-coordinator-redis
+      redis:
+        specifier: ^6.2.1
+        version: 6.2.1
 
   packages/repository-knowledge-framework/dist/lib/specification/object-types: {}
 
