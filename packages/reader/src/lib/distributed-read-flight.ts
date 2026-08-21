@@ -56,10 +56,6 @@ export class DistributedReadFlight {
             throw new ReadExecutionCoordinatorUnavailableError(wait.reason);
         }
 
-        if (wait.status === 'cancelled') {
-            return undefined;
-        }
-
         return request.readShared();
     }
 
@@ -70,6 +66,14 @@ export class DistributedReadFlight {
         let leaseState: 'owned' | 'lost' | 'unavailable' = 'owned';
         let unavailableReason: string | undefined;
         let stopped = false;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const intervalMs = Math.max(1, Math.floor(request.leaseDurationMs / 2));
+
+        const scheduleRenewal = (): void => {
+            timer = setTimeout(() => {
+                void renew();
+            }, intervalMs);
+        };
 
         const renew = async (): Promise<void> => {
             if (stopped || leaseState !== 'owned') {
@@ -90,13 +94,15 @@ export class DistributedReadFlight {
             if (result.status === 'unavailable') {
                 leaseState = 'unavailable';
                 unavailableReason = result.reason;
+                return;
+            }
+
+            if (!stopped) {
+                scheduleRenewal();
             }
         };
 
-        const intervalMs = Math.max(1, Math.floor(request.leaseDurationMs / 2));
-        const timer = setInterval(() => {
-            void renew();
-        }, intervalMs);
+        scheduleRenewal();
 
         try {
             const sharedResult = await request.readShared();
@@ -106,33 +112,34 @@ export class DistributedReadFlight {
 
             const sourceResult = await request.executeSource();
 
-            if (leaseState === 'lost') {
-                throw new ReadExecutionOwnershipLostError();
-            }
-
-            if (leaseState === 'unavailable') {
-                throw new ReadExecutionCoordinatorUnavailableError(
-                    unavailableReason ?? 'lease renewal failed',
-                );
-            }
+            this.assertOwnership(leaseState, unavailableReason);
 
             await request.publishSourceResult(sourceResult);
 
-            if (leaseState === 'lost') {
-                throw new ReadExecutionOwnershipLostError();
-            }
-
-            if (leaseState === 'unavailable') {
-                throw new ReadExecutionCoordinatorUnavailableError(
-                    unavailableReason ?? 'lease renewal failed',
-                );
-            }
+            this.assertOwnership(leaseState, unavailableReason);
 
             return sourceResult;
         } finally {
             stopped = true;
-            clearInterval(timer);
+            if (timer !== undefined) {
+                clearTimeout(timer);
+            }
             await this.coordinator.release({ key: request.key, lease });
+        }
+    }
+
+    private assertOwnership(
+        leaseState: 'owned' | 'lost' | 'unavailable',
+        unavailableReason: string | undefined,
+    ): void {
+        if (leaseState === 'lost') {
+            throw new ReadExecutionOwnershipLostError();
+        }
+
+        if (leaseState === 'unavailable') {
+            throw new ReadExecutionCoordinatorUnavailableError(
+                unavailableReason ?? 'lease renewal failed',
+            );
         }
     }
 }
