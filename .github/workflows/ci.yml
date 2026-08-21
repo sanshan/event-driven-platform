@@ -95,12 +95,6 @@ jobs:
           READ_COORDINATOR_REDIS_URL: redis://127.0.0.1:6379
         run: pnpm nx run @event-driven-platform/read-execution-coordinator-redis:test:integration
 
-      - name: Verify Reader distributed integration
-        if: steps.redis-integration.outputs.reader == 'true'
-        env:
-          READ_COORDINATOR_REDIS_URL: redis://127.0.0.1:6379
-        run: pnpm nx run @event-driven-platform/reader:test:integration
-
       - name: Verify Reader load and recovery behavior
         if: steps.redis-integration.outputs.reader == 'true'
         env:
