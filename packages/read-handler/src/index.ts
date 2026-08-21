@@ -1,1 +1,1 @@
-export * from './lib/read-handler.js';
+export type { ReadHandler } from './lib/read-handler.js';
