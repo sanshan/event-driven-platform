@@ -76,9 +76,22 @@ CI follows the Nx local-registry testing pattern.
 
 `tools/start-local-registry.ts` starts Verdaccio through `@nx/js:verdaccio`, versions the current workspace with the temporary `0.0.0-e2e` version using `releaseVersion()`, and publishes it with `releasePublish()`. The setup does not maintain package lists, release groups, production-version knowledge, or registry baselines.
 
-An isolated consumer then installs its declared dependencies from Verdaccio, compiles against the published declarations, and executes the representative ESM `Operation -> Command -> Runner` flow.
+An isolated consumer then installs its declared dependencies from Verdaccio and compiles against the published declarations with no workspace path resolution.
 
-The same verification runs on every CI execution. Nx Release remains responsible for release versioning; `private: true` remains the package-level publication boundary, and the consumer fixture only declares packages that it directly imports.
+The consumer executes representative ESM flows for both supported execution pipelines:
+
+```text
+Operation -> Command -> Runner
+Read      -> Query   -> Reader
+```
+
+The Read fixture always verifies no-cache execution and bounded process-local InMemory caching. When the affected Read graph requires Redis-backed verification, CI keeps the existing temporary Redis service alive for the package-verification step and supplies `READ_PACKAGE_VERIFICATION_REDIS_URL`; the same external consumer then verifies shared Redis L2 plus distributed read-execution coordination across two Reader instances.
+
+Redis-backed external verification is conditional so unrelated changes do not pay the Redis service overhead. The Verdaccio/local-registry mechanism itself remains the same Nx Release path used by the write fixture.
+
+The verification proves that package manifests, root exports, declaration files, transitive package dependencies, ESM runtime artifacts, and representative consumer composition work outside the monorepo.
+
+Nx Release remains responsible for release versioning; `private: true` remains the package-level publication boundary, and the consumer fixture only declares packages that it directly imports.
 
 ## Production publishing
 

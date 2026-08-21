@@ -7,4 +7,5 @@ export type { QueryCacheLevel } from './lib/query-cache-level.js';
 export type { QueryCacheLevels, QueryCachePlan } from './lib/query-cache-plan.js';
 export type { QueryContext } from './lib/query-context.js';
 export type { QueryOptions } from './lib/query-options.js';
+export type { QueryReadCoordinationOptions } from './lib/query-read-coordination-options.js';
 export type { ReadCacheKey } from './lib/read-cache-key.js';

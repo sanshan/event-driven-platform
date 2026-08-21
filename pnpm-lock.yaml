@@ -443,6 +443,103 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  packages/read-cache-in-memory:
+    dependencies:
+      '@event-driven-platform/query':
+        specifier: workspace:*
+        version: link:../query
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
+  packages/read-cache-redis:
+    dependencies:
+      '@event-driven-platform/query':
+        specifier: workspace:*
+        version: link:../query
+      redis:
+        specifier: ^6.2.1
+        version: 6.2.1
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
+  packages/read-execution-coordinator:
+    dependencies:
+      '@event-driven-platform/query':
+        specifier: workspace:*
+        version: link:../query
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
+  packages/read-execution-coordinator-redis:
+    dependencies:
+      '@event-driven-platform/query':
+        specifier: workspace:*
+        version: link:../query
+      '@event-driven-platform/read-execution-coordinator':
+        specifier: workspace:*
+        version: link:../read-execution-coordinator
+      redis:
+        specifier: ^6.2.1
+        version: 6.2.1
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
+  packages/read-handler:
+    dependencies:
+      '@event-driven-platform/read':
+        specifier: workspace:*
+        version: link:../read
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+
+  packages/read-handler-resolver:
+    dependencies:
+      '@event-driven-platform/read':
+        specifier: workspace:*
+        version: link:../read
+      '@event-driven-platform/read-handler':
+        specifier: workspace:*
+        version: link:../read-handler
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+
+  packages/reader:
+    dependencies:
+      '@event-driven-platform/query':
+        specifier: workspace:*
+        version: link:../query
+      '@event-driven-platform/read':
+        specifier: workspace:*
+        version: link:../read
+      '@event-driven-platform/read-execution-coordinator':
+        specifier: workspace:*
+        version: link:../read-execution-coordinator
+      '@event-driven-platform/read-handler-resolver':
+        specifier: workspace:*
+        version: link:../read-handler-resolver
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+    devDependencies:
+      '@event-driven-platform/read-cache-in-memory':
+        specifier: workspace:*
+        version: link:../read-cache-in-memory
+      '@event-driven-platform/read-cache-redis':
+        specifier: workspace:*
+        version: link:../read-cache-redis
+      '@event-driven-platform/read-execution-coordinator-redis':
+        specifier: workspace:*
+        version: link:../read-execution-coordinator-redis
+      redis:
+        specifier: ^6.2.1
+        version: 6.2.1
+
   packages/repository-knowledge-framework/dist/lib/specification/object-types: {}
 
   packages/retry:
@@ -1418,6 +1515,42 @@ packages:
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
 
+  '@redis/bloom@6.2.1':
+    resolution: {integrity: sha512-huQgNLaCIZfQ9SeLn4q9124uOUd8HbZDYHwwUzNcRgHqCHiHKl2dDxMqJCeWh8cMqZAoWuHR8XnWbDMIf+o7ag==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.2.1
+
+  '@redis/client@6.2.1':
+    resolution: {integrity: sha512-LzxBY7SIBvvJiyCgcaJZZakE3fJrZZ++i24+EDW9fKpCl68D35uJcKFpZZwCfOoG9WZTbyZlMzMeM0gtOAMU9Q==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@node-rs/xxhash': ^1.1.0
+      '@opentelemetry/api': '>=1 <2'
+    peerDependenciesMeta:
+      '@node-rs/xxhash':
+        optional: true
+      '@opentelemetry/api':
+        optional: true
+
+  '@redis/json@6.2.1':
+    resolution: {integrity: sha512-AFIUJ8Gj0DaaSBHYuSt8+O0oYWM+50OK1c0OmodB7XERIA8+BbyV3O4v76f9iccWasd1/7qjfZTpuzexUaZtrQ==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.2.1
+
+  '@redis/search@6.2.1':
+    resolution: {integrity: sha512-2vfOAOyYFE7UUw3sBBlkqqruBtOUS4HRY5MtW4hp83llrwvtrTE4r22CEqXddlV+54zkLxBE4nmsIJ/dpezQrQ==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.2.1
+
+  '@redis/time-series@6.2.1':
+    resolution: {integrity: sha512-kiYniph04dJOole+L359B6C9E+jYS2uDP7hca6Onj0xF38ZIpyxARO0Iq0W4ZRn1e8Q6vqW00QFZVSMRA/2Ijw==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.2.1
+
   '@rolldown/binding-android-arm64@1.1.5':
     resolution: {integrity: sha512-lZg8fqIv2v7FF237bwMgzGZEJvGL79/s5knJ/i6FmsGF4XXlzccZ4jb+TrFIxtSSxFtIpdsgrPZeMk1I9AFcyQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -2017,6 +2150,10 @@ packages:
   clone@1.0.4:
     resolution: {integrity: sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==}
     engines: {node: '>=0.8'}
+
+  cluster-key-slot@1.1.2:
+    resolution: {integrity: sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==}
+    engines: {node: '>=0.10.0'}
 
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
@@ -3255,6 +3392,10 @@ packages:
   real-require@0.2.0:
     resolution: {integrity: sha512-57frrGM/OCTLqLOAh0mhVA9VBMHd+9U7Zb2THMGdBUoZVOtGbJzjxsYGDJ3A9AYYCP4hn6y1TVbaOfzWtm5GFg==}
     engines: {node: '>= 12.13.0'}
+
+  redis@6.2.1:
+    resolution: {integrity: sha512-Z9VHtgYs48PiQC77X9O2Er8Hj4T+5BtFjT91/vi5Is1D04N72cA946ZslM1ImJw8ZctFBZWAVjM7S5wJNeHMpg==}
+    engines: {node: '>= 20.0.0'}
 
   regenerate-unicode-properties@10.2.2:
     resolution: {integrity: sha512-m03P+zhBeQd1RGnYxrGyDAPpWX/epKirLrp8e3qevZdVkKtnCrjjWczIbYc8+xd6vcTStVlqfycTx1KR4LOr0g==}
@@ -4951,6 +5092,26 @@ snapshots:
 
   '@pinojs/redact@0.4.0': {}
 
+  '@redis/bloom@6.2.1(@redis/client@6.2.1)':
+    dependencies:
+      '@redis/client': 6.2.1
+
+  '@redis/client@6.2.1':
+    dependencies:
+      cluster-key-slot: 1.1.2
+
+  '@redis/json@6.2.1(@redis/client@6.2.1)':
+    dependencies:
+      '@redis/client': 6.2.1
+
+  '@redis/search@6.2.1(@redis/client@6.2.1)':
+    dependencies:
+      '@redis/client': 6.2.1
+
+  '@redis/time-series@6.2.1(@redis/client@6.2.1)':
+    dependencies:
+      '@redis/client': 6.2.1
+
   '@rolldown/binding-android-arm64@1.1.5':
     optional: true
 
@@ -5652,6 +5813,8 @@ snapshots:
       mimic-response: 1.0.1
 
   clone@1.0.4: {}
+
+  cluster-key-slot@1.1.2: {}
 
   color-convert@2.0.1:
     dependencies:
@@ -6964,6 +7127,17 @@ snapshots:
       string_decoder: 1.3.0
 
   real-require@0.2.0: {}
+
+  redis@6.2.1:
+    dependencies:
+      '@redis/bloom': 6.2.1(@redis/client@6.2.1)
+      '@redis/client': 6.2.1
+      '@redis/json': 6.2.1(@redis/client@6.2.1)
+      '@redis/search': 6.2.1(@redis/client@6.2.1)
+      '@redis/time-series': 6.2.1(@redis/client@6.2.1)
+    transitivePeerDependencies:
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
 
   regenerate-unicode-properties@10.2.2:
     dependencies:

@@ -42,6 +42,7 @@ Review these files before changing release behavior:
 - [`.github/workflows/publish.yml`](../../.github/workflows/publish.yml) — production npm publication path.
 - `packages/*/package.json` — package version, publishability, exports, files and package dependencies.
 - `packages/*/CHANGELOG.md` — generated project changelogs.
+- [`../execution-public-api.md`](../execution-public-api.md) and [`../read-public-api.md`](../read-public-api.md) — reviewed consumer-facing package boundaries.
 
 ## Current release model
 
@@ -75,21 +76,27 @@ The dependent packages received changelog entries under `Updated Dependencies`.
 
 ## Publishable and internal packages
 
-Nx version calculation evaluates the configured `packages/*` release project set.
+Nx version calculation evaluates the configured `packages/*` release project set, but publication intent is package-local. A package is publishable only when its current manifest permits publication and its public boundary has been reviewed.
 
-The publish phase does not publish every project in that set. During the validated publish dry-run, `nx-release-publish` ran for 24 publishable projects. The following internal projects were not part of that publish target set:
+An earlier validated publish dry-run predated the Read release boundary. At that time `read` and `query` were internal and were correctly omitted from publication. That historical result must not be treated as the current package set.
+
+The current Read public boundary is defined in [`../read-public-api.md`](../read-public-api.md) and includes:
 
 ```text
 @event-driven-platform/read
 @event-driven-platform/query
-@event-driven-platform/scoped-execution-transaction
-@event-driven-platform/transaction-scope-node
-@event-driven-platform/transaction-adapter
-@event-driven-platform/transaction-host
-@event-driven-platform/transaction-scope
+@event-driven-platform/read-handler
+@event-driven-platform/read-handler-resolver
+@event-driven-platform/reader
+@event-driven-platform/read-execution-coordinator
+@event-driven-platform/read-cache-in-memory
+@event-driven-platform/read-cache-redis
+@event-driven-platform/read-execution-coordinator-redis
 ```
 
-Do not assume a package is safe to publish solely because it participates in Nx Release version calculation. Check its current `package.json` and the supported package boundary before changing publication behavior.
+Other workspace packages remain internal when their current `package.json` keeps `private: true`, even if they participate in Nx Release version calculation.
+
+Do not assume a package is safe to publish solely because it exists under `packages/*` or receives an Nx version. Check its current manifest and the applicable reviewed public boundary.
 
 ## Prerequisites
 
@@ -192,7 +199,7 @@ pnpm nx release publish --dry-run
 
 This previews the publish targets without publishing anything.
 
-The validated dry-run ran `nx-release-publish` for all current publishable projects, not only packages receiving a new version. This is expected for the current configuration.
+The validated dry-run ran `nx-release-publish` for all publishable projects at that point in repository history, not only packages receiving a new version. This behavior should be rechecked from current Nx output whenever the publishable set changes.
 
 The real publish path safely handled already-published package versions and published only versions that were new.
 
@@ -204,32 +211,24 @@ Build the package projects using the repository's Nx targets:
 pnpm nx run-many -t build --projects='packages/*'
 ```
 
-At the time this document was validated, 29 projects had a `build` target. Two internal projects did not:
-
-```text
-@event-driven-platform/scoped-execution-transaction
-@event-driven-platform/transaction-scope-node
-```
-
-Nx still completed the run successfully for the buildable projects.
-
-Inspect at least one representative changed publishable package before the production publish:
+Inspect representative changed publishable packages before the production publish:
 
 ```bash
 cd packages/<package>
 npm pack --dry-run
 ```
 
-Confirm that the tarball contains the expected consumer artifact:
+Confirm that each inspected tarball contains the expected consumer artifact:
 
 - compiled JavaScript;
 - TypeScript declarations;
 - `package.json`;
-- `README.md`;
 - files allowed by the package manifest;
 - no tests, source-only files or repository-only configuration unless intentionally included.
 
-The validated `@event-driven-platform/clock@0.0.3` tarball contained the compiled `FixedClock`, declarations, README and package metadata and excluded `src/` and tests.
+The validated `@event-driven-platform/clock@0.0.3` tarball contained the compiled `FixedClock`, declarations, and package metadata and excluded `src/` and tests.
+
+In addition, CI verifies current publishable artifacts through the repository's local Nx Release + Verdaccio path. An isolated consumer installs published package artifacts, typechecks with no workspace resolution, and executes representative write and read compositions. Redis-backed Read composition is included when the affected Read graph requires the Redis service.
 
 ## 6. Trusted Publishing prerequisites
 
@@ -286,6 +285,8 @@ pnpm add @event-driven-platform/<package>@<version>
 Import and exercise the released public API with Node or the appropriate consumer toolchain.
 
 The validated release installed `@event-driven-platform/clock@0.0.3` from npm and successfully executed both `FixedClock` and `SystemClock` from a clean external project.
+
+Local Verdaccio verification is a pre-publication artifact check; it does not replace this post-publication npm check.
 
 ## Failure and recovery checkpoints
 

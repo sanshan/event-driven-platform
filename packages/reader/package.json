@@ -1,0 +1,45 @@
+{
+    "name": "@event-driven-platform/reader",
+    "version": "0.0.1",
+    "description": "Centralized execution engine for Queries, cache traversal, coalescing, and ReadHandler dispatch.",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.js.map",
+        "dist/**/*.d.ts",
+        "dist/**/*.d.ts.map"
+    ],
+    "exports": {
+        "./package.json": "./package.json",
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sanshan/event-driven-platform.git",
+        "directory": "packages/reader"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "dependencies": {
+        "@event-driven-platform/query": "workspace:*",
+        "@event-driven-platform/read": "workspace:*",
+        "@event-driven-platform/read-execution-coordinator": "workspace:*",
+        "@event-driven-platform/read-handler-resolver": "workspace:*",
+        "tslib": "catalog:"
+    },
+    "devDependencies": {
+        "@event-driven-platform/read-cache-in-memory": "workspace:*",
+        "@event-driven-platform/read-cache-redis": "workspace:*",
+        "@event-driven-platform/read-execution-coordinator-redis": "workspace:*",
+        "redis": "^6.2.1"
+    }
+}

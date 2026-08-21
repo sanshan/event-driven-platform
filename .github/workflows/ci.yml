@@ -37,8 +37,86 @@ jobs:
 
       - uses: nrwl/nx-set-shas@v5
 
+      - name: Detect Redis integration impact
+        id: redis-integration
+        shell: bash
+        run: |
+          affected="$(pnpm nx show projects --affected)"
+
+          if grep -Fxq '@event-driven-platform/read-execution-coordinator-redis' <<< "$affected"; then
+            echo "coordinator=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "coordinator=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if grep -Fxq '@event-driven-platform/reader' <<< "$affected"; then
+            echo "reader=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "reader=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if grep -Fxq '@event-driven-platform/read-cache-redis' <<< "$affected"; then
+            echo "cache=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "cache=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if grep -Eq '^@event-driven-platform/(read-execution-coordinator-redis|reader|read-cache-redis)$' <<< "$affected"; then
+            echo "required=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "required=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Validate affected projects
         run: pnpm nx affected -t lint test typecheck build
 
-      - name: Verify packages through Verdaccio
+      - name: Start Redis integration service
+        if: steps.redis-integration.outputs.required == 'true'
+        shell: bash
+        run: |
+          docker run --detach --rm \
+            --name read-coordinator-redis \
+            --publish 6379:6379 \
+            redis:7.4-alpine
+
+          for attempt in {1..30}; do
+            if docker exec read-coordinator-redis redis-cli ping | grep -Fxq PONG; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          docker logs read-coordinator-redis
+          exit 1
+
+      - name: Verify Redis coordinator integration
+        if: steps.redis-integration.outputs.coordinator == 'true'
+        env:
+          READ_COORDINATOR_REDIS_URL: redis://127.0.0.1:6379
+        run: pnpm nx run @event-driven-platform/read-execution-coordinator-redis:test:integration
+
+      - name: Verify Reader load and recovery behavior
+        if: steps.redis-integration.outputs.reader == 'true'
+        env:
+          READ_COORDINATOR_REDIS_URL: redis://127.0.0.1:6379
+        run: pnpm nx run @event-driven-platform/reader:test:verification
+
+      - name: Verify Redis cache integration
+        if: steps.redis-integration.outputs.cache == 'true'
+        env:
+          READ_CACHE_REDIS_URL: redis://127.0.0.1:6379
+        run: pnpm nx run @event-driven-platform/read-cache-redis:test:integration
+
+      - name: Verify packages through Verdaccio with Redis read composition
+        if: steps.redis-integration.outputs.required == 'true'
+        env:
+          READ_PACKAGE_VERIFICATION_REDIS_URL: redis://127.0.0.1:6379
         run: pnpm nx run package-verification:verify-registry
+
+      - name: Verify packages through Verdaccio
+        if: steps.redis-integration.outputs.required != 'true'
+        run: pnpm nx run package-verification:verify-registry
+
+      - name: Stop Redis integration service
+        if: always() && steps.redis-integration.outputs.required == 'true'
+        run: docker rm --force read-coordinator-redis || true
