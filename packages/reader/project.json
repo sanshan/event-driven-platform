@@ -13,6 +13,14 @@
                 "command": "vitest run --config vitest.integration.config.mts",
                 "cwd": "packages/reader"
             }
+        },
+        "test:verification": {
+            "executor": "nx:run-commands",
+            "cache": false,
+            "options": {
+                "command": "vitest run --config vitest.verification.config.mts",
+                "cwd": "packages/reader"
+            }
         }
     }
 }
