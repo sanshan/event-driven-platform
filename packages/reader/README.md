@@ -1,102 +1,102 @@
 # @event-driven-platform/reader
 
-> **Status: Draft / internal.** This package is not part of the supported public package boundary.
-
-Implements the current Reader execution boundary for the still-incomplete read side.
+Central execution engine for the stable `Read -> Query -> Reader` pipeline.
 
 ## Role
 
-`Reader` is the centralized read execution boundary:
+Reader interprets Query execution configuration while keeping Read and ReadHandler infrastructure-agnostic.
 
 ```text
-Query -> Reader -> cache plan -> ReadHandlerResolver -> ReadHandler -> Result
+Query -> Reader
+          |
+          +-> cache traversal / population
+          +-> local in-flight coalescing
+          +-> optional distributed coordination
+          +-> ReadHandlerResolver -> ReadHandler
 ```
 
-A Query with no cache plan keeps the no-cache behavior introduced by the baseline Reader implementation.
+## Basic usage
 
-A Query with a cache plan is traversed in the exact level order declared by Query. Reader stops on the first cache hit. If every configured cache level misses or is unavailable, Reader executes the source-handler path.
+```ts
+import { DefaultReader } from '@event-driven-platform/reader';
 
-`DefaultReader` resolves the Read through `ReadHandlerResolver` and executes the first handler in the resolver's deterministic ordered handler set. The current `ReadHandler` contract returns a result directly and has no `miss` outcome, so Reader does not iterate source handlers as fallbacks.
+const reader = new DefaultReader({
+    readHandlerResolver,
+});
 
-A `not-found` or `ambiguous` resolver outcome is surfaced as an explicit Reader error.
-
-## Cache traversal and population
-
-Cache levels are read from fastest/closest to slowest/farthest:
-
-```text
-L1 -> L2 -> ... -> Ln -> source
+const result = await reader.execute({
+    read: {
+        name: 'user.get',
+        actor,
+        parameters: { userId: 'user-42' },
+    },
+    context: {
+        correlationId: 'request-123',
+    },
+});
 ```
 
-Population runs in the reverse direction and only uses explicit writer capabilities:
+`DefaultReader` requires a `ReadHandlerResolver`. `readTimeout`, `readExecutionCoordinator`, and `readExecutionOwnerIdFactory` are optional composition dependencies.
 
-```text
-source result -> Ln -> ... -> L2 -> L1
+## Cached composition
+
+Cache topology belongs to Query. For example, a process-local L1 followed by shared L2:
+
+```ts
+const result = await reader.execute({
+    read,
+    context: { correlationId },
+    options: {
+        timeoutMs: 2_000,
+        cache: {
+            key: {
+                namespace: 'user.get',
+                version: '1',
+                partition: 'tenant:tenant-1',
+                value: 'user:user-42',
+            },
+            levels: [
+                { scope: 'local', reader: l1, writer: l1 },
+                { scope: 'shared', reader: l2Reader, writer: l2Writer },
+            ],
+            coordination: {
+                leaseDurationMs: 1_000,
+            },
+        },
+    },
+});
 ```
 
-When a lower cache level hits, Reader promotes the value only into preceding writable levels, again in reverse order.
+When `coordination` is present, `DefaultReader` must also receive a `ReadExecutionCoordinator`, and the plan must contain shared cache. The coordinator transports ownership only; successful distributed rendezvous happens through shared cache.
 
-Cache readers never write caches. ReadHandlers never write caches. Query only carries the plan; Reader owns traversal, promotion and backfill orchestration.
+## Execution semantics
 
-### Cache failure policy
+Reader traverses cache levels in declared order and stops on the first hit. Lower-level hits are promoted only into preceding writable levels. Full misses execute the resolved source handler and backfill writable levels in reverse order.
 
-Cache IO is fail-open:
+Cache IO is fail-open for result correctness: unavailable reads continue traversal and failed cache writes cannot replace a successful result. Distributed coordination is fail-closed because bypassing a configured coordinator could create uncontrolled duplicate source work.
 
-- `miss` continues to the next level;
-- a cache reader `{ status: 'error' }` continues to the next level;
-- a thrown cache-reader error is treated as an unavailable cache level and traversal continues;
-- promotion/backfill writer failures are ignored for result correctness;
-- a successful cache hit or source-handler result is never replaced by a cache-write failure;
-- source-handler failures are still propagated.
+Cached Queries use deterministic `ReadCacheKey` identity for process-local single-flight. Distributed plans extend that coalescing across instances with ownership-safe leases and shared-cache rendezvous.
 
-Observability for degraded cache reads/writes belongs to the later Reader observability task.
+## Handler resolution
 
-## Process-local in-flight coalescing
-
-Cached Queries use their deterministic `ReadCacheKey` as the process-local single-flight identity.
-
-Reader first checks the leading `local` cache levels normally. After those levels miss, only one local leader for that key continues into shared cache traversal and source execution. Followers in the same Reader process await the leader's in-flight Promise directly rather than repeating the downstream path.
-
-The local leader re-checks the leading local levels after acquiring the flight. Flights are removed after the underlying downstream Promise settles, whether it succeeds or fails. Different keys use independent flights and remain concurrent.
-
-## Distributed shared-cache rendezvous
-
-A cache plan may opt into distributed coordination with a technology-neutral lease duration:
-
-```text
-local cache(s)
--> shared cache(s)
--> distributed claim
-   -> leader: shared re-check -> source -> reverse backfill -> release
-   -> follower: wait -> shared re-read -> hit or re-claim
-```
-
-Distributed coordination is entered only after the configured shared cache levels have missed. A shared cache level is mandatory when distributed coordination is enabled because the coordinator transports no read result.
-
-After acquiring ownership, the leader re-checks shared cache before source execution. This closes the race where another owner filled the shared rendezvous cache while the claim was being acquired.
-
-Followers wait for the current flight with a lease-bounded wait. After every wake or wait timeout they re-read the shared cache. A hit is promoted into preceding writable levels. A miss always re-enters claim contention; a follower never bypasses coordination and runs the source directly.
-
-Healthy ownership is renewed while source/backfill work is active. If ownership is lost before publication, the stale owner does not intentionally publish a new shared result. Release uses the ownership-safe coordinator contract and the lease remains TTL-bounded even if release cannot complete.
-
-Coordinator unavailability is fail-closed for a distributed cache plan: Reader does not bypass the coordinator and create an uncontrolled source herd.
-
-Concrete coordinator technology is supplied through `DefaultReaderDependencies`. Query does not contain Redis or another infrastructure client.
+`DefaultReader` resolves the Read through `ReadHandlerResolver`. `not-found` and `ambiguous` outcomes become typed Reader errors. The current source contract executes the first handler in a resolved deterministic handler set; `ReadHandler` has no fallback `miss` outcome.
 
 ## Timeout and cancellation
 
-`QueryOptions.timeoutMs` bounds the caller's complete Reader wait, including cache traversal, local-flight waiting and distributed wait/source work.
+`QueryOptions.timeoutMs` bounds one caller's complete Reader wait. `QueryOptions.signal` lets that caller stop waiting. A timed-out or cancelled follower does not cancel healthy shared work serving other callers.
 
-`QueryOptions.signal` allows the caller to stop waiting. Cancellation of one caller does not cancel a process-local/distributed flight shared with other callers. This preserves the single-flight guarantee: one short-lived caller cannot poison the leader or longer-lived followers.
+## Public API
 
-The underlying shared flight remains active until its downstream work settles and performs the normal ownership-safe cleanup/release path.
+The package exports `Reader`, `DefaultReader`, `DefaultReaderDependencies`, `ReadTimeout`, and typed errors for handler resolution, timeout/cancellation, missing/unavailable coordination, and ownership loss.
 
-## Current boundary
+Internal services implementing source execution, cache traversal, local in-flight behavior, distributed-flight orchestration, and the default timeout are deliberately not exported. Consumers should import only from the package root.
 
-Concrete InMemory/Redis cache adapters, TTL/eviction/jitter policy, full observability, broad load/chaos qualification and the final public release boundary remain separate later tasks in the read-pipeline Epic.
+## Verification
 
-Reader contains orchestration only; it does not add business logic and it does not mutate Read or Query.
+Infrastructure-backed load/recovery verification and the invariant-to-test map are documented in [`VERIFICATION.md`](VERIFICATION.md).
 
 ## Related documentation
 
-See the **Draft read side** section of [`docs/architecture/README.md`](../../docs/architecture/README.md).
+- [`docs/architecture/README.md`](../../docs/architecture/README.md)
+- [`docs/read-public-api.md`](../../docs/read-public-api.md)
+- [`docs/read-release-readiness.md`](../../docs/read-release-readiness.md)
