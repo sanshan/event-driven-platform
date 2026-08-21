@@ -5,10 +5,10 @@ export {
     RedisReadCacheWriter,
 } from './lib/read-cache-redis.js';
 export type {
-    FixedTtlPolicyOptions,
     ReadCacheCodec,
     RedisReadCacheKeyEncoder,
     RedisReadCacheReaderOptions,
     RedisReadCacheTtlPolicy,
+    RedisReadCacheTtlPolicyOptions,
     RedisReadCacheWriterOptions,
 } from './lib/read-cache-redis.js';
