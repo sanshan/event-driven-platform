@@ -57,16 +57,20 @@ The command Redis client is supplied by the consumer and remains consumer-owned.
 
 ## Integration tests
 
-Real Redis integration tests are enabled when `READ_COORDINATOR_REDIS_URL` is defined. They use multiple independent Redis clients/coordinator instances and cover contention, renewal, expiry/reclaim, stale release, follower wake-up and timeout.
-
-Example:
+Real Redis verification is a separate Nx target:
 
 ```bash
 READ_COORDINATOR_REDIS_URL=redis://localhost:6379 \
-  pnpm nx test @event-driven-platform/read-execution-coordinator-redis
+  pnpm nx run @event-driven-platform/read-execution-coordinator-redis:test:integration
 ```
 
-Without that environment variable, the real-Redis suite is skipped so ordinary unit/type/build validation does not require an externally running Redis instance. CI or release verification that claims Redis integration coverage must run the suite with a real Redis service.
+The integration target requires `READ_COORDINATOR_REDIS_URL`; it fails rather than silently skipping when no Redis endpoint is supplied. The suite uses multiple independent Redis clients/coordinator instances and covers contention, renewal, expiry/reclaim, stale release, follower wake-up and timeout.
+
+The ordinary `test` target excludes `*.integration.spec.ts`, so normal unit/affected validation does not require Redis.
+
+CI uses the Nx affected project graph to decide whether this adapter needs real Redis verification. When `@event-driven-platform/read-execution-coordinator-redis` is affected directly or through an upstream dependency, CI starts a temporary Redis service and runs `test:integration`. Unrelated changes do not start Redis or pay the integration-test overhead.
+
+The integration target is not Nx-cacheable because it verifies a real external service boundary.
 
 ## Current boundary
 
