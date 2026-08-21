@@ -25,6 +25,15 @@ function resolverWith(
     };
 }
 
+function deferred<TResult>() {
+    let resolve!: (value: TResult) => void;
+    const promise = new Promise<TResult>((promiseResolve) => {
+        resolve = promiseResolve;
+    });
+
+    return { promise, resolve };
+}
+
 function queryFor(
     key: ReadCacheKey,
     readCache: () => Promise<WalletView | undefined>,
@@ -109,52 +118,46 @@ describe('DefaultReader distributed shared-cache rendezvous', () => {
         };
         let sharedValue: WalletView | undefined;
         let sourceExecutions = 0;
-        let releaseSource!: () => void;
-        const sourceGate = new Promise<void>((resolve) => {
-            releaseSource = resolve;
+        const sourceStarted = deferred<void>();
+        const sourceGate = deferred<void>();
+        const handler = {
+            execute: async () => {
+                sourceExecutions += 1;
+                sourceStarted.resolve();
+                await sourceGate.promise;
+                return { id: 'wallet-1', balance: 42 };
+            },
+        };
+        const resolution = { status: 'resolved', handlers: [handler] } as const;
+        const readCache = async () => sharedValue;
+        const writeCache = async (value: WalletView) => {
+            sharedValue = value;
+        };
+        const query = queryFor(cacheKey, readCache, writeCache);
+        const firstReader = new DefaultReader({
+            readHandlerResolver: resolverWith(resolution),
+            readExecutionCoordinator: firstCoordinator,
+            readExecutionOwnerIdFactory: () => 'instance-a',
         });
-        const sourceStarted = new Promise<void>((resolve) => {
-            const handler = {
-                execute: async () => {
-                    sourceExecutions += 1;
-                    resolve();
-                    await sourceGate;
-                    return { id: 'wallet-1', balance: 42 };
-                },
-            };
-            const resolution = { status: 'resolved', handlers: [handler] } as const;
-            const readCache = async () => sharedValue;
-            const writeCache = async (value: WalletView) => {
-                sharedValue = value;
-            };
-            const query = queryFor(cacheKey, readCache, writeCache);
-            const firstReader = new DefaultReader({
-                readHandlerResolver: resolverWith(resolution),
-                readExecutionCoordinator: firstCoordinator,
-                readExecutionOwnerIdFactory: () => 'instance-a',
-            });
-            const secondReader = new DefaultReader({
-                readHandlerResolver: resolverWith(resolution),
-                readExecutionCoordinator: secondCoordinator,
-                readExecutionOwnerIdFactory: () => 'instance-b',
-            });
-
-            const first = firstReader.execute(query);
-            const second = secondReader.execute(query);
-
-            void Promise.resolve().then(async () => {
-                await sourceStarted;
-                expect(sourceExecutions).toBe(1);
-                releaseSource();
-                await expect(Promise.all([first, second])).resolves.toEqual([
-                    { id: 'wallet-1', balance: 42 },
-                    { id: 'wallet-1', balance: 42 },
-                ]);
-                expect(sourceExecutions).toBe(1);
-                expect(sharedValue).toEqual({ id: 'wallet-1', balance: 42 });
-            });
+        const secondReader = new DefaultReader({
+            readHandlerResolver: resolverWith(resolution),
+            readExecutionCoordinator: secondCoordinator,
+            readExecutionOwnerIdFactory: () => 'instance-b',
         });
 
-        await sourceStarted;
+        const first = firstReader.execute(query);
+        const second = secondReader.execute(query);
+
+        await sourceStarted.promise;
+        expect(sourceExecutions).toBe(1);
+
+        sourceGate.resolve();
+
+        await expect(Promise.all([first, second])).resolves.toEqual([
+            { id: 'wallet-1', balance: 42 },
+            { id: 'wallet-1', balance: 42 },
+        ]);
+        expect(sourceExecutions).toBe(1);
+        expect(sharedValue).toEqual({ id: 'wallet-1', balance: 42 });
     });
 });
