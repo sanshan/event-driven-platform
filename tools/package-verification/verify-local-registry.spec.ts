@@ -25,6 +25,15 @@ const consumerDependencies = [
     '@event-driven-platform/operation-result',
     '@event-driven-platform/outbox',
     '@event-driven-platform/outbox-store',
+    '@event-driven-platform/query',
+    '@event-driven-platform/read',
+    '@event-driven-platform/read-cache-in-memory',
+    '@event-driven-platform/read-cache-redis',
+    '@event-driven-platform/read-execution-coordinator',
+    '@event-driven-platform/read-execution-coordinator-redis',
+    '@event-driven-platform/read-handler',
+    '@event-driven-platform/read-handler-resolver',
+    '@event-driven-platform/reader',
     '@event-driven-platform/runner',
     '@event-driven-platform/subject',
     '@event-driven-platform/tenant-reference',
@@ -48,13 +57,17 @@ describe('published workspace packages', () => {
             join(fixtureDirectory, 'package.json'),
             `${JSON.stringify(
                 {
-                    name: 'event-driven-platform-execution-verification',
+                    name: 'event-driven-platform-package-verification',
                     private: true,
                     type: 'module',
-                    dependencies: Object.fromEntries(
-                        consumerDependencies.map((packageName) => [packageName, e2eVersion]),
-                    ),
+                    dependencies: {
+                        ...Object.fromEntries(
+                            consumerDependencies.map((packageName) => [packageName, e2eVersion]),
+                        ),
+                        redis: '^6.2.1',
+                    },
                     devDependencies: {
+                        '@types/node': '^22.0.0',
                         typescript: '~5.9.2',
                     },
                 },
@@ -70,5 +83,6 @@ describe('published workspace packages', () => {
         );
         run('pnpm', ['exec', 'tsc', '--project', 'tsconfig.json'], fixtureDirectory);
         run('node', [join(fixtureDirectory, 'dist/index.js')], fixtureDirectory);
+        run('node', [join(fixtureDirectory, 'dist/read.js')], fixtureDirectory);
     });
 });
