@@ -103,6 +103,9 @@
         },
         {
             "path": "./packages/reader"
+        },
+        {
+            "path": "./packages/read-execution-coordinator"
         }
     ]
 }

@@ -443,6 +443,15 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  packages/read-execution-coordinator:
+    dependencies:
+      '@event-driven-platform/query':
+        specifier: workspace:*
+        version: link:../query
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
   packages/read-handler:
     dependencies:
       '@event-driven-platform/read':
