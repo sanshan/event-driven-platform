@@ -445,12 +445,18 @@ importers:
 
   packages/read-cache-in-memory:
     dependencies:
+      '@event-driven-platform/query':
+        specifier: workspace:*
+        version: link:../query
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
 
   packages/read-cache-redis:
     dependencies:
+      '@event-driven-platform/query':
+        specifier: workspace:*
+        version: link:../query
       redis:
         specifier: ^6.2.1
         version: 6.2.1
