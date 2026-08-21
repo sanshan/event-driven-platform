@@ -10,6 +10,7 @@ export default defineConfig(() => ({
         environment: 'node',
         include: ['src/**/*.verification.spec.ts'],
         reporters: ['default'],
+        fileParallelism: false,
         testTimeout: 15_000,
         hookTimeout: 15_000,
     },
