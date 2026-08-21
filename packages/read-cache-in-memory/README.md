@@ -1,11 +1,31 @@
-# read-cache-in-memory
+# @event-driven-platform/read-cache-in-memory
 
-This library was generated with [Nx](https://nx.dev).
+Process-local cache capabilities for the Read pipeline.
 
-## Building
+`InMemoryReadCache<TResult>` implements the technology-neutral `CacheReader<TResult>` and `CacheWriter<TResult>` contracts from `@event-driven-platform/query`. It is intended for `scope: 'local'` cache levels composed by `Reader`.
 
-Run `nx build read-cache-in-memory` to build the library.
+The adapter provides:
 
-## Running unit tests
+- explicit positive capacity;
+- bounded oldest-entry eviction;
+- per-entry TTL;
+- lazy expiry without background timers;
+- deterministic clock injection for tests;
+- no Reader traversal, promotion, backfill, retry, or in-flight behavior.
 
-Run `nx test read-cache-in-memory` to execute the unit tests via [Vitest](https://vitest.dev/).
+Example:
+
+```ts
+const cache = new InMemoryReadCache<UserView>({
+    capacity: 10_000,
+    ttlMs: 30_000,
+});
+
+const level = {
+    scope: 'local' as const,
+    reader: cache,
+    writer: cache,
+};
+```
+
+The cache is disposable process-local state. Correctness must not depend on instance affinity or cache survival.
