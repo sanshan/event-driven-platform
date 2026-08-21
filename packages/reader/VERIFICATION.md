@@ -50,7 +50,7 @@ CI starts Redis conditionally when Reader or the Redis-backed read components ar
 | Source failure propagates after full cache miss | `default-reader.cache.spec.ts` |
 | Independent caller timeout does not cancel a shared local flight | `default-reader.inflight.spec.ts` |
 | InMemory cache remains bounded under sustained distinct-key pressure | `default-reader.load.verification.spec.ts`: 5,000 writes leave exactly the configured 64 entries |
-| TTL jitter spreads otherwise synchronized expiry | `default-reader.load.verification.spec.ts`: 100 TTL samples span the configured jitter interval |
+| TTL jitter stays within the configured range and follows deterministic sampling | `read-cache-redis.spec.ts` |
 | Redis per-key coordination state is reclaimed | `default-reader.recovery.verification.spec.ts`: after 50 completed distinct-key flights no lease keys remain; only the single generation key persists |
 | Redis cache serialization and expiry semantics are exercised against real Redis | `read-cache-redis.integration.spec.ts` |
 
