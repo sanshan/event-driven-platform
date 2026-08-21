@@ -37,21 +37,35 @@ jobs:
 
       - uses: nrwl/nx-set-shas@v5
 
-      - name: Detect Redis coordinator impact
-        id: redis-coordinator
+      - name: Detect Redis integration impact
+        id: redis-integration
         shell: bash
         run: |
-          if pnpm nx show projects --affected | grep -Fxq '@event-driven-platform/read-execution-coordinator-redis'; then
-            echo "affected=true" >> "$GITHUB_OUTPUT"
+          affected="$(pnpm nx show projects --affected)"
+
+          if grep -Fxq '@event-driven-platform/read-execution-coordinator-redis' <<< "$affected"; then
+            echo "coordinator=true" >> "$GITHUB_OUTPUT"
           else
-            echo "affected=false" >> "$GITHUB_OUTPUT"
+            echo "coordinator=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if grep -Fxq '@event-driven-platform/reader' <<< "$affected"; then
+            echo "reader=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "reader=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if grep -Eq '^@event-driven-platform/(read-execution-coordinator-redis|reader)$' <<< "$affected"; then
+            echo "required=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "required=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Validate affected projects
         run: pnpm nx affected -t lint test typecheck build
 
       - name: Start Redis integration service
-        if: steps.redis-coordinator.outputs.affected == 'true'
+        if: steps.redis-integration.outputs.required == 'true'
         shell: bash
         run: |
           docker run --detach --rm \
@@ -70,13 +84,19 @@ jobs:
           exit 1
 
       - name: Verify Redis coordinator integration
-        if: steps.redis-coordinator.outputs.affected == 'true'
+        if: steps.redis-integration.outputs.coordinator == 'true'
         env:
           READ_COORDINATOR_REDIS_URL: redis://127.0.0.1:6379
         run: pnpm nx run @event-driven-platform/read-execution-coordinator-redis:test:integration
 
+      - name: Verify Reader distributed integration
+        if: steps.redis-integration.outputs.reader == 'true'
+        env:
+          READ_COORDINATOR_REDIS_URL: redis://127.0.0.1:6379
+        run: pnpm nx run @event-driven-platform/reader:test:integration
+
       - name: Stop Redis integration service
-        if: always() && steps.redis-coordinator.outputs.affected == 'true'
+        if: always() && steps.redis-integration.outputs.required == 'true'
         run: docker rm --force read-coordinator-redis || true
 
       - name: Verify packages through Verdaccio
