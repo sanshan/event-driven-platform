@@ -1,7 +1,6 @@
 export {
     createJsonReadCacheCodec,
     createRedisReadCacheTtlPolicy,
-    defaultRedisReadCacheKeyEncoder,
     RedisReadCacheReader,
     RedisReadCacheWriter,
 } from './lib/read-cache-redis.js';
