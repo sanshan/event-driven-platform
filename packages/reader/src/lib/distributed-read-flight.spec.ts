@@ -9,8 +9,8 @@ import type {
 } from '@event-driven-platform/read-execution-coordinator';
 import type { ReadCacheKey } from '@event-driven-platform/query';
 
-import { DistributedReadFlight } from './distributed-read-flight.js';
-import { ReadExecutionCoordinatorUnavailableError } from './read-execution-coordinator-unavailable.error.js';
+import { ReadExecutionCoordinatorUnavailableError } from './errors/read-execution-coordinator-unavailable.error.js';
+import { DistributedReadFlight } from './inflight/distributed-read-flight.js';
 
 const key: ReadCacheKey = {
     namespace: 'wallet.get',

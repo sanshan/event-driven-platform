@@ -1,1 +1,4 @@
-export * from './lib/read-handler-resolver.js';
+export type {
+    ReadHandlerResolution,
+    ReadHandlerResolver,
+} from './lib/read-handler-resolver.js';

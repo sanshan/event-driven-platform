@@ -1,23 +1,49 @@
 # @event-driven-platform/read
 
-> **Status: Draft / internal.** This package is not part of the supported public package boundary.
-
-Defines the business-oriented `Read` contract for the incomplete read side of the platform.
+Defines the business-oriented `Read` contract for the stable Read pipeline.
 
 ## Role
 
-A Read describes an intent to obtain data and carries business-facing read metadata/parameters. It is intentionally separate from `Query`, which carries read execution concerns.
+A Read describes an intent to obtain data. It carries the actor and business-facing parameters and associates the intent with its result type without adding result metadata at runtime.
 
-The read execution pipeline is not complete in the current repository. This README documents only the implemented `Read` contract and does not imply a future execution API.
+Read deliberately does not know about cache topology, timeout, coordination, storage, Redis, or Reader infrastructure. Those execution concerns belong to `Query` and `Reader`.
 
-## API
+## Example
 
-`Read` is the package's current exported contract, including its type-level association with the expected result.
+```ts
+import type { Read } from '@event-driven-platform/read';
+
+interface UserView {
+    readonly id: string;
+    readonly name: string;
+}
+
+type GetUserRead = Read<
+    'user.get',
+    { readonly userId: string },
+    UserView
+>;
+
+const read: GetUserRead = {
+    name: 'user.get',
+    actor,
+    parameters: { userId: 'user-42' },
+};
+```
+
+`ReadResultOf<TRead>` can recover the associated result type when building handlers or other typed integrations.
+
+## Public API
+
+- `Read`
+- `AnyRead`
+- `ReadResultOf`
 
 ## Architectural boundary
 
-Reads remain business-oriented and must not acquire cache, storage, or infrastructure responsibilities.
+Reads are reusable business intents. They must not acquire cache, transport, storage, timeout, coordination, or infrastructure responsibilities.
 
 ## Related documentation
 
-See the **Draft read side** section of [`docs/architecture/README.md`](../../docs/architecture/README.md).
+- [`docs/architecture/README.md`](../../docs/architecture/README.md)
+- [`docs/read-public-api.md`](../../docs/read-public-api.md)

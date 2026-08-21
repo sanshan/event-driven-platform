@@ -1,37 +1,54 @@
 # @event-driven-platform/read-cache-redis
 
-Shared Redis-backed cache capabilities for the Read pipeline.
+Shared Redis-backed cache adapter for the stable Read pipeline.
 
-The package provides separate `CacheReader<TResult>` and `CacheWriter<TResult>` implementations for `scope: 'shared'` cache levels. It uses the same supported Redis client family as the distributed read coordinator but contains no lease, ownership, Reader traversal, promotion, backfill, retry, or in-flight logic.
+The package provides separate `CacheReader<TResult>` and `CacheWriter<TResult>` implementations for cache levels declared with `scope: 'shared'`. It contains no distributed lease/ownership or Reader orchestration logic.
 
-The adapter provides:
-
-- explicit key namespacing from `ReadCacheKey`;
-- separate reader and writer capabilities;
-- explicit serialization/deserialization through a codec;
-- configurable TTL in milliseconds;
-- configurable expiry jitter through an injected random source;
-- miss/error distinction through the Query cache-read contract;
-- real Redis integration coverage.
-
-Example:
+## Usage
 
 ```ts
-const codec = createJsonReadCacheCodec<UserView>();
+import {
+    createJsonReadCacheCodec,
+    createRedisReadCacheTtlPolicy,
+    RedisReadCacheReader,
+    RedisReadCacheWriter,
+} from '@event-driven-platform/read-cache-redis';
 
-const reader = new RedisReadCacheReader({ client, codec });
-const writer = new RedisReadCacheWriter({
-    client,
-    codec,
+const codec = createJsonReadCacheCodec<UserView>();
+const ttlPolicy = createRedisReadCacheTtlPolicy({
     ttlMs: 120_000,
     jitterRatio: 0.1,
 });
 
+const l2Reader = new RedisReadCacheReader<UserView>({
+    client,
+    codec,
+});
+
+const l2Writer = new RedisReadCacheWriter<UserView>({
+    client,
+    codec,
+    ttlPolicy,
+});
+
 const level = {
     scope: 'shared' as const,
-    reader,
-    writer,
+    reader: l2Reader,
+    writer: l2Writer,
 };
 ```
 
-A shared cache carries values between Reader instances during distributed rendezvous, but the adapter itself never participates in coordination.
+The Redis command client is supplied and owned by the consumer.
+
+## Behavior
+
+The adapter provides deterministic key encoding from `ReadCacheKey`, explicit serialization through `ReadCacheCodec`, separate reader/writer capabilities, TTL policy, optional expiry jitter, cache miss/error distinction, and real Redis integration coverage.
+
+Consumers may provide a custom `RedisReadCacheKeyEncoder`, codec, or `RedisReadCacheTtlPolicy`. `createJsonReadCacheCodec()` and `createRedisReadCacheTtlPolicy()` provide standard implementations.
+
+A shared cache can act as the result rendezvous between Reader instances during distributed coordination, but this adapter never claims ownership or waits for flights itself.
+
+## Related documentation
+
+- [`docs/read-public-api.md`](../../docs/read-public-api.md)
+- [`docs/read-release-readiness.md`](../../docs/read-release-readiness.md)

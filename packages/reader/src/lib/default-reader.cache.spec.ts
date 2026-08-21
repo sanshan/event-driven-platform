@@ -10,7 +10,7 @@ import type {
 import type { Read } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
-import { DefaultReader } from './default-reader.js';
+import { DefaultReader } from './reader/default-reader.js';
 
 interface WalletView {
     readonly id: string;

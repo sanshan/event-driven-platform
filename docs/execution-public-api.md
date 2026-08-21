@@ -113,6 +113,8 @@ The repository's package verification installs public package artifacts into an 
 
 ## Packages intentionally outside this release
 
-Packages unrelated to constructing or executing the write pipeline remain private. In particular, the incomplete read-side packages and any repository-specific infrastructure implementations are not made public merely because they exist in the workspace.
+Packages unrelated to constructing or executing the write pipeline remain outside the write Execution release unless another reviewed public boundary includes them.
+
+The Read pipeline now has its own independently reviewed public boundary. See [`read-public-api.md`](read-public-api.md) rather than treating Read packages as part of this write-side release.
 
 The public boundary must not be expanded without explicit review of the relevant package contracts and runtime behavior.

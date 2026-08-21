@@ -8,15 +8,18 @@ Before modifying any file, check the target directory and its ancestor directori
 
 This repository is a reusable platform for distributed event-driven systems. Architectural clarity, explicit boundaries, composability, determinism, observability, and testability are preferred over framework convenience or local shortcuts.
 
-Preserve the implemented write-side execution pipeline:
+Preserve the two implemented and independent execution pipelines:
 
 ```text
-Operation -> Command -> Runner
+Write: Operation -> Command -> Runner
+Read:  Read      -> Query   -> Reader
 ```
 
-The read side is currently draft and incomplete. The repository currently defines separate `Read` and `Query` contracts, but it does not yet contain a complete read execution pipeline comparable to the write side. Do not invent or assume a `Reader`, read-handler pipeline, cache traversal, cache population mechanism, or other absent read-side component as current architecture.
+On the write side, Operations remain business-oriented, Commands transport execution concerns, and Runner owns execution infrastructure. Operations do not execute other Operations or publish messages directly; emitted Events are persisted to Outbox by Runner.
 
-Do not merge Operation and Command, merge Read and Query, allow Operations to publish messages or execute other Operations, or bypass Runner. Use [`docs/architecture/README.md`](docs/architecture/README.md) as the canonical source for deeper architectural semantics and current maturity status rather than duplicating or extrapolating architecture here.
+On the read side, Reads remain business-oriented, Queries transport declarative execution controls, and Reader owns read execution orchestration. ReadHandlers read from one source responsibility and never write caches. Cache readers and cache writers remain separate capabilities; cache traversal/population and optional local/distributed in-flight coordination belong to Reader rather than Read, Query, or ReadHandler.
+
+Do not merge Operation and Command, merge Read and Query, allow Operations to publish messages or execute other Operations, bypass Runner, bypass Reader, or move cache writes into ReadHandlers. Use [`docs/architecture/README.md`](docs/architecture/README.md) as the canonical source for deeper architectural semantics and current maturity status rather than duplicating or extrapolating architecture here.
 
 ## Evidence Before Assumptions
 
@@ -52,7 +55,7 @@ Organize production code into small, cohesive modules. A source file should norm
 - Use file and directory names that communicate purpose.
 - Do not split files merely to satisfy an arbitrary line-count limit; split when concepts or responsibilities can be named independently.
 
-`packages/runner/src/lib` is a useful local example of responsibility-oriented organization. Treat it as a reference for intent, not as a mechanical template.
+`packages/runner/src/lib` and `packages/reader/src/lib` are useful local examples of responsibility-oriented organization. Treat them as references for intent, not as mechanical templates.
 
 ## Abstractions
 

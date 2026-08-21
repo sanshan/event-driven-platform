@@ -1,49 +1,64 @@
 # @event-driven-platform/query
 
-> **Status: Draft / internal.** This package is not part of the supported public package boundary.
-
-Defines the current `Query` transport and declarative read-execution configuration contracts for the incomplete read side.
+Defines the transport and declarative execution configuration for the stable Read pipeline.
 
 ## Role
 
-`Query` carries a `Read` together with read-execution options and context. It is intentionally separate from the business-oriented Read itself.
-
-A Query may optionally describe an ordered cache plan. The plan is declarative only: Query does not read caches, write caches, traverse levels, or execute source handlers.
-
-The repository does not yet contain a complete read execution engine. This README describes only contracts that exist today and does not document planned Reader behavior as implemented architecture.
-
-## API
-
-- `Query` — current read transport contract; its options preserve the associated Read result type.
-- `QueryOptions` — current execution-option contract, including optional timeout and cache plan.
-- `QueryContext` — current query context contract.
-- `ReadCacheKey` — explicit semantic cache/read identity composed of namespace, version, partition and value.
-- `QueryCachePlan` / `QueryCacheLevels` — non-empty ordered cache-level declaration.
-- `QueryCacheLevel` — one cache source with explicit `local` or `shared` visibility, one reader, and an optional separate writer.
-- `CacheReader` / `CacheWriter` — technology-neutral, separate read and write capabilities typed to the Query result.
-- `CacheReadResult` — explicit `hit`, `miss`, or `error` cache-read outcome.
-
-## Cache identity
-
-`ReadCacheKey` deliberately keeps semantic identity components separate rather than prescribing ad-hoc concatenated strings:
+`Query<TRead>` carries a business `Read`, caller context, and optional execution options. Query describes execution policy but performs no execution itself.
 
 ```ts
-const key: ReadCacheKey = {
-    namespace: 'wallet.get',
-    version: '1',
-    partition: 'tenant:tenant-1',
-    value: 'wallet:wallet-1',
+import type { Query } from '@event-driven-platform/query';
+
+const query: Query<GetUserRead> = {
+    read: {
+        name: 'user.get',
+        actor,
+        parameters: { userId: 'user-42' },
+    },
+    context: {
+        correlationId: 'request-123',
+    },
+    options: {
+        timeoutMs: 2_000,
+    },
 };
 ```
 
-Consumers are responsible for choosing deterministic values that include the security/tenant partition relevant to the Read semantics. Serialization into a concrete cache or coordination key belongs to later infrastructure, not to Read itself.
+## Cache plans
+
+A Query may declare an ordered cache topology:
+
+```ts
+const cache = {
+    key: {
+        namespace: 'user.get',
+        version: '1',
+        partition: 'tenant:tenant-1',
+        value: 'user:user-42',
+    },
+    levels: [
+        { scope: 'local', reader: l1, writer: l1 },
+        { scope: 'shared', reader: l2, writer: l2 },
+    ],
+    coordination: {
+        leaseDurationMs: 1_000,
+    },
+} satisfies QueryCachePlan<UserView>;
+```
+
+Level order is execution order. `local` and `shared` describe cache visibility; Read itself does not know which technologies implement those levels. Distributed coordination requires shared-cache rendezvous and is interpreted by Reader.
+
+`ReadCacheKey` keeps namespace, version, partition/security scope, and value explicit. Consumers must choose deterministic identities that cannot cross security or tenant boundaries incorrectly.
+
+## Public API
+
+The package exports `Query`, `QueryContext`, `QueryOptions`, result helpers, cache reader/writer contracts, cache outcomes, cache scopes/levels/plans, `ReadCacheKey`, and `QueryReadCoordinationOptions`.
 
 ## Architectural boundary
 
-Query contains no business logic and must not collapse into Read.
-
-Cache readers do not write. Cache writers are separate capabilities. These contracts describe possible execution inputs only; no Reader, handler resolution, cache traversal, backfill, in-flight coordination, Redis, or InMemory implementation is provided by this package today.
+Query contains no business logic. It never reads or writes caches, resolves handlers, coordinates flights, or executes a Read. Cache readers and cache writers remain separate capabilities; Reader owns traversal and population.
 
 ## Related documentation
 
-See the **Draft read side** section of [`docs/architecture/README.md`](../../docs/architecture/README.md).
+- [`docs/architecture/README.md`](../../docs/architecture/README.md)
+- [`docs/read-public-api.md`](../../docs/read-public-api.md)

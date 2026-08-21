@@ -4,8 +4,8 @@ import type {
 } from '@event-driven-platform/read-execution-coordinator';
 import type { ReadCacheKey } from '@event-driven-platform/query';
 
-import { ReadExecutionCoordinatorUnavailableError } from './read-execution-coordinator-unavailable.error.js';
-import { ReadExecutionOwnershipLostError } from './read-execution-ownership-lost.error.js';
+import { ReadExecutionCoordinatorUnavailableError } from '../errors/read-execution-coordinator-unavailable.error.js';
+import { ReadExecutionOwnershipLostError } from '../errors/read-execution-ownership-lost.error.js';
 
 type SharedReadResult<TResult> =
     | { readonly status: 'hit'; readonly value: TResult }
