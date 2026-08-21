@@ -1,6 +1,6 @@
-import { ReadCancelledError } from '../read-cancelled.error.js';
-import { ReadTimedOutError } from '../read-timed-out.error.js';
-import type { ReadTimeout } from '../read-timeout.js';
+import { ReadCancelledError } from '../errors/read-cancelled.error.js';
+import { ReadTimedOutError } from '../errors/read-timed-out.error.js';
+import type { ReadTimeout } from './read-timeout.js';
 
 export interface ReadExecutionControls {
     readonly timeoutMs?: number;

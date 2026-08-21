@@ -2,9 +2,9 @@ import type { ReadExecutionCoordinator } from '@event-driven-platform/read-execu
 import type { Query, QueryCachePlan } from '@event-driven-platform/query';
 import type { AnyRead, ReadResultOf } from '@event-driven-platform/read';
 
-import { DistributedReadFlight } from '../distributed-read-flight.js';
-import { LocalReadInFlight } from '../local-read-in-flight.js';
-import { ReadExecutionCoordinationNotConfiguredError } from '../read-execution-coordination-not-configured.error.js';
+import { ReadExecutionCoordinationNotConfiguredError } from '../errors/read-execution-coordination-not-configured.error.js';
+import { DistributedReadFlight } from '../inflight/distributed-read-flight.js';
+import { LocalReadInFlight } from '../inflight/local-read-in-flight.js';
 import type { ReadSourceExecutor } from '../source/read-source-executor.js';
 import { ReadCacheTraversal } from './read-cache-traversal.js';
 

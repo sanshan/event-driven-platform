@@ -1,23 +1,16 @@
 import { randomUUID } from 'node:crypto';
 
-import type { ReadExecutionCoordinator } from '@event-driven-platform/read-execution-coordinator';
 import type { Query } from '@event-driven-platform/query';
 import type { AnyRead, ReadResultOf } from '@event-driven-platform/read';
-import type { ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
-import { CachedReadExecutor } from './cache/cached-read-executor.js';
-import { ReadExecutionControl } from './control/read-execution-control.js';
-import { DefaultReadTimeout } from './default-read-timeout.js';
-import type { ReadTimeout } from './read-timeout.js';
+import { CachedReadExecutor } from '../cache/cached-read-executor.js';
+import { DefaultReadTimeout } from '../control/default-read-timeout.js';
+import { ReadExecutionControl } from '../control/read-execution-control.js';
+import { ReadSourceExecutor } from '../source/read-source-executor.js';
+import type { DefaultReaderDependencies } from './default-reader-dependencies.js';
 import type { Reader } from './reader.js';
-import { ReadSourceExecutor } from './source/read-source-executor.js';
 
-export interface DefaultReaderDependencies {
-    readonly readHandlerResolver: ReadHandlerResolver;
-    readonly readTimeout?: ReadTimeout;
-    readonly readExecutionCoordinator?: ReadExecutionCoordinator;
-    readonly readExecutionOwnerIdFactory?: () => string;
-}
+export type { DefaultReaderDependencies } from './default-reader-dependencies.js';
 
 export class DefaultReader implements Reader {
     private readonly sourceExecutor: ReadSourceExecutor;

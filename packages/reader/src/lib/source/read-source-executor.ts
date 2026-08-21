@@ -1,8 +1,8 @@
 import type { AnyRead, ReadResultOf } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
-import { ReadHandlerAmbiguousError } from '../read-handler-ambiguous.error.js';
-import { ReadHandlerNotFoundError } from '../read-handler-not-found.error.js';
+import { ReadHandlerAmbiguousError } from '../errors/read-handler-ambiguous.error.js';
+import { ReadHandlerNotFoundError } from '../errors/read-handler-not-found.error.js';
 
 export class ReadSourceExecutor {
     public constructor(private readonly readHandlerResolver: ReadHandlerResolver) {}
