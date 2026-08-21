@@ -109,6 +109,12 @@
         },
         {
             "path": "./packages/read-execution-coordinator-redis"
+        },
+        {
+            "path": "./packages/read-cache-in-memory"
+        },
+        {
+            "path": "./packages/read-cache-redis"
         }
     ]
 }

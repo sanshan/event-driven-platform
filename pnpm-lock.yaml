@@ -443,6 +443,21 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  packages/read-cache-in-memory:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
+  packages/read-cache-redis:
+    dependencies:
+      redis:
+        specifier: ^6.2.1
+        version: 6.2.1
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
   packages/read-execution-coordinator:
     dependencies:
       '@event-driven-platform/query':
