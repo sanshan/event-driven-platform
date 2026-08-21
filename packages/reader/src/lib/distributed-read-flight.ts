@@ -7,11 +7,15 @@ import type { ReadCacheKey } from '@event-driven-platform/query';
 import { ReadExecutionCoordinatorUnavailableError } from './read-execution-coordinator-unavailable.error.js';
 import { ReadExecutionOwnershipLostError } from './read-execution-ownership-lost.error.js';
 
+type SharedReadResult<TResult> =
+    | { readonly status: 'hit'; readonly value: TResult }
+    | { readonly status: 'miss' };
+
 interface DistributedReadFlightRequest<TResult> {
     readonly key: ReadCacheKey;
     readonly ownerId: string;
     readonly leaseDurationMs: number;
-    readonly readShared: () => Promise<TResult | undefined>;
+    readonly readShared: () => Promise<SharedReadResult<TResult>>;
     readonly executeSource: () => Promise<TResult>;
     readonly publishSourceResult: (result: TResult) => Promise<void>;
 }
@@ -33,8 +37,8 @@ export class DistributedReadFlight {
 
             if (claim.status === 'already-in-progress') {
                 const afterWait = await this.waitForCurrentFlight(request);
-                if (afterWait !== undefined) {
-                    return afterWait;
+                if (afterWait.status === 'hit') {
+                    return afterWait.value;
                 }
 
                 continue;
@@ -46,7 +50,7 @@ export class DistributedReadFlight {
 
     private async waitForCurrentFlight<TResult>(
         request: DistributedReadFlightRequest<TResult>,
-    ): Promise<TResult | undefined> {
+    ): Promise<SharedReadResult<TResult>> {
         const wait = await this.coordinator.wait({
             key: request.key,
             timeoutMs: request.leaseDurationMs,
@@ -106,8 +110,8 @@ export class DistributedReadFlight {
 
         try {
             const sharedResult = await request.readShared();
-            if (sharedResult !== undefined) {
-                return sharedResult;
+            if (sharedResult.status === 'hit') {
+                return sharedResult.value;
             }
 
             const sourceResult = await request.executeSource();
@@ -124,7 +128,12 @@ export class DistributedReadFlight {
             if (timer !== undefined) {
                 clearTimeout(timer);
             }
-            await this.coordinator.release({ key: request.key, lease });
+
+            try {
+                await this.coordinator.release({ key: request.key, lease });
+            } catch {
+                // The lease is TTL-bounded; release failure must not replace a completed business read.
+            }
         }
     }
 
