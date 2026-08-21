@@ -1,77 +1,47 @@
 # @event-driven-platform/read-execution-coordinator
 
-> **Status: Draft / internal.** This package is not yet part of the supported public package boundary.
-
-Defines the technology-neutral coordination contract used by the read pipeline for transient cross-instance in-flight ownership.
+Defines the technology-neutral distributed coordination contract for transient cross-instance Read execution ownership.
 
 ## Role
 
-The coordinator protects expensive read execution after shared cache miss:
+After shared-cache miss, Reader may use a coordinator to ensure that only one instance owns downstream source work for a deterministic `ReadCacheKey` while followers wait and later re-read shared cache.
 
 ```text
 shared cache miss
--> claim distributed read execution
--> one owner continues
--> followers wait
+-> claim
+   -> owner continues
+   -> followers wait
+-> result rendezvous happens through shared cache
 ```
 
-It is an infrastructure coordination boundary only. It contains no business logic and does not change `Read`, `Query`, or `Reader` responsibilities.
+The coordinator transports ownership, not the read result.
 
-## Identity
+## Ownership model
 
-Coordination is keyed by the deterministic `ReadCacheKey` established by the Query contract. The same effective identity must represent the same semantic read result, including required namespace, version, partition/security scope, and value components.
+A successful claim returns a `ReadExecutionLeaseReference` containing `ownerId` and monotonic ownership `version`. Renewal extends the current generation. Renew and release must verify the complete ownership reference so a stale owner cannot mutate a reclaimed lease.
 
-## Ownership
-
-A successful claim returns a `ReadExecutionLeaseReference` containing:
-
-- `ownerId` — identifies the current owner;
-- `version` — identifies the ownership generation.
-
-A new successful claim after release or expiry must receive a newer generation. Renewal extends the current ownership duration without changing its generation.
-
-`renew` and `release` are ownership-safe: the implementation must verify both owner and generation. A stale owner must receive `ownership-lost` and must not mutate or release a newer owner's lease.
-
-Lease duration is bounded and supplied explicitly per claim/renew request. Concrete clock storage and expiry representation are adapter responsibilities.
+Lease duration is explicit and bounded. Storage technology, clock representation, and expiry implementation belong to adapters.
 
 ## Followers
 
-`wait` represents bounded waiting for the current distributed flight to stop being active. Its outcomes are explicit:
+`wait` is bounded and returns explicit outcomes: `released`, `timed-out`, `cancelled`, or `unavailable`. After waiting, Reader re-reads shared cache and re-contends when the value is still absent. The coordinator never broadcasts the result.
 
-- `released` — the current flight is no longer active and the caller may re-check the shared rendezvous cache;
-- `timed-out` — the caller's wait budget expired;
-- `cancelled` — the supplied `AbortSignal` was cancelled;
-- `unavailable` — the coordination backend could not perform the operation.
+## Shared-cache requirement
 
-The coordinator does **not** return or broadcast the read result.
+Cluster-wide result coalescing requires at least one shared cache level. The owner publishes a successful result through shared cache; followers obtain it by re-reading that cache after the flight changes state.
 
-After `released`, Reader integration must re-read shared cache before attempting another claim. If the result is still unavailable there, the caller re-contends for ownership rather than bypassing coordination.
+A coordinator alone cannot provide cluster-wide result rendezvous for a local-only/no-cache topology.
 
-## Shared rendezvous requirement
+## Failure boundary
 
-Cluster-wide result coalescing under this design requires at least one shared cache level.
-
-The distributed owner writes its successful source result to shared cache. Followers wait for ownership to end and then obtain the result by re-reading that shared cache.
-
-A topology with only local cache, or with no shared result store, must not claim cluster-wide result coalescing through this coordinator alone.
-
-## Failure surface
-
-Coordinator availability is represented explicitly by `unavailable` outcomes on claim/wait/renew/release. This package does not choose Reader's later fail-open/fail-closed execution policy; that belongs to Reader integration.
-
-Lease expiry permits reclaim by a new owner. The new claim must use a newer generation so stale owners cannot interfere with the reclaimed flight.
+Coordinator availability is explicit through contract outcomes. Reader owns the execution policy. The stable Reader integration fails closed when configured distributed coordination is unavailable rather than bypassing coordination and creating uncontrolled source work.
 
 ## Non-responsibilities
 
-This coordinator deliberately does not:
+This package does not persist results or durable execution history, execute handlers, read/write caches, implement local single-flight, or prescribe Redis.
 
-- persist read results;
-- transport read results between instances;
-- provide durable execution history;
-- implement write-side idempotency or an `ExecutionLog` equivalent;
-- execute ReadHandlers;
-- read or write caches;
-- implement local in-process single-flight;
-- prescribe Redis or any other coordination technology.
+## Related documentation
 
-The Redis implementation and Reader integration are separate later tasks in Epic #72.
+- [`docs/architecture/README.md`](../../docs/architecture/README.md)
+- [`docs/read-public-api.md`](../../docs/read-public-api.md)
+- [`docs/read-release-readiness.md`](../../docs/read-release-readiness.md)
