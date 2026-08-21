@@ -15,6 +15,7 @@
         }
     },
     "dependencies": {
+        "@event-driven-platform/query": "workspace:*",
         "@event-driven-platform/read-execution-coordinator": "workspace:*",
         "redis": "^6.2.1",
         "tslib": "^2.3.0"
