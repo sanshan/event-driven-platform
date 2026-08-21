@@ -10,17 +10,18 @@ This package implements transient cross-instance read-execution ownership. It do
 
 ## Ownership model
 
-Each effective `ReadCacheKey` maps to:
+Each effective `ReadCacheKey` maps only to transient coordination state:
 
 - a lease key with bounded Redis TTL;
-- a monotonic Redis-backed ownership generation counter;
 - a release notification channel used only to wake followers.
 
-Claim is atomic in Redis. If no active lease exists, Redis increments the generation and installs the lease with `PSETEX` in one Lua script. The returned lease reference contains the caller `ownerId` and Redis-issued generation.
+The adapter namespace also owns one global monotonic generation counter. This is fixed-cardinality sequencing metadata: it contains no read identity, read result or execution history. Using one counter avoids creating an immortal Redis key for every distinct read identity while still ensuring that reclaimed ownership receives a strictly newer generation.
+
+Claim is atomic in Redis. If no active lease exists, Redis increments the global generation and installs the per-read lease with `PSETEX` in one Lua script. The returned lease reference contains the caller `ownerId` and Redis-issued generation.
 
 Renewal and release use atomic compare-and-mutate Lua scripts. Both compare the complete serialized lease reference before extending or deleting the lease. A stale owner therefore cannot renew or delete a lease created by a later generation.
 
-Generation counters intentionally outlive individual lease TTLs so a reclaimed lease receives a strictly newer generation. They contain no read result or business data.
+All high-cardinality per-read stored state is TTL-bounded. Pub/Sub channels themselves persist no Redis data.
 
 ## Follower waiting
 
