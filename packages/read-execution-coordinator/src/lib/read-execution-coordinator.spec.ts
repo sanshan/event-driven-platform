@@ -36,10 +36,7 @@ class TestReadExecutionCoordinator implements ReadExecutionCoordinator {
         const current = this.leases.get(identity);
 
         if (current !== undefined && current.expiresAtMs > this.nowMs) {
-            return {
-                status: 'already-in-progress',
-                leaseExpiresAt: new Date(current.expiresAtMs).toISOString(),
-            };
+            return { status: 'already-in-progress' };
         }
 
         const version = (this.versions.get(identity) ?? 0) + 1;
@@ -131,7 +128,7 @@ describe('ReadExecutionCoordinator contract', () => {
 
         await expect(
             coordinator.claim({ key, ownerId: 'node-b', leaseDurationMs: 1000 }),
-        ).resolves.toMatchObject({ status: 'already-in-progress' });
+        ).resolves.toEqual({ status: 'already-in-progress' });
     });
 
     it('increments ownership generation when an expired lease is reclaimed', async () => {
@@ -165,10 +162,9 @@ describe('ReadExecutionCoordinator contract', () => {
         await expect(coordinator.release({ key, lease: first.lease })).resolves.toEqual({
             status: 'ownership-lost',
         });
-        await expect(coordinator.renew({ key, lease: second.lease, leaseDurationMs: 100 })).resolves.toEqual({
-            status: 'renewed',
-            lease: second.lease,
-        });
+        await expect(
+            coordinator.renew({ key, lease: second.lease, leaseDurationMs: 100 }),
+        ).resolves.toEqual({ status: 'renewed', lease: second.lease });
     });
 
     it('keeps the ownership generation stable across successful renewals', async () => {
@@ -198,5 +194,14 @@ describe('ReadExecutionCoordinator contract', () => {
         await expect(
             coordinator.wait({ key, timeoutMs: 10, signal: controller.signal }),
         ).resolves.toEqual({ status: 'cancelled' });
+    });
+
+    it('exposes coordinator unavailability as an explicit typed outcome', () => {
+        const unavailable: ClaimReadExecutionResult = {
+            status: 'unavailable',
+            reason: 'coordination backend unavailable',
+        };
+
+        expect(unavailable.status).toBe('unavailable');
     });
 });
