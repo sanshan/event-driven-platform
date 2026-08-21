@@ -37,10 +37,11 @@ export class DefaultReader implements Reader {
     }
 
     public execute<TRead extends AnyRead>(query: Query<TRead>): Promise<ReadResultOf<TRead>> {
+        const cachePlan = query.options?.cache;
         const work =
-            query.options?.cache === undefined
+            cachePlan === undefined
                 ? () => this.sourceExecutor.execute(query.read)
-                : () => this.cachedExecutor.execute(query, query.options.cache!);
+                : () => this.cachedExecutor.execute(query, cachePlan);
 
         return this.executionControl.execute(work, query.options);
     }
