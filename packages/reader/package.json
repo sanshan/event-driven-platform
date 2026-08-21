@@ -22,6 +22,8 @@
         "tslib": "catalog:"
     },
     "devDependencies": {
+        "@event-driven-platform/read-cache-in-memory": "workspace:*",
+        "@event-driven-platform/read-cache-redis": "workspace:*",
         "@event-driven-platform/read-execution-coordinator-redis": "workspace:*",
         "redis": "^6.2.1"
     }
