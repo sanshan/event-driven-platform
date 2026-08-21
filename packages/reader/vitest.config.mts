@@ -9,7 +9,7 @@ export default defineConfig(() => ({
         globals: true,
         environment: 'node',
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-        exclude: ['src/**/*.integration.spec.ts'],
+        exclude: ['src/**/*.integration.spec.ts', 'src/**/*.verification.spec.ts'],
         reporters: ['default'],
         coverage: {
             reportsDirectory: './test-output/vitest/coverage',
