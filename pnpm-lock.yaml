@@ -540,8 +540,6 @@ importers:
         specifier: ^6.2.1
         version: 6.2.1
 
-  packages/repository-knowledge-framework/dist/lib/specification/object-types: {}
-
   packages/retry:
     dependencies:
       tslib:

@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/read-execution-coordinator",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Technology-neutral distributed Read execution coordination contracts.",
     "type": "module",
     "main": "./dist/index.js",

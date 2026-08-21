@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/execution-log",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Execution log entry and attempt state contracts for idempotent event-driven platform execution.",
     "type": "module",
     "main": "./dist/index.js",

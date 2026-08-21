@@ -1,3 +1,16 @@
+## 0.0.4 (2026-08-21)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/aggregate-reference to 0.1.2
+- Updated @event-driven-platform/operation-result to 0.1.2
+- Updated @event-driven-platform/tenant-reference to 0.1.2
+- Updated @event-driven-platform/operation to 0.1.2
+- Updated @event-driven-platform/command to 0.0.3
+- Updated @event-driven-platform/clock to 0.0.4
+- Updated @event-driven-platform/event to 0.1.2
+- Updated @event-driven-platform/types to 0.1.2
+
 ## 0.0.3 (2026-08-20)
 
 ### 🧱 Updated Dependencies

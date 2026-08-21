@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/retry",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Retry policy and delay strategy contracts for event-driven platform Commands.",
     "type": "module",
     "main": "./dist/index.js",

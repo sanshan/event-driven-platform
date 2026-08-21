@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/actor",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Actor contracts and factory for the event-driven platform.",
     "type": "module",
     "main": "./dist/index.js",

@@ -1,3 +1,9 @@
+## 0.0.3 (2026-08-21)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/types to 0.1.2
+
 ## 0.0.2 (2026-08-20)
 
 ### 🚀 Features
