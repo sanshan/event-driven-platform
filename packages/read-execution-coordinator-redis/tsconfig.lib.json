@@ -13,6 +13,9 @@
     "references": [
         {
             "path": "../query/tsconfig.lib.json"
+        },
+        {
+            "path": "../read-execution-coordinator/tsconfig.lib.json"
         }
     ],
     "exclude": [
