@@ -43,13 +43,21 @@ export class DefaultReader implements Reader {
     }
 
     async execute<TRead extends AnyRead>(query: Query<TRead>): Promise<ReadResultOf<TRead>> {
+        if (query.options?.signal?.aborted === true) {
+            throw new ReadCancelledError();
+        }
+
         const cachePlan = query.options?.cache;
 
         if (cachePlan === undefined) {
             return this.executeSource(query);
         }
 
-        return this.executeCached(query, cachePlan);
+        return this.awaitWithQueryControls(
+            this.executeCached(query, cachePlan),
+            query.options?.timeoutMs,
+            query.options?.signal,
+        );
     }
 
     private async executeCached<TRead extends AnyRead>(
@@ -73,14 +81,8 @@ export class DefaultReader implements Reader {
             return localHit.value;
         }
 
-        const flight = this.localReadInFlight.run(cachePlan.key, () =>
+        return this.localReadInFlight.run(cachePlan.key, () =>
             this.executeLocalLeader(query, cachePlan, localEndIndex),
-        );
-
-        return this.awaitWithQueryControls(
-            flight,
-            query.options?.timeoutMs,
-            query.options?.signal,
         );
     }
 
