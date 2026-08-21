@@ -55,7 +55,13 @@ describe('Redis read cache integration', () => {
 
         const keys = await client.keys('read-cache:*');
         expect(keys).toHaveLength(1);
-        await expect(client.pTTL(keys[0]!)).resolves.toBeGreaterThan(0);
+
+        const [storedKey] = keys;
+        if (storedKey === undefined) {
+            throw new Error('Expected one Redis cache key after write.');
+        }
+
+        await expect(client.pTTL(storedKey)).resolves.toBeGreaterThan(0);
     });
 
     it('returns an error outcome when deserialization fails', async () => {
