@@ -71,11 +71,14 @@ export class DistributedReadFlight {
         let unavailableReason: string | undefined;
         let stopped = false;
         let timer: ReturnType<typeof setTimeout> | undefined;
+        let renewing: Promise<void> | undefined;
         const intervalMs = Math.max(1, Math.floor(request.leaseDurationMs / 2));
 
         const scheduleRenewal = (): void => {
             timer = setTimeout(() => {
-                void renew();
+                renewing = renew().finally(() => {
+                    renewing = undefined;
+                });
             }, intervalMs);
         };
 
@@ -106,6 +109,14 @@ export class DistributedReadFlight {
             }
         };
 
+        const synchronizeRenewal = async (): Promise<void> => {
+            if (renewing !== undefined) {
+                await renewing;
+            }
+
+            this.assertOwnership(leaseState, unavailableReason);
+        };
+
         scheduleRenewal();
 
         try {
@@ -116,17 +127,23 @@ export class DistributedReadFlight {
 
             const sourceResult = await request.executeSource();
 
-            this.assertOwnership(leaseState, unavailableReason);
-
+            await synchronizeRenewal();
             await request.publishSourceResult(sourceResult);
-
-            this.assertOwnership(leaseState, unavailableReason);
+            await synchronizeRenewal();
 
             return sourceResult;
         } finally {
             stopped = true;
             if (timer !== undefined) {
                 clearTimeout(timer);
+            }
+
+            if (renewing !== undefined) {
+                try {
+                    await renewing;
+                } catch {
+                    // Renewal failure has already been represented through coordinator outcomes.
+                }
             }
 
             try {
