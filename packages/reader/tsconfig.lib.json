@@ -25,6 +25,12 @@
         },
         {
             "path": "../read-execution-coordinator-redis/tsconfig.lib.json"
+        },
+        {
+            "path": "../read-cache-redis/tsconfig.lib.json"
+        },
+        {
+            "path": "../read-cache-in-memory/tsconfig.lib.json"
         }
     ],
     "exclude": [
