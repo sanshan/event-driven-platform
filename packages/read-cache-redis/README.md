@@ -1,11 +1,37 @@
-# read-cache-redis
+# @event-driven-platform/read-cache-redis
 
-This library was generated with [Nx](https://nx.dev).
+Shared Redis-backed cache capabilities for the Read pipeline.
 
-## Building
+The package provides separate `CacheReader<TResult>` and `CacheWriter<TResult>` implementations for `scope: 'shared'` cache levels. It uses the same supported Redis client family as the distributed read coordinator but contains no lease, ownership, Reader traversal, promotion, backfill, retry, or in-flight logic.
 
-Run `nx build read-cache-redis` to build the library.
+The adapter provides:
 
-## Running unit tests
+- explicit key namespacing from `ReadCacheKey`;
+- separate reader and writer capabilities;
+- explicit serialization/deserialization through a codec;
+- configurable TTL in milliseconds;
+- configurable expiry jitter through an injected random source;
+- miss/error distinction through the Query cache-read contract;
+- real Redis integration coverage.
 
-Run `nx test read-cache-redis` to execute the unit tests via [Vitest](https://vitest.dev/).
+Example:
+
+```ts
+const codec = createJsonReadCacheCodec<UserView>();
+
+const reader = new RedisReadCacheReader({ client, codec });
+const writer = new RedisReadCacheWriter({
+    client,
+    codec,
+    ttlMs: 120_000,
+    jitterRatio: 0.1,
+});
+
+const level = {
+    scope: 'shared' as const,
+    reader,
+    writer,
+};
+```
+
+A shared cache carries values between Reader instances during distributed rendezvous, but the adapter itself never participates in coordination.
