@@ -28,6 +28,10 @@ interface CacheHit<TResult> {
     readonly value: TResult;
 }
 
+type SharedCacheResult<TResult> =
+    | { readonly status: 'hit'; readonly value: TResult }
+    | { readonly status: 'miss' };
+
 export class DefaultReader implements Reader {
     private readonly readTimeout: ReadTimeout;
     private readonly localReadInFlight = new LocalReadInFlight();
@@ -100,10 +104,10 @@ export class DefaultReader implements Reader {
             return localHit.value;
         }
 
-        const downstreamHit = await this.findSharedCacheHit(cachePlan, localEndIndex);
+        const downstreamResult = await this.findSharedCacheResult(cachePlan, localEndIndex);
 
-        if (downstreamHit !== undefined) {
-            return downstreamHit;
+        if (downstreamResult.status === 'hit') {
+            return downstreamResult.value;
         }
 
         const coordination = cachePlan.coordination;
@@ -136,17 +140,17 @@ export class DefaultReader implements Reader {
             key: cachePlan.key,
             ownerId: this.ownerIdFactory(),
             leaseDurationMs: coordination.leaseDurationMs,
-            readShared: () => this.findSharedCacheHit(cachePlan, localEndIndex),
+            readShared: () => this.findSharedCacheResult(cachePlan, localEndIndex),
             executeSource: () => this.executeSourceWithoutTimeout(query),
             publishSourceResult: (result) =>
                 this.populateLevels(cachePlan.levels, cachePlan.key, result),
         });
     }
 
-    private async findSharedCacheHit<TResult>(
+    private async findSharedCacheResult<TResult>(
         cachePlan: QueryCachePlan<TResult>,
         firstSharedIndex: number,
-    ): Promise<TResult | undefined> {
+    ): Promise<SharedCacheResult<TResult>> {
         const hit = await this.findCacheHit(
             cachePlan.levels.slice(firstSharedIndex),
             cachePlan.key,
@@ -154,7 +158,7 @@ export class DefaultReader implements Reader {
         );
 
         if (hit === undefined) {
-            return undefined;
+            return { status: 'miss' };
         }
 
         await this.populateLevels(
@@ -163,7 +167,7 @@ export class DefaultReader implements Reader {
             hit.value,
         );
 
-        return hit.value;
+        return { status: 'hit', value: hit.value };
     }
 
     private async executeSourceAndBackfill<TRead extends AnyRead>(
