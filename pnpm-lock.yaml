@@ -527,6 +527,12 @@ importers:
         specifier: 'catalog:'
         version: 2.8.1
     devDependencies:
+      '@event-driven-platform/read-cache-in-memory':
+        specifier: workspace:*
+        version: link:../read-cache-in-memory
+      '@event-driven-platform/read-cache-redis':
+        specifier: workspace:*
+        version: link:../read-cache-redis
       '@event-driven-platform/read-execution-coordinator-redis':
         specifier: workspace:*
         version: link:../read-execution-coordinator-redis
