@@ -1,4 +1,3 @@
-export { DefaultReadTimeout } from './lib/control/default-read-timeout.js';
 export type { ReadTimeout } from './lib/control/read-timeout.js';
 export { ReadCancelledError } from './lib/errors/read-cancelled.error.js';
 export { ReadExecutionCoordinationNotConfiguredError } from './lib/errors/read-execution-coordination-not-configured.error.js';
