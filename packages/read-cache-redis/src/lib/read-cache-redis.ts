@@ -66,13 +66,13 @@ export class RedisReadCacheWriter<TResult> implements CacheWriter<TResult> {
     }
 }
 
-export interface FixedTtlPolicyOptions {
+export interface RedisReadCacheTtlPolicyOptions {
     readonly ttlMs: number;
     readonly jitterRatio?: number;
     readonly random?: () => number;
 }
 
-export function createRedisReadCacheTtlPolicy(options: FixedTtlPolicyOptions): RedisReadCacheTtlPolicy {
+export function createRedisReadCacheTtlPolicy(options: RedisReadCacheTtlPolicyOptions): RedisReadCacheTtlPolicy {
     if (!Number.isInteger(options.ttlMs) || options.ttlMs <= 0) {
         throw new RangeError('Redis read cache ttlMs must be a positive integer.');
     }
