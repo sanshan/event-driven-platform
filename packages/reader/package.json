@@ -17,6 +17,7 @@
     "dependencies": {
         "@event-driven-platform/query": "workspace:*",
         "@event-driven-platform/read": "workspace:*",
+        "@event-driven-platform/read-execution-coordinator": "workspace:*",
         "@event-driven-platform/read-handler-resolver": "workspace:*",
         "tslib": "catalog:"
     }
