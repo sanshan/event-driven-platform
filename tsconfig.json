@@ -106,6 +106,9 @@
         },
         {
             "path": "./packages/read-execution-coordinator"
+        },
+        {
+            "path": "./packages/read-execution-coordinator-redis"
         }
     ]
 }
