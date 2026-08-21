@@ -8,7 +8,7 @@
     "targets": {
         "test:integration": {
             "cache": false,
-            "command": "vitest run src/lib/read-cache-redis.integration.spec.ts"
+            "command": "vitest run --config vitest.integration.config.mts"
         }
     }
 }
