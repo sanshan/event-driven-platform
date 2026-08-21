@@ -129,6 +129,23 @@ Verification is intentionally layered rather than duplicated:
 
 A separate generic Reader integration suite is intentionally absent because its previous coverage duplicated the stronger verification suite.
 
+The Reader verification files share one external Redis database. They are therefore executed sequentially at the file level so one suite cannot clear or mutate Redis state belonging to another suite. Ordinary unit tests remain parallel.
+
+## External-consumer artifact verification
+
+The supported Read package set has been exercised through the repository's existing Nx Release + Verdaccio verification path rather than workspace source resolution.
+
+CI versions and publishes the candidate workspace artifacts to the temporary local registry as `0.0.0-e2e`. An isolated consumer project then:
+
+1. installs the Read packages from Verdaccio;
+2. typechecks against the published declaration files with `skipLibCheck: false`;
+3. executes a no-cache `Read -> Query -> Reader` composition;
+4. executes a bounded process-local InMemory L1 cache composition;
+5. when Redis-backed Read packages are affected, executes two independent Reader instances using published Redis L2 and distributed coordinator packages against real Redis;
+6. verifies that the distributed cold-read pair collapses to one source execution and promotes the result into both local L1 caches.
+
+This evidence covers package manifests, root exports, declaration artifacts, package dependency resolution, ESM runtime artifacts, and representative consumer composition outside the monorepo.
+
 ## Release constraints
 
 The Read release does not claim universal throughput, latency, or p99 targets. Those values depend on consumer workload, topology, cache sizing, source behavior, and deployment environment.
@@ -137,12 +154,6 @@ The release also does not introduce observability or diagnostics APIs. Cross-pip
 
 No future capability is part of this release merely because it is discussed elsewhere. Only implemented package-root APIs and behavior documented here are release commitments.
 
-## Remaining release checks
+## Remaining release check
 
-Before the Read package set is considered externally consumable, the repository still must:
-
-1. align package READMEs, root documentation, and agent instructions with the implemented Stable pipeline;
-2. publish the candidate packages through the repository's existing local Nx Release/Verdaccio flow;
-3. install those artifacts into an isolated external project without workspace path resolution;
-4. typecheck and execute representative no-cache and cached/distributed consumer compositions;
-5. run the final Epic-wide dependency, documentation, API, and CI audit.
+The package documentation, public boundary and external-consumer artifact flow are now aligned and exercised. The remaining gate for this issue is the final Epic-wide dependency, documentation, public-API and CI audit before the Read boundary is treated as frozen.
