@@ -20,5 +20,9 @@
         "@event-driven-platform/read-execution-coordinator": "workspace:*",
         "@event-driven-platform/read-handler-resolver": "workspace:*",
         "tslib": "catalog:"
+    },
+    "devDependencies": {
+        "@event-driven-platform/read-execution-coordinator-redis": "workspace:*",
+        "redis": "^6.2.1"
     }
 }
