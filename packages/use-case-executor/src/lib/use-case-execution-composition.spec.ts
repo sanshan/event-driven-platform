@@ -426,7 +426,7 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
         }
 
         if (!sameLease(record.lease, request.lease)) {
-            return { type: 'lease-conflict', lease: record.lease };
+            return { type: 'lease-conflict' };
         }
 
         record.leaseVersion += 1;
@@ -450,7 +450,7 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
         }
 
         if (!sameLease(record.lease, request.lease)) {
-            return { type: 'lease-conflict', lease: record.lease };
+            return { type: 'lease-conflict' };
         }
 
         record.state = 'completed';
@@ -468,7 +468,7 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
         }
 
         if (!sameLease(record.lease, request.lease)) {
-            return { type: 'lease-conflict', lease: record.lease };
+            return { type: 'lease-conflict' };
         }
 
         record.state = 'released';
