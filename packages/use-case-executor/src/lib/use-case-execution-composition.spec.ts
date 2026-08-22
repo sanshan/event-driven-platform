@@ -6,7 +6,11 @@ import {
     type ExecutionLeaseOwnerId,
 } from '@event-driven-platform/execution';
 import { DefaultEventIdFactory, type AnyEvent } from '@event-driven-platform/event';
-import { DefaultIntentFactory, type Intent } from '@event-driven-platform/intent';
+import {
+    DefaultIntentFactory,
+    type Intent,
+    type IntentDescriptor,
+} from '@event-driven-platform/intent';
 import type { AnyOperation } from '@event-driven-platform/operation';
 import { DefaultOperationEventEnvelopeFactory } from '@event-driven-platform/operation-event-envelope-factory';
 import type { UseCase } from '@event-driven-platform/use-case';
@@ -35,7 +39,10 @@ const intentFactory = new DefaultIntentFactory();
 const executionIdFactory = new DefaultExecutionIdFactory();
 const leaseOwnerId = 'use-case-executor-1' as ExecutionLeaseOwnerId;
 const correlationId = 'flow-1';
-const tenant = { type: 'merchant', id: 'merchant-1' } as const;
+const tenant = {
+    type: 'merchant',
+    id: 'merchant-1',
+} as IntentDescriptor['tenant'];
 
 function rootIntent(requestId: string): Intent {
     return intentFactory.create({
@@ -63,28 +70,27 @@ function createExecutor(store: UseCaseExecutionStore, ownerId = leaseOwnerId) {
 }
 
 describe('UseCase execution composition', () => {
-    it('restarts incomplete orchestration from the beginning while the same child Intent protects an already completed write', async () => {
+    it('restarts incomplete orchestration while the same child Intent protects the completed write', async () => {
         const store = new StatefulUseCaseExecutionStore();
         const executor = createExecutor(store);
-        const writeBoundary = new IdempotentWriteBoundary();
+        const writes = new IdempotentWriteBoundary();
         const parentIntent = rootIntent('retry-safe');
-        let orchestrationRuns = 0;
+        let runs = 0;
 
         const useCase: UseCase<void, string> = {
             execute: async (_input, context) => {
-                orchestrationRuns += 1;
+                runs += 1;
                 const childIntent = intentFactory.derive({
                     parent: { id: context.intent.id },
                     slot: 'create-wallet',
                 });
-
-                const child = await writeBoundary.execute({
+                const child = await writes.execute({
                     intent: childIntent,
                     correlationId: context.correlationId,
                     snapshot: { kind: 'CreateWallet', currency: 'EUR' },
                 });
 
-                if (orchestrationRuns === 1) {
+                if (runs === 1) {
                     throw new Error('failure after first child');
                 }
 
@@ -95,26 +101,24 @@ describe('UseCase execution composition', () => {
         await expect(
             executor.execute({ useCase, input: undefined, intent: parentIntent, correlationId }),
         ).rejects.toThrow('failure after first child');
-
+        await expect(
+            executor.execute({ useCase, input: undefined, intent: parentIntent, correlationId }),
+        ).resolves.toBe('wallet-created');
         await expect(
             executor.execute({ useCase, input: undefined, intent: parentIntent, correlationId }),
         ).resolves.toBe('wallet-created');
 
-        await expect(
-            executor.execute({ useCase, input: undefined, intent: parentIntent, correlationId }),
-        ).resolves.toBe('wallet-created');
-
-        expect(orchestrationRuns).toBe(2);
-        expect(writeBoundary.effectCount).toBe(1);
-        expect(writeBoundary.sources).toEqual(['executed', 'stored']);
-        expect(writeBoundary.intentIds[0]).toBe(writeBoundary.intentIds[1]);
-        expect(writeBoundary.correlationIds).toEqual([correlationId, correlationId]);
+        expect(runs).toBe(2);
+        expect(writes.effectCount).toBe(1);
+        expect(writes.sources).toEqual(['executed', 'stored']);
+        expect(writes.intentIds[0]).toBe(writes.intentIds[1]);
+        expect(writes.correlationIds).toEqual([correlationId, correlationId]);
     });
 
-    it('keeps one logical child Intent stable when retry-time payload or branch selection changes', async () => {
+    it('does not mint a new child Intent when retry-time payload or branch selection changes', async () => {
         const store = new StatefulUseCaseExecutionStore();
         const executor = createExecutor(store);
-        const writeBoundary = new IdempotentWriteBoundary();
+        const writes = new IdempotentWriteBoundary();
         const parentIntent = rootIntent('changed-state');
         let run = 0;
 
@@ -129,8 +133,7 @@ describe('UseCase execution composition', () => {
                     run === 1
                         ? { kind: 'CreateCardPaymentMethod', currency: 'EUR' }
                         : { kind: 'CreateBankPaymentMethod', currency: 'USD' };
-
-                const child = await writeBoundary.execute({
+                const child = await writes.execute({
                     intent: childIntent,
                     correlationId: context.correlationId,
                     snapshot,
@@ -147,45 +150,40 @@ describe('UseCase execution composition', () => {
         await expect(
             executor.execute({ useCase, input: undefined, intent: parentIntent, correlationId }),
         ).rejects.toThrow('retry after state change');
-
         await expect(
             executor.execute({ useCase, input: undefined, intent: parentIntent, correlationId }),
         ).rejects.toBeInstanceOf(WriteIntentConflictError);
 
-        expect(writeBoundary.effectCount).toBe(1);
-        expect(writeBoundary.intentIds).toHaveLength(2);
-        expect(writeBoundary.intentIds[0]).toBe(writeBoundary.intentIds[1]);
+        expect(writes.effectCount).toBe(1);
+        expect(writes.intentIds).toHaveLength(2);
+        expect(writes.intentIds[0]).toBe(writes.intentIds[1]);
     });
 
     it('keeps 1:N child identities stable across collection reordering', () => {
         const parent = rootIntent('collection-order');
-        const firstOrder = ['wallet-1', 'wallet-2', 'wallet-3'].map((walletId) => [
-            walletId,
-            intentFactory.derive({
-                parent: { id: parent.id },
-                slot: 'notify-wallet',
-                discriminator: walletId,
-            }),
-        ] as const);
-        const secondOrder = ['wallet-3', 'wallet-1', 'wallet-2'].map((walletId) => [
-            walletId,
-            intentFactory.derive({
-                parent: { id: parent.id },
-                slot: 'notify-wallet',
-                discriminator: walletId,
-            }),
-        ] as const);
+        const derive = (ids: readonly string[]) =>
+            Object.fromEntries(
+                ids.map((id) => [
+                    id,
+                    intentFactory.derive({
+                        parent: { id: parent.id },
+                        slot: 'notify-wallet',
+                        discriminator: id,
+                    }),
+                ]),
+            );
+        const first = derive(['wallet-1', 'wallet-2', 'wallet-3']);
+        const reordered = derive(['wallet-3', 'wallet-1', 'wallet-2']);
 
-        expect(Object.fromEntries(secondOrder.map(([id, intent]) => [id, intent.id]))).toEqual(
-            Object.fromEntries(firstOrder.map(([id, intent]) => [id, intent.id])),
+        expect(Object.fromEntries(Object.entries(reordered).map(([id, intent]) => [id, intent.id]))).toEqual(
+            Object.fromEntries(Object.entries(first).map(([id, intent]) => [id, intent.id])),
         );
-
-        for (const [, intent] of secondOrder) {
+        for (const intent of Object.values(reordered)) {
             expect(intent.parent).toEqual({ id: parent.id });
         }
     });
 
-    it('rejects an active duplicate while allowing a different parent Intent to execute independently', async () => {
+    it('rejects an active duplicate while a different parent Intent executes independently', async () => {
         const store = new StatefulUseCaseExecutionStore();
         const executor = createExecutor(store);
         const blocked = deferred<string>();
@@ -208,7 +206,6 @@ describe('UseCase execution composition', () => {
                 correlationId,
             }),
         ).rejects.toBeInstanceOf(UseCaseAlreadyInProgressError);
-
         await expect(
             executor.execute({
                 useCase: { execute: async () => 'independent' },
@@ -251,7 +248,7 @@ describe('UseCase execution composition', () => {
         await expect(staleExecution).rejects.toBeInstanceOf(UseCaseExecutionTransitionError);
     });
 
-    it('continues causal Intent lineage and CorrelationId through EventEnvelope into downstream UseCase replay', async () => {
+    it('continues Intent lineage and CorrelationId through EventEnvelope into downstream replay', async () => {
         const root = rootIntent('event-flow');
         const operationIntent = intentFactory.derive({
             parent: { id: root.id },
@@ -289,22 +286,20 @@ describe('UseCase execution composition', () => {
         expect(envelope.intentId).toBe(operationIntent.id);
         expect(envelope.correlationId).toBe(correlationId);
 
-        const deriveDownstream = (reactionSlot: string, sourceEventId = envelope.eventId) =>
+        const deriveDownstream = (slot: string) =>
             intentFactory.derive({
                 parent: { id: envelope.intentId },
-                slot: reactionSlot,
-                discriminator: sourceEventId,
+                slot,
+                discriminator: envelope.eventId,
             });
         const downstreamIntent = deriveDownstream('start-wallet-fulfillment');
-        const sameDeliveryIntent = deriveDownstream('start-wallet-fulfillment');
-        const otherReactionIntent = deriveDownstream('notify-wallet-owner');
-        let downstreamRuns = 0;
-        const store = new StatefulUseCaseExecutionStore();
-        const executor = createExecutor(store);
+        const redeliveredIntent = deriveDownstream('start-wallet-fulfillment');
+        const otherReaction = deriveDownstream('notify-wallet-owner');
+        let runs = 0;
+        const executor = createExecutor(new StatefulUseCaseExecutionStore());
         const downstreamUseCase: UseCase<void, string> = {
             execute: async (_input, context) => {
-                downstreamRuns += 1;
-                expect(context.intent.id).toBe(downstreamIntent.id);
+                runs += 1;
                 expect(context.intent.parent).toEqual({ id: operationIntent.id });
                 expect(context.intent.derivation?.discriminator).toBe(envelope.eventId);
                 expect(context.correlationId).toBe(correlationId);
@@ -312,8 +307,8 @@ describe('UseCase execution composition', () => {
             },
         };
 
-        expect(sameDeliveryIntent.id).toBe(downstreamIntent.id);
-        expect(otherReactionIntent.id).not.toBe(downstreamIntent.id);
+        expect(redeliveredIntent.id).toBe(downstreamIntent.id);
+        expect(otherReaction.id).not.toBe(downstreamIntent.id);
 
         await expect(
             executor.execute({
@@ -323,17 +318,16 @@ describe('UseCase execution composition', () => {
                 correlationId: envelope.correlationId,
             }),
         ).resolves.toBe('downstream-result');
-
         await expect(
             executor.execute({
                 useCase: downstreamUseCase,
                 input: undefined,
-                intent: sameDeliveryIntent,
+                intent: redeliveredIntent,
                 correlationId: 'different-correlation-id',
             }),
         ).resolves.toBe('downstream-result');
 
-        expect(downstreamRuns).toBe(1);
+        expect(runs).toBe(1);
     });
 });
 
@@ -362,7 +356,6 @@ class IdempotentWriteBoundary {
             if (existing.snapshot !== snapshot) {
                 throw new WriteIntentConflictError('same Intent reached the write boundary with changed work');
             }
-
             this.sources.push('stored');
             return { result: existing.result, source: 'stored' };
         }
@@ -393,7 +386,6 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
         if (existing && existing.intentId !== request.intent.id) {
             return { type: 'intent-conflict', existingIntentId: existing.intentId };
         }
-
         if (existing?.state === 'completed') {
             return {
                 type: 'completed',
@@ -401,7 +393,6 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
                 completedAt: existing.completedAt ?? request.requestedAt,
             };
         }
-
         if (existing?.state === 'in-progress' && existing.lease) {
             return { type: 'already-in-progress', lease: existing.lease };
         }
@@ -414,17 +405,14 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
             lease,
             leaseVersion,
         });
-
         return { type: 'claimed', lease };
     }
 
     async renewLease(request: RenewUseCaseExecutionLeaseRequest): Promise<RenewUseCaseExecutionLeaseResult> {
         const record = this.records.get(request.executionId);
-
         if (!record || record.state !== 'in-progress' || !record.lease) {
             return { type: 'not-in-progress' };
         }
-
         if (!sameLease(record.lease, request.lease)) {
             return { type: 'lease-conflict' };
         }
@@ -436,7 +424,6 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
             acquiredAt: request.requestedAt,
             expiresAt: addMilliseconds(request.requestedAt, request.leaseDurationMs),
         } as ExecutionLease;
-
         return { type: 'renewed', lease: record.lease };
     }
 
@@ -444,11 +431,9 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
         request: CompleteUseCaseExecutionRequest<TResult>,
     ): Promise<CompleteUseCaseExecutionResult> {
         const record = this.records.get(request.executionId);
-
         if (!record || record.state !== 'in-progress' || !record.lease) {
             return { type: 'not-in-progress' };
         }
-
         if (!sameLease(record.lease, request.lease)) {
             return { type: 'lease-conflict' };
         }
@@ -462,11 +447,9 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
 
     async release(request: ReleaseUseCaseExecutionRequest): Promise<ReleaseUseCaseExecutionResult> {
         const record = this.records.get(request.executionId);
-
         if (!record || record.state !== 'in-progress' || !record.lease) {
             return { type: 'not-in-progress' };
         }
-
         if (!sameLease(record.lease, request.lease)) {
             return { type: 'lease-conflict' };
         }
@@ -478,11 +461,9 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
 
     abandon(executionId: ExecutionId): void {
         const record = this.records.get(executionId);
-
         if (!record || record.state !== 'in-progress') {
             throw new Error('Expected an active execution to abandon.');
         }
-
         record.state = 'released';
         record.lease = null;
     }
@@ -526,6 +507,5 @@ function deferred<T>() {
         resolve = resolvePromise;
         reject = rejectPromise;
     });
-
     return { promise, resolve, reject };
 }
