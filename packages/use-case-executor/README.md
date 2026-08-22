@@ -2,7 +2,7 @@
 
 Durable invocation boundary for application UseCases.
 
-`UseCaseExecutor` derives execution identity from the supplied UseCase `Intent`, claims the invocation through `UseCaseExecutionStore`, executes only a safely claimed UseCase, renews ownership while work remains active, persists successful completion, and replays the exact stored result for an already completed invocation.
+`UseCaseExecutor` derives execution identity from the supplied UseCase `Intent`, claims the invocation through `UseCaseExecutionStore`, executes only a safely claimed UseCase, persists successful completion, and replays the exact stored result for an already completed invocation.
 
 ## Supported entrypoint boundary
 
@@ -31,6 +31,7 @@ For an incomplete invocation whose claim can be reclaimed:
 
 ```text
 same Intent
+-> expired/released incomplete execution
 -> claim/reclaim
 -> UseCase starts again from the beginning
 ```
@@ -39,11 +40,11 @@ The Executor does not checkpoint orchestration steps and does not infer whole-Us
 
 An active duplicate is rejected with `UseCaseAlreadyInProgressError`; followers are not waited, polled, or coalesced by this package.
 
+Each claim uses a fixed 30 second lease window. The Executor does not renew or heartbeat the lease while the UseCase is running. After the lease expires, the durable store may allow another executor to reclaim the invocation. This intentionally does not promise exactly-once UseCase code execution.
+
+Completion and release are fenced with the lease returned by `claim`. If another executor has already reclaimed the invocation and advanced ownership, a stale executor cannot durably complete it. A rejected durable completion is surfaced as `UseCaseExecutionTransitionError` rather than returning an unpersisted result.
+
 If a UseCase throws, the Executor attempts a fenced release and rethrows the original UseCase error. Retry cadence remains the responsibility of the invoking transport/application boundary; there is no internal UseCase retry policy.
-
-A long-running claimed execution renews its lease before expiry. If renewal is rejected or ownership cannot be confirmed, the Executor treats ownership as lost and must not persist or return a later successful UseCase result as durable completion. The already-started UseCase is not force-cancelled by a hidden cancellation mechanism.
-
-A rejected durable completion is surfaced as `UseCaseExecutionTransitionError` rather than returning an unpersisted result.
 
 ## Identity and correlation
 
@@ -56,10 +57,10 @@ The package-root API intentionally exposes:
 - `UseCaseExecutor` and `DefaultUseCaseExecutor`;
 - `UseCaseExecutionRequest`;
 - `UseCaseExecutorDependencies` and `UseCaseExecutorRuntime` for composition;
-- typed Executor errors for active duplicates, Intent conflicts, ownership loss, invalid configuration, and rejected durable transitions.
+- typed Executor errors for active duplicates, Intent conflicts, and rejected durable completion.
 
-Heartbeat timer/lifecycle implementation details are internal and are not a supported package-root API.
+There is no public timer, heartbeat, renewal interval, or lease-duration configuration API.
 
 ## Boundaries
 
-This package does not implement Runner-style retries, guards, rate limiting, timeouts, attempts, execution transactions, Outbox/event publication, child-step persistence, broker behavior, CorrelationId generation, Operation execution, Read execution, or a concrete durable store adapter.
+This package does not implement Runner-style retries, guards, rate limiting, timeouts, attempts, execution transactions, Outbox/event publication, child-step persistence, broker behavior, CorrelationId generation, Operation execution, Read execution, progress detection, lease renewal, or a concrete durable store adapter.
