@@ -25,6 +25,15 @@
         },
         {
             "path": "../clock/tsconfig.lib.json"
+        },
+        {
+            "path": "../operation-event-envelope-factory/tsconfig.lib.json"
+        },
+        {
+            "path": "../operation/tsconfig.lib.json"
+        },
+        {
+            "path": "../event/tsconfig.lib.json"
         }
     ],
     "exclude": [
