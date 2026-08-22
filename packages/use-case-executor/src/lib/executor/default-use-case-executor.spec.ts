@@ -25,7 +25,7 @@ const lease = {
     expiresAt: '2026-08-22T05:00:30.000Z',
 } as ExecutionLease;
 const clock: Clock = { now: () => '2026-08-22T05:00:00.000Z' };
-const executionIdFactory: ExecutionIdFactory = { create: () => executionId };
+const executionIdFactory: ExecutionIdFactory = { create: vi.fn(() => executionId) };
 
 function createExecutor(store: UseCaseExecutionStore) {
     return new DefaultUseCaseExecutor({ clock, executionIdFactory, store }, { leaseOwnerId });
@@ -51,6 +51,7 @@ describe('DefaultUseCaseExecutor', () => {
             correlationId: 'c-1',
         });
 
+        expect(executionIdFactory.create).toHaveBeenCalledWith(intent.id);
         expect(store.claim).toHaveBeenCalledWith({
             executionId,
             intent,
