@@ -688,8 +688,14 @@ importers:
 
   packages/use-case-execution-store:
     dependencies:
+      '@event-driven-platform/execution':
+        specifier: workspace:*
+        version: link:../execution
+      '@event-driven-platform/intent':
+        specifier: workspace:*
+        version: link:../intent
       tslib:
-        specifier: ^2.3.0
+        specifier: 'catalog:'
         version: 2.8.1
 
 packages:

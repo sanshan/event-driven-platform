@@ -16,4 +16,6 @@ export type { ExecutionLease } from './lib/execution-lease.js';
 
 export type { ExecutionLeaseOwnerId } from './lib/execution-lease-owner-id.js';
 
+export type { ExecutionLeaseReference } from './lib/execution-lease-reference.js';
+
 export type { ExecutionLeaseVersion } from './lib/execution-lease-version.js';
