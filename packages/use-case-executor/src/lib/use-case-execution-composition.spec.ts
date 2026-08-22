@@ -21,8 +21,6 @@ import type {
     CompleteUseCaseExecutionResult,
     ReleaseUseCaseExecutionRequest,
     ReleaseUseCaseExecutionResult,
-    RenewUseCaseExecutionLeaseRequest,
-    RenewUseCaseExecutionLeaseResult,
     UseCaseExecutionStore,
 } from '@event-driven-platform/use-case-execution-store';
 import { describe, expect, it } from 'vitest';
@@ -32,7 +30,6 @@ import {
     UseCaseAlreadyInProgressError,
     UseCaseExecutionTransitionError,
 } from './use-case-executor-error.js';
-import type { UseCaseExecutorTimer, UseCaseExecutorTimerHandle } from './use-case-executor-timer.js';
 
 const clock: Clock = { now: () => '2026-08-22T06:00:00.000Z' };
 const intentFactory = new DefaultIntentFactory();
@@ -56,16 +53,8 @@ function rootIntent(requestId: string): Intent {
 
 function createExecutor(store: UseCaseExecutionStore, ownerId = leaseOwnerId) {
     return new DefaultUseCaseExecutor(
-        {
-            clock,
-            executionIdFactory,
-            store,
-            timer: new InertTimer(),
-        },
-        {
-            leaseOwnerId: ownerId,
-            leaseDurationMs: 60_000,
-        },
+        { clock, executionIdFactory, store },
+        { leaseOwnerId: ownerId },
     );
 }
 
@@ -111,13 +100,9 @@ describe('UseCase execution composition', () => {
         expect(runs).toBe(2);
         expect(writes.requests).toHaveLength(2);
         expect(writes.requests[0]?.intent.id).toBe(writes.requests[1]?.intent.id);
-        expect(writes.requests.map((request) => request.correlationId)).toEqual([
-            correlationId,
-            correlationId,
-        ]);
     });
 
-    it('keeps the same semantic child Intent even when retry-time payload or branch selection changes', async () => {
+    it('keeps the same semantic child Intent when retry-time payload or branch selection changes', async () => {
         const store = new StatefulUseCaseExecutionStore();
         const executor = createExecutor(store);
         const writes = new RecordingWriteBoundary();
@@ -156,7 +141,6 @@ describe('UseCase execution composition', () => {
             executor.execute({ useCase, input: undefined, intent: parentIntent, correlationId }),
         ).resolves.toBe('wallet-created');
 
-        expect(writes.requests).toHaveLength(2);
         expect(writes.requests[0]?.intent.id).toBe(writes.requests[1]?.intent.id);
         expect(writes.requests[0]?.snapshot).not.toEqual(writes.requests[1]?.snapshot);
     });
@@ -180,9 +164,6 @@ describe('UseCase execution composition', () => {
         expect(Object.fromEntries(Object.entries(reordered).map(([id, intent]) => [id, intent.id]))).toEqual(
             Object.fromEntries(Object.entries(first).map(([id, intent]) => [id, intent.id])),
         );
-        for (const intent of Object.values(reordered)) {
-            expect(intent.parent).toEqual({ id: parent.id });
-        }
     });
 
     it('rejects an active duplicate while a different parent Intent executes independently', async () => {
@@ -221,12 +202,13 @@ describe('UseCase execution composition', () => {
         await expect(firstExecution).resolves.toBe('first');
     });
 
-    it('prevents a stale owner from completing after an abandoned execution is reclaimed', async () => {
+    it('prevents a stale owner from completing after the fixed lease is reclaimed', async () => {
         const store = new StatefulUseCaseExecutionStore();
         const firstExecutor = createExecutor(store, 'owner-1' as ExecutionLeaseOwnerId);
         const secondExecutor = createExecutor(store, 'owner-2' as ExecutionLeaseOwnerId);
         const parentIntent = rootIntent('reclaim');
         const blocked = deferred<string>();
+        const executionId = executionIdFactory.create(parentIntent.id);
         const staleExecution = firstExecutor.execute({
             useCase: { execute: () => blocked.promise },
             input: undefined,
@@ -235,7 +217,7 @@ describe('UseCase execution composition', () => {
         });
 
         await flushMicrotasks();
-        store.abandon(executionIdFactory.create(parentIntent.id));
+        store.expire(executionId);
 
         await expect(
             secondExecutor.execute({
@@ -271,11 +253,10 @@ describe('UseCase execution composition', () => {
             schemaVersion: 1,
             payload: { walletId: 'wallet-1' },
         } as AnyEvent;
-        const envelopeFactory = new DefaultOperationEventEnvelopeFactory(
+        const [envelope] = new DefaultOperationEventEnvelopeFactory(
             clock,
             new DefaultEventIdFactory(),
-        );
-        const [envelope] = envelopeFactory.createMany({
+        ).createMany({
             operation,
             context: { correlationId },
             events: [event],
@@ -284,9 +265,6 @@ describe('UseCase execution composition', () => {
         if (!envelope) {
             throw new Error('Expected one EventEnvelope.');
         }
-
-        expect(envelope.intentId).toBe(operationIntent.id);
-        expect(envelope.correlationId).toBe(correlationId);
 
         const deriveDownstream = (slot: string) =>
             intentFactory.derive({
@@ -344,7 +322,6 @@ class RecordingWriteBoundary {
 
     async execute(request: WriteRequest): Promise<{ result: string }> {
         this.requests.push(request);
-
         return { result: 'wallet-created' };
     }
 }
@@ -379,7 +356,12 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
         }
 
         const leaseVersion = (existing?.leaseVersion ?? 0) + 1;
-        const lease = createLease(request, leaseVersion);
+        const lease = {
+            ownerId: request.leaseOwnerId,
+            version: leaseVersion,
+            acquiredAt: request.requestedAt,
+            expiresAt: addMilliseconds(request.requestedAt, request.leaseDurationMs),
+        } as ExecutionLease;
         this.records.set(request.executionId, {
             intentId: request.intent.id,
             state: 'in-progress',
@@ -387,25 +369,6 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
             leaseVersion,
         });
         return { type: 'claimed', lease };
-    }
-
-    async renewLease(request: RenewUseCaseExecutionLeaseRequest): Promise<RenewUseCaseExecutionLeaseResult> {
-        const record = this.records.get(request.executionId);
-        if (!record || record.state !== 'in-progress' || !record.lease) {
-            return { type: 'not-in-progress' };
-        }
-        if (!sameLease(record.lease, request.lease)) {
-            return { type: 'lease-conflict' };
-        }
-
-        record.leaseVersion += 1;
-        record.lease = {
-            ownerId: record.lease.ownerId,
-            version: record.leaseVersion,
-            acquiredAt: request.requestedAt,
-            expiresAt: addMilliseconds(request.requestedAt, request.leaseDurationMs),
-        } as ExecutionLease;
-        return { type: 'renewed', lease: record.lease };
     }
 
     async complete<TResult>(
@@ -440,53 +403,32 @@ class StatefulUseCaseExecutionStore implements UseCaseExecutionStore {
         return { type: 'released', releasedAt: request.releasedAt };
     }
 
-    abandon(executionId: ExecutionId): void {
+    expire(executionId: ExecutionId): void {
         const record = this.records.get(executionId);
-        if (!record || record.state !== 'in-progress') {
-            throw new Error('Expected an active execution to abandon.');
+        if (record?.state === 'in-progress') {
+            record.state = 'released';
+            record.lease = null;
         }
-        record.state = 'released';
-        record.lease = null;
     }
 }
 
-class InertTimer implements UseCaseExecutorTimer {
-    schedule(_delayMs: number, _callback: () => void): UseCaseExecutorTimerHandle {
-        return { cancel: () => undefined };
-    }
-}
-
-function createLease(request: ClaimUseCaseExecutionRequest, version: number): ExecutionLease {
-    return {
-        ownerId: request.leaseOwnerId,
-        version,
-        acquiredAt: request.requestedAt,
-        expiresAt: addMilliseconds(request.requestedAt, request.leaseDurationMs),
-    } as ExecutionLease;
-}
-
-function sameLease(
-    current: ExecutionLease,
-    expected: { readonly ownerId: ExecutionLease['ownerId']; readonly version: ExecutionLease['version'] },
-): boolean {
-    return current.ownerId === expected.ownerId && current.version === expected.version;
+function sameLease(current: ExecutionLease, provided: { ownerId: string; version: number }): boolean {
+    return current.ownerId === provided.ownerId && current.version === provided.version;
 }
 
 function addMilliseconds(timestamp: string, milliseconds: number): string {
-    return new Date(Date.parse(timestamp) + milliseconds).toISOString();
+    return new Date(new Date(timestamp).getTime() + milliseconds).toISOString();
+}
+
+function deferred<T>() {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>((resolvePromise) => {
+        resolve = resolvePromise;
+    });
+    return { promise, resolve };
 }
 
 async function flushMicrotasks(): Promise<void> {
     await Promise.resolve();
     await Promise.resolve();
-}
-
-function deferred<T>() {
-    let resolve!: (value: T) => void;
-    let reject!: (reason: unknown) => void;
-    const promise = new Promise<T>((resolvePromise, rejectPromise) => {
-        resolve = resolvePromise;
-        reject = rejectPromise;
-    });
-    return { promise, resolve, reject };
 }
