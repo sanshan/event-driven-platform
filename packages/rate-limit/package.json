@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/rate-limit",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "Execution rate-limit policy contracts for event-driven platform Commands.",
     "type": "module",
     "main": "./dist/index.js",

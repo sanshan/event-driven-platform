@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/read-cache-in-memory",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Bounded in-memory Read cache adapter for the event-driven platform.",
     "type": "module",
     "main": "./dist/index.js",

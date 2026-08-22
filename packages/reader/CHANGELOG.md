@@ -1,3 +1,15 @@
+## 0.0.3 (2026-08-22)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/read-execution-coordinator-redis to 0.0.3
+- Updated @event-driven-platform/read-execution-coordinator to 0.0.3
+- Updated @event-driven-platform/read-handler-resolver to 0.0.3
+- Updated @event-driven-platform/read-cache-in-memory to 0.0.3
+- Updated @event-driven-platform/read-cache-redis to 0.0.3
+- Updated @event-driven-platform/query to 0.0.4
+- Updated @event-driven-platform/read to 0.0.4
+
 ## 0.0.2 (2026-08-21)
 
 ### 🚀 Features

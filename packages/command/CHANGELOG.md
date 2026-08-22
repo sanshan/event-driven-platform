@@ -1,3 +1,19 @@
+## 0.0.4 (2026-08-22)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/aggregate-reference to 0.1.3
+- Updated @event-driven-platform/operation-result to 0.1.3
+- Updated @event-driven-platform/tenant-reference to 0.1.3
+- Updated @event-driven-platform/rate-limit to 0.0.4
+- Updated @event-driven-platform/operation to 0.1.3
+- Updated @event-driven-platform/subject to 0.1.3
+- Updated @event-driven-platform/intent to 0.1.3
+- Updated @event-driven-platform/actor to 0.1.3
+- Updated @event-driven-platform/guard to 0.0.4
+- Updated @event-driven-platform/retry to 0.0.4
+- Updated @event-driven-platform/types to 0.1.3
+
 ## 0.0.3 (2026-08-21)
 
 ### 🧱 Updated Dependencies

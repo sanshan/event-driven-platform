@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/reader",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Centralized execution engine for Queries, cache traversal, coalescing, and ReadHandler dispatch.",
     "type": "module",
     "main": "./dist/index.js",

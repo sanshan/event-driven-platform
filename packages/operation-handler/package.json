@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/operation-handler",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "Operation handler contract for executing one domain Operation within the Runner pipeline.",
     "type": "module",
     "main": "./dist/index.js",

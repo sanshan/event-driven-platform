@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/operation-result",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "description": "Operation result contracts and factories for the event-driven platform.",
     "type": "module",
     "main": "./dist/index.js",
