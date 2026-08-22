@@ -115,6 +115,9 @@
         },
         {
             "path": "./packages/read-cache-redis"
+        },
+        {
+            "path": "./packages/use-case"
         }
     ]
 }
