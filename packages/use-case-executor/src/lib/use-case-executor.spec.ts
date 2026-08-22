@@ -150,6 +150,7 @@ describe('DefaultUseCaseExecutor', () => {
         const useCase: UseCase<string, string> = { execute: () => work.promise };
 
         const execution = executor.execute({ useCase, input: 'input', intent, correlationId: 'c-1' });
+        await Promise.resolve();
         expect(timer.delays).toEqual([20_000]);
 
         timer.fireNext();
@@ -181,6 +182,7 @@ describe('DefaultUseCaseExecutor', () => {
             correlationId: 'c-1',
         });
 
+        await Promise.resolve();
         timer.fireNext();
         work.resolve('result');
         await Promise.resolve();
@@ -206,6 +208,7 @@ describe('DefaultUseCaseExecutor', () => {
             correlationId: 'c-1',
         });
 
+        await Promise.resolve();
         timer.fireNext();
         await Promise.resolve();
         work.resolve('result');
@@ -230,6 +233,7 @@ describe('DefaultUseCaseExecutor', () => {
             correlationId: 'c-1',
         });
 
+        await Promise.resolve();
         timer.fireNext();
         await Promise.resolve();
         work.resolve('result');
@@ -252,6 +256,7 @@ describe('DefaultUseCaseExecutor', () => {
             correlationId: 'c-1',
         });
 
+        await Promise.resolve();
         timer.fireNext();
         await Promise.resolve();
         work.reject(originalError);
