@@ -47,8 +47,13 @@
     "devDependencies": {
         "@event-driven-platform/aggregate-reference": "workspace:*",
         "@event-driven-platform/event": "workspace:*",
+        "@event-driven-platform/intent": "workspace:*",
         "@event-driven-platform/operation-handler": "workspace:*",
+        "@event-driven-platform/reader": "workspace:*",
         "@event-driven-platform/tenant-reference": "workspace:*",
-        "@event-driven-platform/types": "workspace:*"
+        "@event-driven-platform/types": "workspace:*",
+        "@event-driven-platform/use-case": "workspace:*",
+        "@event-driven-platform/use-case-execution-store": "workspace:*",
+        "@event-driven-platform/use-case-executor": "workspace:*"
     }
 }
