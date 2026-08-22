@@ -10,7 +10,23 @@
         "types": ["node"]
     },
     "include": ["src/**/*.ts"],
-    "references": [],
+    "references": [
+        {
+            "path": "../use-case-execution-store/tsconfig.lib.json"
+        },
+        {
+            "path": "../use-case/tsconfig.lib.json"
+        },
+        {
+            "path": "../intent/tsconfig.lib.json"
+        },
+        {
+            "path": "../execution/tsconfig.lib.json"
+        },
+        {
+            "path": "../clock/tsconfig.lib.json"
+        }
+    ],
     "exclude": [
         "vite.config.ts",
         "vite.config.mts",

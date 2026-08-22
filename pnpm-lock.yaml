@@ -700,8 +700,23 @@ importers:
 
   packages/use-case-executor:
     dependencies:
+      '@event-driven-platform/clock':
+        specifier: workspace:*
+        version: link:../clock
+      '@event-driven-platform/execution':
+        specifier: workspace:*
+        version: link:../execution
+      '@event-driven-platform/intent':
+        specifier: workspace:*
+        version: link:../intent
+      '@event-driven-platform/use-case':
+        specifier: workspace:*
+        version: link:../use-case
+      '@event-driven-platform/use-case-execution-store':
+        specifier: workspace:*
+        version: link:../use-case-execution-store
       tslib:
-        specifier: ^2.3.0
+        specifier: 'catalog:'
         version: 2.8.1
 
 packages:
