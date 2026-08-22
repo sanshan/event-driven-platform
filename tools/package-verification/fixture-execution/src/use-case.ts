@@ -26,6 +26,103 @@ import type {
 } from '@event-driven-platform/use-case-execution-store';
 import { DefaultUseCaseExecutor } from '@event-driven-platform/use-case-executor';
 
+interface MemoryRecord {
+    readonly intentId: string;
+    state: 'in-progress' | 'completed' | 'released';
+    lease: ExecutionLease | null;
+    result?: unknown;
+    completedAt?: string;
+    version: number;
+}
+
+class MemoryUseCaseExecutionStore implements UseCaseExecutionStore {
+    private readonly records = new Map<ExecutionId, MemoryRecord>();
+
+    async claim<TResult>(
+        request: ClaimUseCaseExecutionRequest,
+    ): Promise<ClaimUseCaseExecutionResult<TResult>> {
+        const existing = this.records.get(request.executionId);
+
+        if (existing && existing.intentId !== request.intent.id) {
+            return { type: 'intent-conflict', existingIntentId: existing.intentId };
+        }
+        if (existing?.state === 'completed') {
+            return {
+                type: 'completed',
+                result: existing.result as TResult,
+                completedAt: existing.completedAt ?? request.requestedAt,
+            };
+        }
+        if (existing?.state === 'in-progress' && existing.lease) {
+            return { type: 'already-in-progress', lease: existing.lease };
+        }
+
+        const version = (existing?.version ?? 0) + 1;
+        const lease = {
+            ownerId: request.leaseOwnerId,
+            version,
+            acquiredAt: request.requestedAt,
+            expiresAt: new Date(
+                Date.parse(request.requestedAt) + request.leaseDurationMs,
+            ).toISOString(),
+        } as ExecutionLease;
+
+        this.records.set(request.executionId, {
+            intentId: request.intent.id,
+            state: 'in-progress',
+            lease,
+            version,
+        });
+
+        return { type: 'claimed', lease };
+    }
+
+    async complete<TResult>(
+        request: CompleteUseCaseExecutionRequest<TResult>,
+    ): Promise<CompleteUseCaseExecutionResult> {
+        const record = this.records.get(request.executionId);
+
+        if (!record || record.state !== 'in-progress' || !record.lease) {
+            return { type: 'not-in-progress' };
+        }
+        if (!sameLease(record.lease, request.lease)) {
+            return { type: 'lease-conflict' };
+        }
+
+        record.state = 'completed';
+        record.lease = null;
+        record.result = request.result;
+        record.completedAt = request.completedAt;
+
+        return { type: 'completed', completedAt: request.completedAt };
+    }
+
+    async release(
+        request: ReleaseUseCaseExecutionRequest,
+    ): Promise<ReleaseUseCaseExecutionResult> {
+        const record = this.records.get(request.executionId);
+
+        if (!record || record.state !== 'in-progress' || !record.lease) {
+            return { type: 'not-in-progress' };
+        }
+        if (!sameLease(record.lease, request.lease)) {
+            return { type: 'lease-conflict' };
+        }
+
+        record.state = 'released';
+        record.lease = null;
+
+        return { type: 'released', releasedAt: request.releasedAt };
+    }
+}
+
+function sameLease(
+    current: ExecutionLease,
+    candidate: { readonly ownerId: ExecutionLease['ownerId']; readonly version: ExecutionLease['version'] },
+): boolean {
+    return current.ownerId === candidate.ownerId && current.version === candidate.version;
+}
+
 const clock: Clock = { now: () => '2026-08-22T08:00:00.000Z' };
 const intentFactory = new DefaultIntentFactory();
 const tenant = {
@@ -174,101 +271,4 @@ const downstreamResult = await executor.execute({
 
 if (downstreamResult !== 'fulfillment-started') {
     throw new Error('Event-triggered UseCase composition verification failed.');
-}
-
-interface MemoryRecord {
-    readonly intentId: string;
-    state: 'in-progress' | 'completed' | 'released';
-    lease: ExecutionLease | null;
-    result?: unknown;
-    completedAt?: string;
-    version: number;
-}
-
-class MemoryUseCaseExecutionStore implements UseCaseExecutionStore {
-    private readonly records = new Map<ExecutionId, MemoryRecord>();
-
-    async claim<TResult>(
-        request: ClaimUseCaseExecutionRequest,
-    ): Promise<ClaimUseCaseExecutionResult<TResult>> {
-        const existing = this.records.get(request.executionId);
-
-        if (existing && existing.intentId !== request.intent.id) {
-            return { type: 'intent-conflict', existingIntentId: existing.intentId };
-        }
-        if (existing?.state === 'completed') {
-            return {
-                type: 'completed',
-                result: existing.result as TResult,
-                completedAt: existing.completedAt ?? request.requestedAt,
-            };
-        }
-        if (existing?.state === 'in-progress' && existing.lease) {
-            return { type: 'already-in-progress', lease: existing.lease };
-        }
-
-        const version = (existing?.version ?? 0) + 1;
-        const lease = {
-            ownerId: request.leaseOwnerId,
-            version,
-            acquiredAt: request.requestedAt,
-            expiresAt: new Date(
-                Date.parse(request.requestedAt) + request.leaseDurationMs,
-            ).toISOString(),
-        } as ExecutionLease;
-
-        this.records.set(request.executionId, {
-            intentId: request.intent.id,
-            state: 'in-progress',
-            lease,
-            version,
-        });
-
-        return { type: 'claimed', lease };
-    }
-
-    async complete<TResult>(
-        request: CompleteUseCaseExecutionRequest<TResult>,
-    ): Promise<CompleteUseCaseExecutionResult> {
-        const record = this.records.get(request.executionId);
-
-        if (!record || record.state !== 'in-progress' || !record.lease) {
-            return { type: 'not-in-progress' };
-        }
-        if (!sameLease(record.lease, request.lease)) {
-            return { type: 'lease-conflict' };
-        }
-
-        record.state = 'completed';
-        record.lease = null;
-        record.result = request.result;
-        record.completedAt = request.completedAt;
-
-        return { type: 'completed', completedAt: request.completedAt };
-    }
-
-    async release(
-        request: ReleaseUseCaseExecutionRequest,
-    ): Promise<ReleaseUseCaseExecutionResult> {
-        const record = this.records.get(request.executionId);
-
-        if (!record || record.state !== 'in-progress' || !record.lease) {
-            return { type: 'not-in-progress' };
-        }
-        if (!sameLease(record.lease, request.lease)) {
-            return { type: 'lease-conflict' };
-        }
-
-        record.state = 'released';
-        record.lease = null;
-
-        return { type: 'released', releasedAt: request.releasedAt };
-    }
-}
-
-function sameLease(
-    current: ExecutionLease,
-    candidate: { readonly ownerId: ExecutionLease['ownerId']; readonly version: ExecutionLease['version'] },
-): boolean {
-    return current.ownerId === candidate.ownerId && current.version === candidate.version;
 }
