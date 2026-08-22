@@ -7,6 +7,7 @@
         "emitDeclarationOnly": false,
         "importHelpers": true,
         "noImplicitReturns": true,
+        "stripInternal": true,
         "types": ["node"]
     },
     "include": ["src/**/*.ts"],
