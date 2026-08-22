@@ -27,6 +27,9 @@
             "path": "../clock/tsconfig.lib.json"
         },
         {
+            "path": "../query/tsconfig.lib.json"
+        },
+        {
             "path": "../operation-event-envelope-factory/tsconfig.lib.json"
         },
         {
@@ -34,6 +37,9 @@
         },
         {
             "path": "../event/tsconfig.lib.json"
+        },
+        {
+            "path": "../command/tsconfig.lib.json"
         }
     ],
     "exclude": [
