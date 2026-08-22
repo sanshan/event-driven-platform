@@ -21,6 +21,29 @@ interface UseCaseContext {
 
 `correlationId` is distributed correlation context. Concrete UseCases propagate it unchanged to child `CommandContext` and `QueryContext` values. It is not an idempotency key and does not participate in Intent identity.
 
+## Supported application flow
+
+Service/application entrypoints invoke business flows through:
+
+```text
+entrypoint -> UseCaseExecutor -> UseCase
+```
+
+Direct `useCase.execute(...)` is valid for isolated unit tests and internal composition, but it is not the supported service entrypoint path because it bypasses durable UseCase invocation deduplication and completed-result replay.
+
+Inside a concrete UseCase, Operations still execute through Runner and Reads still execute through Reader:
+
+```text
+UseCase -> Runner -> Command -> Operation
+UseCase -> Reader -> Query   -> Read
+```
+
+The UseCase owns orchestration decisions; it does not absorb the execution responsibilities of either engine.
+
+## Retry implication
+
+When an incomplete durable invocation is retried, UseCaseExecutor starts the UseCase again from the beginning. The UseCase contract therefore does not imply deterministic replay of Reads or branch decisions. Retry-safe writes require deterministic child Operation Intents and Runner's existing idempotency/conflict behavior.
+
 ## Boundaries
 
 This package does not provide durable invocation state, deduplication, leases, retries, timeouts, guards, rate limiting, Outbox behavior, transport adapters, CorrelationId generation, child Intent derivation, Operation execution, or Read execution.

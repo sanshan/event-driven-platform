@@ -11,7 +11,6 @@ import type { UseCaseExecutionStore } from '@event-driven-platform/use-case-exec
 import { describe, expect, it } from 'vitest';
 
 import { DefaultUseCaseExecutor } from './default-use-case-executor.js';
-import type { UseCaseExecutorTimer, UseCaseExecutorTimerHandle } from './use-case-executor-timer.js';
 
 const correlationId = 'flow-correlation-1';
 const clock = { now: () => '2026-08-22T06:30:00.000Z' };
@@ -28,19 +27,14 @@ const parentIntent = intentFactory.create({
 });
 
 describe('UseCase correlation composition', () => {
-    it('propagates one correlationId into child CommandContext and QueryContext while child Intent remains independent', async () => {
-        const store = new SingleClaimStore();
+    it('propagates one correlationId into child CommandContext and QueryContext while Intent identity stays independent', async () => {
         const executor = new DefaultUseCaseExecutor(
             {
                 clock,
                 executionIdFactory: new DefaultExecutionIdFactory(),
-                store,
-                timer: new InertTimer(),
+                store: new SingleClaimStore(),
             },
-            {
-                leaseOwnerId: 'executor-1' as ExecutionLeaseOwnerId,
-                leaseDurationMs: 60_000,
-            },
+            { leaseOwnerId: 'executor-1' as ExecutionLeaseOwnerId },
         );
 
         let receivedCommandContext: CommandContext | undefined;
@@ -53,15 +47,9 @@ describe('UseCase correlation composition', () => {
                     parent: { id: context.intent.id },
                     slot: 'create-wallet',
                 });
-                const commandContext: CommandContext = {
-                    correlationId: context.correlationId,
-                };
-                const queryContext: QueryContext = {
-                    correlationId: context.correlationId,
-                };
 
-                receivedCommandContext = commandContext;
-                receivedQueryContext = queryContext;
+                receivedCommandContext = { correlationId: context.correlationId };
+                receivedQueryContext = { correlationId: context.correlationId };
                 receivedChildIntentId = childIntent.id;
 
                 return 'done';
@@ -86,10 +74,6 @@ describe('UseCase correlation composition', () => {
             }).id,
         );
 
-        const changedCorrelationCommandContext: CommandContext = {
-            correlationId: 'another-flow',
-        };
-        expect(changedCorrelationCommandContext.correlationId).not.toBe(correlationId);
         expect(
             intentFactory.derive({
                 parent: { id: parentIntent.id },
@@ -99,12 +83,6 @@ describe('UseCase correlation composition', () => {
     });
 });
 
-class InertTimer implements UseCaseExecutorTimer {
-    schedule(_delayMs: number, _callback: () => void): UseCaseExecutorTimerHandle {
-        return { cancel: () => undefined };
-    }
-}
-
 class SingleClaimStore implements UseCaseExecutionStore {
     private completed = false;
     private result: unknown;
@@ -112,7 +90,7 @@ class SingleClaimStore implements UseCaseExecutionStore {
         ownerId: 'executor-1' as ExecutionLeaseOwnerId,
         version: 1,
         acquiredAt: clock.now(),
-        expiresAt: '2026-08-22T06:31:00.000Z',
+        expiresAt: '2026-08-22T06:30:30.000Z',
     } as ExecutionLease;
 
     async claim<TResult>() {
@@ -125,10 +103,6 @@ class SingleClaimStore implements UseCaseExecutionStore {
         }
 
         return { type: 'claimed' as const, lease: this.lease };
-    }
-
-    async renewLease() {
-        return { type: 'renewed' as const, lease: this.lease };
     }
 
     async complete<TResult>(request: { readonly result: TResult }) {

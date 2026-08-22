@@ -4,14 +4,7 @@ export type { UseCaseExecutor } from './lib/use-case-executor.js';
 export type { UseCaseExecutorDependencies } from './lib/use-case-executor-dependencies.js';
 export {
     UseCaseAlreadyInProgressError,
-    UseCaseExecutionOwnershipLostError,
     UseCaseExecutionTransitionError,
-    UseCaseExecutorConfigurationError,
     UseCaseIntentConflictError,
 } from './lib/use-case-executor-error.js';
 export type { UseCaseExecutorRuntime } from './lib/use-case-executor-runtime.js';
-export {
-    SystemUseCaseExecutorTimer,
-    type UseCaseExecutorTimer,
-    type UseCaseExecutorTimerHandle,
-} from './lib/use-case-executor-timer.js';

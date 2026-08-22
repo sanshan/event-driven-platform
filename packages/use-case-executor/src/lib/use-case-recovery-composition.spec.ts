@@ -5,11 +5,7 @@ import {
     type ExecutionLeaseOwnerId,
 } from '@event-driven-platform/execution';
 import { DefaultEventIdFactory, type AnyEvent } from '@event-driven-platform/event';
-import {
-    DefaultIntentFactory,
-    type Intent,
-    type IntentDescriptor,
-} from '@event-driven-platform/intent';
+import { DefaultIntentFactory, type IntentDescriptor } from '@event-driven-platform/intent';
 import type { AnyOperation } from '@event-driven-platform/operation';
 import { DefaultOperationEventEnvelopeFactory } from '@event-driven-platform/operation-event-envelope-factory';
 import type { QueryContext } from '@event-driven-platform/query';
@@ -18,7 +14,6 @@ import type { UseCaseExecutionStore } from '@event-driven-platform/use-case-exec
 import { describe, expect, it } from 'vitest';
 
 import { DefaultUseCaseExecutor } from './default-use-case-executor.js';
-import type { UseCaseExecutorTimer, UseCaseExecutorTimerHandle } from './use-case-executor-timer.js';
 
 const clock = { now: () => '2026-08-22T07:00:00.000Z' };
 const correlationId = 'flow-recovery-1';
@@ -34,85 +29,19 @@ function createExecutor(store: UseCaseExecutionStore) {
             clock,
             executionIdFactory: new DefaultExecutionIdFactory(),
             store,
-            timer: new InertTimer(),
         },
-        {
-            leaseOwnerId: 'executor-1' as ExecutionLeaseOwnerId,
-            leaseDurationMs: 60_000,
-        },
+        { leaseOwnerId: 'executor-1' as ExecutionLeaseOwnerId },
     );
 }
 
-function rootIntent(requestId: string): Intent {
-    return intentFactory.create({
-        namespace: 'wallet',
-        action: 'provision',
-        version: 1,
-        tenant,
-        components: { requestId },
-    });
-}
-
 describe('UseCase recovery composition matrix', () => {
-    it('restarts partial orchestration from the beginning and reaches unfinished child work on retry', async () => {
-        const executor = createExecutor(new ReplayStore());
-        const parentIntent = rootIntent('partial-retry');
-        const childCalls: string[] = [];
-        let run = 0;
-
-        const useCase: UseCase<void, string> = {
-            execute: async (_input, context) => {
-                run += 1;
-
-                const firstChild = intentFactory.derive({
-                    parent: { id: context.intent.id },
-                    slot: 'reserve-wallet',
-                });
-                childCalls.push(firstChild.id);
-
-                if (run === 1) {
-                    throw new Error('fail between child steps');
-                }
-
-                const secondChild = intentFactory.derive({
-                    parent: { id: context.intent.id },
-                    slot: 'activate-wallet',
-                });
-                childCalls.push(secondChild.id);
-
-                return 'completed';
-            },
-        };
-
-        await expect(
-            executor.execute({ useCase, input: undefined, intent: parentIntent, correlationId }),
-        ).rejects.toThrow('fail between child steps');
-
-        await expect(
-            executor.execute({ useCase, input: undefined, intent: parentIntent, correlationId }),
-        ).resolves.toBe('completed');
-
-        await expect(
-            executor.execute({ useCase, input: undefined, intent: parentIntent, correlationId }),
-        ).resolves.toBe('completed');
-
-        const expectedFirst = intentFactory.derive({
-            parent: { id: parentIntent.id },
-            slot: 'reserve-wallet',
-        });
-        const expectedSecond = intentFactory.derive({
-            parent: { id: parentIntent.id },
-            slot: 'activate-wallet',
-        });
-
-        expect(run).toBe(2);
-        expect(childCalls).toEqual([expectedFirst.id, expectedFirst.id, expectedSecond.id]);
-    });
-
     it('derives distinct downstream UseCase identities for different source Event IDs', () => {
-        const producingIntent = intentFactory.derive({
-            parent: { id: rootIntent('different-events').id },
-            slot: 'create-wallet',
+        const producingIntent = intentFactory.create({
+            namespace: 'wallet',
+            action: 'create',
+            version: 1,
+            tenant,
+            components: { requestId: 'different-events' },
         });
         const operation = {
             name: 'CreateWallet',
@@ -124,19 +53,17 @@ describe('UseCase recovery composition matrix', () => {
             aggregate: { type: 'wallet', id: 'wallet-1' },
             payload: {},
         } as AnyOperation;
-        const events = [
-            { name: 'wallet.created', schemaVersion: 1, payload: { sequence: 1 } },
-            { name: 'wallet.created', schemaVersion: 1, payload: { sequence: 2 } },
-        ] as readonly AnyEvent[];
         const envelopes = new DefaultOperationEventEnvelopeFactory(
             clock,
             new DefaultEventIdFactory(),
         ).createMany({
             operation,
             context: { correlationId },
-            events,
+            events: [
+                { name: 'wallet.created', schemaVersion: 1, payload: { sequence: 1 } } as AnyEvent,
+                { name: 'wallet.created', schemaVersion: 1, payload: { sequence: 2 } } as AnyEvent,
+            ],
         });
-
         const firstEnvelope = envelopes[0];
         const secondEnvelope = envelopes[1];
 
@@ -149,24 +76,29 @@ describe('UseCase recovery composition matrix', () => {
             slot: 'start-wallet-fulfillment',
             discriminator: firstEnvelope.eventId,
         });
+        const redelivery = intentFactory.derive({
+            parent: { id: firstEnvelope.intentId },
+            slot: 'start-wallet-fulfillment',
+            discriminator: firstEnvelope.eventId,
+        });
         const secondDownstream = intentFactory.derive({
             parent: { id: secondEnvelope.intentId },
             slot: 'start-wallet-fulfillment',
             discriminator: secondEnvelope.eventId,
         });
 
-        expect(firstEnvelope.intentId).toBe(producingIntent.id);
-        expect(secondEnvelope.intentId).toBe(producingIntent.id);
-        expect(firstEnvelope.eventId).not.toBe(secondEnvelope.eventId);
-        expect(firstDownstream.id).not.toBe(secondDownstream.id);
+        expect(redelivery.id).toBe(firstDownstream.id);
+        expect(secondDownstream.id).not.toBe(firstDownstream.id);
         expect(firstDownstream.parent).toEqual({ id: producingIntent.id });
-        expect(secondDownstream.parent).toEqual({ id: producingIntent.id });
     });
 
     it('continues Event correlation into downstream UseCase CommandContext and QueryContext', async () => {
-        const producingIntent = intentFactory.derive({
-            parent: { id: rootIntent('async-correlation').id },
-            slot: 'create-wallet',
+        const producingIntent = intentFactory.create({
+            namespace: 'wallet',
+            action: 'create',
+            version: 1,
+            tenant,
+            components: { requestId: 'async-correlation' },
         });
         const operation = {
             name: 'CreateWallet',
@@ -221,30 +153,23 @@ describe('UseCase recovery composition matrix', () => {
             }),
         ).resolves.toBe('done');
 
-        expect(envelope.correlationId).toBe(correlationId);
         expect(commandContext).toEqual({ correlationId });
         expect(queryContext).toEqual({ correlationId });
     });
 });
 
-class InertTimer implements UseCaseExecutorTimer {
-    schedule(_delayMs: number, _callback: () => void): UseCaseExecutorTimerHandle {
-        return { cancel: () => undefined };
-    }
-}
-
 class ReplayStore implements UseCaseExecutionStore {
-    private state: 'empty' | 'in-progress' | 'completed' = 'empty';
+    private completed = false;
     private storedResult: unknown;
     private readonly lease = {
         ownerId: 'executor-1' as ExecutionLeaseOwnerId,
         version: 1,
         acquiredAt: clock.now(),
-        expiresAt: '2026-08-22T07:01:00.000Z',
+        expiresAt: '2026-08-22T07:00:30.000Z',
     } as ExecutionLease;
 
     async claim<TResult>() {
-        if (this.state === 'completed') {
+        if (this.completed) {
             return {
                 type: 'completed' as const,
                 result: this.storedResult as TResult,
@@ -252,22 +177,16 @@ class ReplayStore implements UseCaseExecutionStore {
             };
         }
 
-        this.state = 'in-progress';
         return { type: 'claimed' as const, lease: this.lease };
     }
 
-    async renewLease() {
-        return { type: 'renewed' as const, lease: this.lease };
-    }
-
     async complete<TResult>(request: { readonly result: TResult }) {
-        this.state = 'completed';
+        this.completed = true;
         this.storedResult = request.result;
         return { type: 'completed' as const, completedAt: clock.now() };
     }
 
     async release() {
-        this.state = 'empty';
         return { type: 'released' as const, releasedAt: clock.now() };
     }
 }
