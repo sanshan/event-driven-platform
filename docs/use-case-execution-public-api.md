@@ -27,7 +27,7 @@ The generic UseCase contract does not depend on Runner or Reader. Concrete appli
 
 ### `@event-driven-platform/use-case-execution-store`
 
-Intentional package-root exports are the technology-neutral persistence port and the request/result contracts required to implement it:
+Intentional package-root exports are the technology-neutral persistence port and request/result contracts needed to implement it:
 
 - `UseCaseExecutionStore`;
 - claim request/result and `claimed`, `completed`, `already-in-progress`, `intent-conflict` variants;
@@ -43,9 +43,13 @@ complete
 release
 ```
 
-It is not a second `ExecutionLogStore`: it has no attempts, failure history, retry bookkeeping, child-step state, Operation snapshots, Outbox state, guards, rate limits, execution transactions, heartbeat, or lease renewal.
+There is no lease-renewal transition. The store does not try to determine whether a running UseCase is healthy or stuck.
 
-No production adapter is supplied by this Epic. A consuming application must provide an adapter whose claim/complete/release transitions are atomic and durable for its storage technology. In-memory test doubles do not provide cross-process durability or crash recovery.
+The Executor supplies a fixed 30 second lease duration to `claim`. The store owns atomic claim/reclaim eligibility and must create a newer fenced lease generation when an incomplete invocation is reclaimed. `complete` and `release` are fenced by `{ ownerId, version }` through the shared `ExecutionLeaseReference`.
+
+The store is not a second `ExecutionLogStore`: it has no attempts, failure history, retry bookkeeping, child-step state, Operation snapshots, Outbox state, guards, rate limits, heartbeat, or execution transactions.
+
+No production adapter is supplied by this Epic. A consuming application must provide an adapter whose claim/reclaim/complete/release transitions are atomic and durable for its storage technology. In-memory test doubles do not provide cross-process durability or crash recovery.
 
 ### `@event-driven-platform/use-case-executor`
 
@@ -60,9 +64,9 @@ Intentional package-root exports:
 - `UseCaseIntentConflictError`;
 - `UseCaseExecutionTransitionError`.
 
-There is no public timer, heartbeat, renewal interval, or lease-duration configuration API.
+No timer, heartbeat, renewal lifecycle, ownership-health API, or renewal configuration is public or implemented.
 
-`UseCaseExecutor` owns only durable invocation claim, fixed-lease ownership fencing, completion persistence, and completed-result replay. It does not execute Operations or Reads and has no production dependency on Runner, Reader, EventEnvelope, or broker implementations.
+`UseCaseExecutor` owns only durable invocation claim, fixed-lease fencing, completion persistence, and completed-result replay. It does not execute Operations or Reads and has no production dependency on Runner, Reader, EventEnvelope, or broker implementations.
 
 ### `@event-driven-platform/intent`
 
@@ -77,7 +81,7 @@ Intent derivation remains transport-neutral and does not depend on EventEnvelope
 
 ### `@event-driven-platform/execution`
 
-Generic execution identity/lease primitives reused by both Runner-side and UseCase execution remain centralized here. `ExecutionLeaseReference` is intentionally public so persistence boundaries can share `{ ownerId, version }` fencing semantics instead of defining parallel lease-reference types.
+Generic execution identity/lease primitives reused by Runner-side and UseCase execution remain centralized here. `ExecutionLeaseReference` is intentionally public so persistence boundaries can share `{ ownerId, version }` fencing semantics instead of defining parallel lease-reference types.
 
 ## Dependency direction
 
@@ -120,7 +124,15 @@ UseCase -> Reader.execute(Query)
 
 They do not execute Operations/Reads directly and do not recreate Runner/Reader infrastructure semantics.
 
-## Retry and completion semantics
+## Fixed lease and retry semantics
+
+Every newly claimed invocation receives a fixed 30 second lease. The Executor does not renew it.
+
+The 30 second lease is a recovery/exclusivity window, not a timeout for `UseCase.execute(...)`. The Executor does not infer progress or health from a still-pending Promise. A UseCase may continue after lease expiry. Once the store considers an incomplete claim reclaimable, another Executor may reclaim the same logical invocation.
+
+That means concurrent orchestration is possible before durable completion. The architecture intentionally does not promise exactly-once UseCase code execution.
+
+Fencing prevents stale durable completion: after reclaim advances the lease generation, `complete` or `release` using the previous owner/version must be rejected.
 
 ### Duplicate after durable completion
 
@@ -136,22 +148,18 @@ same parent Intent
 
 ```text
 same parent Intent
--> prior claim released/expired
+-> prior claim released or becomes reclaimable after the fixed lease window
 -> claim/reclaim
 -> UseCase starts again from the beginning
 ```
 
-UseCaseExecutor has no step checkpoints. Reads, orchestration, and branch decisions may occur again and may observe changed state. This is not exactly-once UseCase code execution and is not deterministic workflow replay.
+UseCaseExecutor has no step checkpoints. Reads, orchestration, and branch decisions may occur again and may observe changed state. This is not deterministic workflow replay.
 
-Write safety comes from stable child Operation Intents plus Runner's existing idempotency/conflict semantics. An unfinished child may proceed on the retry; an already encountered logical child must be reconstructed with the same Intent.
+Write safety comes from stable child Operation Intents plus Runner's existing idempotency/conflict semantics. An unfinished child may proceed on retry; an already encountered logical child must be reconstructed with the same Intent.
 
 UseCase failures are rethrown after a best-effort fenced release. Retry cadence is external to the Executor. Active duplicates receive a typed already-in-progress error rather than follower waiting/single-flight behavior.
 
-Every claim uses a fixed 30 second lease. The Executor does not heartbeat or renew that lease and therefore does not claim to know whether a still-running UseCase is making progress or is stuck. Once the lease expires, the store may allow another executor to reclaim the same invocation. The original executor may still be running, so concurrent orchestration is possible before durable completion.
-
-Safety after reclaim comes from fencing: reclaim creates a newer lease generation, while `complete` and `release` require the lease returned by the original claim. A stale executor therefore cannot durably complete after ownership has moved. Completion-store rejection is surfaced as `UseCaseExecutionTransitionError` rather than treated as success.
-
-The 30 second lease is an intentional recovery window, not a UseCase execution timeout. This layer does not cancel a UseCase after 30 seconds.
+A rejected durable completion is surfaced as `UseCaseExecutionTransitionError`; an unpersisted result is never returned as durable success.
 
 ## Synchronous child Intent derivation
 

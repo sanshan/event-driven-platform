@@ -27,17 +27,14 @@ const parentIntent = intentFactory.create({
 });
 
 describe('UseCase correlation composition', () => {
-    it('propagates one correlationId into child CommandContext and QueryContext while child Intent remains independent', async () => {
-        const store = new SingleClaimStore();
+    it('propagates one correlationId into child CommandContext and QueryContext while Intent identity stays independent', async () => {
         const executor = new DefaultUseCaseExecutor(
             {
                 clock,
                 executionIdFactory: new DefaultExecutionIdFactory(),
-                store,
+                store: new SingleClaimStore(),
             },
-            {
-                leaseOwnerId: 'executor-1' as ExecutionLeaseOwnerId,
-            },
+            { leaseOwnerId: 'executor-1' as ExecutionLeaseOwnerId },
         );
 
         let receivedCommandContext: CommandContext | undefined;
@@ -50,15 +47,9 @@ describe('UseCase correlation composition', () => {
                     parent: { id: context.intent.id },
                     slot: 'create-wallet',
                 });
-                const commandContext: CommandContext = {
-                    correlationId: context.correlationId,
-                };
-                const queryContext: QueryContext = {
-                    correlationId: context.correlationId,
-                };
 
-                receivedCommandContext = commandContext;
-                receivedQueryContext = queryContext;
+                receivedCommandContext = { correlationId: context.correlationId };
+                receivedQueryContext = { correlationId: context.correlationId };
                 receivedChildIntentId = childIntent.id;
 
                 return 'done';
@@ -83,10 +74,6 @@ describe('UseCase correlation composition', () => {
             }).id,
         );
 
-        const changedCorrelationCommandContext: CommandContext = {
-            correlationId: 'another-flow',
-        };
-        expect(changedCorrelationCommandContext.correlationId).not.toBe(correlationId);
         expect(
             intentFactory.derive({
                 parent: { id: parentIntent.id },

@@ -1,3 +1,5 @@
+import type { ExecutionId } from '@event-driven-platform/execution';
+
 import type { UseCaseExecutor } from './use-case-executor.js';
 import type { UseCaseExecutorDependencies } from './use-case-executor-dependencies.js';
 import {

@@ -99,9 +99,7 @@ const executor = new DefaultUseCaseExecutor(
         executionIdFactory: new DefaultExecutionIdFactory(),
         store,
     },
-    {
-        leaseOwnerId: 'external-executor' as ExecutionLeaseOwnerId,
-    },
+    { leaseOwnerId: 'external-executor' as ExecutionLeaseOwnerId },
 );
 
 const firstResult = await executor.execute({
@@ -160,18 +158,15 @@ const downstreamIntent = intentFactory.derive({
     discriminator: envelope.eventId,
 });
 
-const downstreamUseCase: UseCase<void, string> = {
-    execute: async (_input, context) => {
-        if (context.correlationId !== envelope.correlationId) {
-            throw new Error('CorrelationId did not continue across the Event boundary.');
-        }
-
-        return 'fulfillment-started';
-    },
-};
-
 const downstreamResult = await executor.execute({
-    useCase: downstreamUseCase,
+    useCase: {
+        execute: async (_input, context) => {
+            if (context.correlationId !== envelope.correlationId) {
+                throw new Error('CorrelationId did not continue across the Event boundary.');
+            }
+            return 'fulfillment-started';
+        },
+    },
     input: undefined,
     intent: downstreamIntent,
     correlationId: envelope.correlationId,
@@ -201,7 +196,6 @@ class MemoryUseCaseExecutionStore implements UseCaseExecutionStore {
         if (existing && existing.intentId !== request.intent.id) {
             return { type: 'intent-conflict', existingIntentId: existing.intentId };
         }
-
         if (existing?.state === 'completed') {
             return {
                 type: 'completed',
@@ -209,7 +203,6 @@ class MemoryUseCaseExecutionStore implements UseCaseExecutionStore {
                 completedAt: existing.completedAt ?? request.requestedAt,
             };
         }
-
         if (existing?.state === 'in-progress' && existing.lease) {
             return { type: 'already-in-progress', lease: existing.lease };
         }
@@ -242,11 +235,7 @@ class MemoryUseCaseExecutionStore implements UseCaseExecutionStore {
         if (!record || record.state !== 'in-progress' || !record.lease) {
             return { type: 'not-in-progress' };
         }
-
-        if (
-            record.lease.ownerId !== request.lease.ownerId ||
-            record.lease.version !== request.lease.version
-        ) {
+        if (!sameLease(record.lease, request.lease)) {
             return { type: 'lease-conflict' };
         }
 
@@ -266,11 +255,7 @@ class MemoryUseCaseExecutionStore implements UseCaseExecutionStore {
         if (!record || record.state !== 'in-progress' || !record.lease) {
             return { type: 'not-in-progress' };
         }
-
-        if (
-            record.lease.ownerId !== request.lease.ownerId ||
-            record.lease.version !== request.lease.version
-        ) {
+        if (!sameLease(record.lease, request.lease)) {
             return { type: 'lease-conflict' };
         }
 
@@ -279,4 +264,11 @@ class MemoryUseCaseExecutionStore implements UseCaseExecutionStore {
 
         return { type: 'released', releasedAt: request.releasedAt };
     }
+}
+
+function sameLease(
+    current: ExecutionLease,
+    candidate: { readonly ownerId: ExecutionLease['ownerId']; readonly version: ExecutionLease['version'] },
+): boolean {
+    return current.ownerId === candidate.ownerId && current.version === candidate.version;
 }

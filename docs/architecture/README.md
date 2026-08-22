@@ -58,16 +58,18 @@ Operations still execute only through Runner and Reads still execute only throug
 
 - deriving execution identity from the supplied UseCase Intent;
 - atomically claiming one logical invocation through `UseCaseExecutionStore`;
+- requesting a fixed 30 second lease for a new claim;
 - rejecting an active duplicate;
-- reclaiming a released/abandoned/expired incomplete invocation through the store contract;
-- renewing a healthy lease while long-running work remains active;
-- executing the UseCase only while it owns a valid claim;
+- reclaiming a released or reclaimable incomplete invocation through the store contract;
+- executing the UseCase after a successful claim;
 - passing the supplied CorrelationId unchanged into UseCaseContext;
-- durably persisting the final successful UseCase result;
+- durably persisting the final successful UseCase result through fenced completion;
 - returning the exact stored result without entering the UseCase when the invocation is already completed;
-- preventing stale or ownership-uncertain executors from completing/releasing as the current owner.
+- preventing a stale executor from completing/releasing after another owner has advanced the lease generation.
 
-UseCaseExecutor does not execute Commands, Operations, Queries, or Reads. It does not implement Runner-style retries, timeout, guards, rate limiting, attempts, transactions, Outbox/event handling, child-step checkpoints, broker behavior, or CorrelationId generation. Its generic production dependency graph remains independent from Runner, Reader, EventEnvelope, and broker implementations.
+The Executor does not renew leases and does not attempt to infer whether a still-running UseCase is healthy, progressing, or stuck. The fixed lease is a recovery/exclusivity window, not an execution timeout. A UseCase may continue running after its lease becomes reclaimable.
+
+UseCaseExecutor does not execute Commands, Operations, Queries, or Reads. It does not implement Runner-style retries, timeout, guards, rate limiting, attempts, transactions, Outbox/event handling, child-step checkpoints, broker behavior, heartbeat, progress detection, cancellation, or CorrelationId generation. Its generic production dependency graph remains independent from Runner, Reader, EventEnvelope, and broker implementations.
 
 ### Durable completion and retry semantics
 
@@ -87,16 +89,18 @@ Before durable completion, a reclaimable retry behaves differently:
 
 ```text
 same parent Intent
--> prior claim released / abandoned / expired
+-> prior claim released or becomes reclaimable after the fixed lease window
 -> claim or reclaim
 -> UseCase starts again from the beginning
 ```
 
 UseCaseExecutor does not checkpoint individual orchestration steps and does not infer completion from child Operations. Reads, orchestration, and branch decisions may therefore run again and may observe changed state. This architecture does not promise exactly-once UseCase code execution or deterministic replay of Reads/branches.
 
+A UseCase that continues after lease expiry is not automatically cancelled. Once the store allows reclaim, another Executor may start the same incomplete invocation. Concurrent orchestration is therefore possible before durable completion.
+
 Write-side safety across such retries comes from deterministic child Operation Intents and the existing Runner idempotency/conflict boundary. An already encountered logical write is reconstructed with the same child Intent; unfinished child work may proceed on the retry.
 
-A normal thrown UseCase error is rethrown after a best-effort fenced release. Retry cadence remains external to the Executor. If ownership renewal is rejected or cannot be confirmed, a stale/uncertain Executor must not durably persist or return a later successful result. The already-started opaque UseCase is not force-cancelled by a hidden generic cancellation mechanism.
+A normal thrown UseCase error is rethrown after a best-effort fenced release. Retry cadence remains external to the Executor. Successful completion is accepted only through the lease returned by `claim`; if another owner has reclaimed and advanced the lease generation, the stale completion is rejected and the stale Executor must not return that result as durable success.
 
 ### UseCase execution store
 
@@ -104,14 +108,17 @@ A normal thrown UseCase error is rethrown after a best-effort fenced release. Re
 
 ```text
 claim
-renewLease
 complete
 release
 ```
 
+The Executor currently supplies `leaseDurationMs = 30_000` to `claim`. The store is responsible for atomic claim/reclaim eligibility and for generating a newer fenced lease generation on reclaim. `complete` and `release` require the current lease reference and must reject stale owner/version pairs.
+
+The store has no renewal transition and does not own liveness/progress detection.
+
 The store does not own Runner attempts, failure history, Operation snapshots, Outbox state, retry bookkeeping, guards, rate limits, execution transactions, or child-step state.
 
-No production database/Redis adapter is supplied by the UseCase execution layer. Applications must provide an adapter whose claim/renew/complete/release transitions are atomic and durable for their storage technology. In-memory test doubles are not cross-process durability or crash recovery.
+No production database/Redis adapter is supplied by the UseCase execution layer. Applications must provide an adapter whose claim/reclaim/complete/release transitions are atomic and durable for their storage technology. In-memory test doubles are not cross-process durability or crash recovery.
 
 ### Synchronous causal Intent lineage
 
@@ -205,7 +212,10 @@ The following are current architecture constraints:
 
 - supported service/application entrypoints execute business flows through `UseCaseExecutor -> UseCase`;
 - UseCase owns application/business orchestration rather than Operation/Read execution infrastructure;
-- UseCaseExecutor owns only durable invocation claim, lease safety, durable completion, and completed-result replay;
+- UseCaseExecutor owns only durable invocation claim, fixed-lease fencing, durable completion, and completed-result replay;
+- UseCase claims use a fixed 30 second lease with no heartbeat or renewal;
+- lease expiry does not cancel a running UseCase and does not prove that it is unhealthy;
+- reclaim may cause concurrent orchestration before durable completion, while fenced completion protects the current durable owner;
 - Runner remains the only supported Operation execution boundary;
 - Reader remains the only supported Read execution boundary;
 - UseCaseExecutor does not checkpoint child steps or infer whole-UseCase completion from child Operations;

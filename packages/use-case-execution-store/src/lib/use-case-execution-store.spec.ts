@@ -1,5 +1,3 @@
-import { describe, expectTypeOf, it } from 'vitest';
-
 import type {
     ExecutionId,
     ExecutionLease,
@@ -7,6 +5,7 @@ import type {
     ExecutionLeaseReference,
 } from '@event-driven-platform/execution';
 import type { Intent } from '@event-driven-platform/intent';
+import { describe, expectTypeOf, it } from 'vitest';
 
 import type {
     ClaimUseCaseExecutionRequest,
@@ -28,10 +27,7 @@ interface TestResult {
 
 const executionId = 'execution-1' as ExecutionId;
 const leaseOwnerId = 'owner-1' as ExecutionLeaseOwnerId;
-const intent: Intent = {
-    id: 'intent-1',
-    key: 'test:intent',
-};
+const intent: Intent = { id: 'intent-1', key: 'test:intent' };
 const lease = {
     ownerId: leaseOwnerId,
     version: 1,
@@ -44,7 +40,7 @@ const leaseReference: ExecutionLeaseReference = {
 };
 
 describe('UseCaseExecutionStore contract', () => {
-    it('claims by authoritative Intent identity and correlation context', () => {
+    it('claims by authoritative Intent identity with a fixed lease duration supplied by the Executor', () => {
         const request: ClaimUseCaseExecutionRequest = {
             executionId,
             intent,
@@ -72,19 +68,19 @@ describe('UseCaseExecutionStore contract', () => {
             executionId,
             lease: leaseReference,
             result: { value: 'done' },
-            completedAt: '2026-08-22T05:00:25.000Z',
+            completedAt: '2026-08-22T05:00:20.000Z',
         };
         const releaseRequest: ReleaseUseCaseExecutionRequest = {
             executionId,
             lease: leaseReference,
-            releasedAt: '2026-08-22T05:00:25.000Z',
+            releasedAt: '2026-08-22T05:00:20.000Z',
         };
 
         expectTypeOf(completeRequest.lease).toEqualTypeOf<ExecutionLeaseReference>();
         expectTypeOf(releaseRequest.lease).toEqualTypeOf<ExecutionLeaseReference>();
     });
 
-    it('exposes deterministic transition outcomes instead of adapter exceptions', () => {
+    it('exposes deterministic completion/release rejection outcomes', () => {
         expectTypeOf<CompleteUseCaseExecutionResult>().toEqualTypeOf<
             | { readonly type: 'completed'; readonly completedAt: string }
             | { readonly type: 'not-found' }
@@ -99,7 +95,7 @@ describe('UseCaseExecutionStore contract', () => {
         >();
     });
 
-    it('contains only the transitions required by fixed-lease UseCaseExecutor', () => {
+    it('contains only the transitions required by the fixed-lease Executor', () => {
         expectTypeOf<keyof UseCaseExecutionStore>().toEqualTypeOf<'claim' | 'complete' | 'release'>();
     });
 });
