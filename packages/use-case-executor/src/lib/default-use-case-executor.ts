@@ -1,18 +1,33 @@
+import type { ExecutionId, ExecutionLease } from '@event-driven-platform/execution';
+
 import type { UseCaseExecutor } from './use-case-executor.js';
 import type { UseCaseExecutorDependencies } from './use-case-executor-dependencies.js';
 import {
     UseCaseAlreadyInProgressError,
+    UseCaseExecutionOwnershipLostError,
     UseCaseExecutionTransitionError,
+    UseCaseExecutorConfigurationError,
     UseCaseIntentConflictError,
 } from './use-case-executor-error.js';
 import type { UseCaseExecutionRequest } from './use-case-execution-request.js';
 import type { UseCaseExecutorRuntime } from './use-case-executor-runtime.js';
+import {
+    SystemUseCaseExecutorTimer,
+    type UseCaseExecutorTimer,
+    type UseCaseExecutorTimerHandle,
+} from './use-case-executor-timer.js';
 
 export class DefaultUseCaseExecutor implements UseCaseExecutor {
+    private readonly renewalIntervalMs: number;
+    private readonly timer: UseCaseExecutorTimer;
+
     public constructor(
         private readonly dependencies: UseCaseExecutorDependencies,
         private readonly runtime: UseCaseExecutorRuntime,
-    ) {}
+    ) {
+        this.renewalIntervalMs = resolveRenewalInterval(runtime);
+        this.timer = dependencies.timer ?? new SystemUseCaseExecutorTimer();
+    }
 
     public async execute<TInput, TResult>(
         request: UseCaseExecutionRequest<TInput, TResult>,
@@ -38,6 +53,7 @@ export class DefaultUseCaseExecutor implements UseCaseExecutor {
                 break;
         }
 
+        const renewal = this.startRenewal(executionId, claim.lease);
         let result: TResult;
 
         try {
@@ -46,22 +62,32 @@ export class DefaultUseCaseExecutor implements UseCaseExecutor {
                 correlationId: request.correlationId,
             });
         } catch (error) {
-            try {
-                await this.dependencies.store.release({
-                    executionId,
-                    lease: claim.lease,
-                    releasedAt: this.dependencies.clock.now(),
-                });
-            } catch {
-                // The original UseCase failure remains authoritative.
+            const ownership = await renewal.stop();
+
+            if (ownership.confirmed) {
+                try {
+                    await this.dependencies.store.release({
+                        executionId,
+                        lease: ownership.lease,
+                        releasedAt: this.dependencies.clock.now(),
+                    });
+                } catch {
+                    // The original UseCase failure remains authoritative.
+                }
             }
 
             throw error;
         }
 
+        const ownership = await renewal.stop();
+
+        if (!ownership.confirmed) {
+            throw new UseCaseExecutionOwnershipLostError(executionId);
+        }
+
         const completion = await this.dependencies.store.complete({
             executionId,
-            lease: claim.lease,
+            lease: ownership.lease,
             result,
             completedAt: this.dependencies.clock.now(),
         });
@@ -72,4 +98,93 @@ export class DefaultUseCaseExecutor implements UseCaseExecutor {
 
         return result;
     }
+
+    private startRenewal(executionId: ExecutionId, initialLease: ExecutionLease): RenewalLifecycle {
+        let lease = initialLease;
+        let ownershipConfirmed = true;
+        let stopped = false;
+        let scheduled: UseCaseExecutorTimerHandle | undefined;
+        let inFlight: Promise<void> | undefined;
+
+        const scheduleNext = () => {
+            if (stopped || !ownershipConfirmed) {
+                return;
+            }
+
+            scheduled = this.timer.schedule(this.renewalIntervalMs, () => {
+                if (stopped || !ownershipConfirmed) {
+                    return;
+                }
+
+                inFlight = renew().finally(() => {
+                    inFlight = undefined;
+                });
+            });
+        };
+
+        const renew = async () => {
+            try {
+                const result = await this.dependencies.store.renewLease({
+                    executionId,
+                    lease,
+                    leaseDurationMs: this.runtime.leaseDurationMs,
+                    requestedAt: this.dependencies.clock.now(),
+                });
+
+                if (result.type !== 'renewed') {
+                    ownershipConfirmed = false;
+                    return;
+                }
+
+                lease = result.lease;
+                scheduleNext();
+            } catch {
+                ownershipConfirmed = false;
+            }
+        };
+
+        scheduleNext();
+
+        return {
+            stop: async () => {
+                stopped = true;
+                scheduled?.cancel();
+                await inFlight;
+
+                return ownershipConfirmed
+                    ? { confirmed: true, lease }
+                    : { confirmed: false };
+            },
+        };
+    }
+}
+
+interface RenewalLifecycle {
+    stop(): Promise<RenewalOwnership>;
+}
+
+type RenewalOwnership =
+    | { readonly confirmed: true; readonly lease: ExecutionLease }
+    | { readonly confirmed: false };
+
+function resolveRenewalInterval(runtime: UseCaseExecutorRuntime): number {
+    if (!Number.isFinite(runtime.leaseDurationMs) || runtime.leaseDurationMs <= 0) {
+        throw new UseCaseExecutorConfigurationError('leaseDurationMs must be a positive finite number.');
+    }
+
+    const renewalIntervalMs = runtime.renewalIntervalMs ?? runtime.leaseDurationMs / 2;
+
+    if (!Number.isFinite(renewalIntervalMs) || renewalIntervalMs <= 0) {
+        throw new UseCaseExecutorConfigurationError(
+            'renewalIntervalMs must be a positive finite number.',
+        );
+    }
+
+    if (renewalIntervalMs >= runtime.leaseDurationMs) {
+        throw new UseCaseExecutorConfigurationError(
+            'renewalIntervalMs must be strictly less than leaseDurationMs.',
+        );
+    }
+
+    return renewalIntervalMs;
 }
