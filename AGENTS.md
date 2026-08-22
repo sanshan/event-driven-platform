@@ -15,6 +15,8 @@ Write: Operation -> Command -> Runner
 Read:  Read      -> Query   -> Reader
 ```
 
+The implemented application-orchestration layer sits above those pipelines. Supported service/application entrypoints execute business flows through `UseCaseExecutor -> UseCase`; concrete UseCases may compose Runner and Reader, but neither UseCase nor UseCaseExecutor replaces or bypasses those execution boundaries. Event-triggered continuation remains `Operation -> Event -> Consumer -> UseCaseExecutor -> downstream UseCase`, not direct UseCase-to-UseCase orchestration.
+
 On the write side, Operations remain business-oriented, Commands transport execution concerns, and Runner owns execution infrastructure. Operations do not execute other Operations or publish messages directly; emitted Events are persisted to Outbox by Runner.
 
 On the read side, Reads remain business-oriented, Queries transport declarative execution controls, and Reader owns read execution orchestration. ReadHandlers read from one source responsibility and never write caches. Cache readers and cache writers remain separate capabilities; cache traversal/population and optional local/distributed in-flight coordination belong to Reader rather than Read, Query, or ReadHandler.
