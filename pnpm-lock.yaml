@@ -677,6 +677,12 @@ importers:
         specifier: 'catalog:'
         version: 2.8.1
 
+  packages/use-case:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
 packages:
 
   '@acemir/cssom@0.9.31':
