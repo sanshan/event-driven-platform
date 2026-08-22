@@ -1,14 +1,17 @@
 import type { CommandContext } from '@event-driven-platform/command';
+import {
+    DefaultExecutionIdFactory,
+    type ExecutionLease,
+    type ExecutionLeaseOwnerId,
+} from '@event-driven-platform/execution';
+import { DefaultIntentFactory, type IntentDescriptor } from '@event-driven-platform/intent';
 import type { QueryContext } from '@event-driven-platform/query';
 import type { UseCase } from '@event-driven-platform/use-case';
+import type { UseCaseExecutionStore } from '@event-driven-platform/use-case-execution-store';
 import { describe, expect, it } from 'vitest';
 
 import { DefaultUseCaseExecutor } from './default-use-case-executor.js';
 import type { UseCaseExecutorTimer, UseCaseExecutorTimerHandle } from './use-case-executor-timer.js';
-
-import { DefaultExecutionIdFactory, type ExecutionLeaseOwnerId } from '@event-driven-platform/execution';
-import { DefaultIntentFactory, type IntentDescriptor } from '@event-driven-platform/intent';
-import type { UseCaseExecutionStore } from '@event-driven-platform/use-case-execution-store';
 
 const correlationId = 'flow-correlation-1';
 const clock = { now: () => '2026-08-22T06:30:00.000Z' };
@@ -110,7 +113,7 @@ class SingleClaimStore implements UseCaseExecutionStore {
         version: 1,
         acquiredAt: clock.now(),
         expiresAt: '2026-08-22T06:31:00.000Z',
-    } as const;
+    } as ExecutionLease;
 
     async claim<TResult>() {
         if (this.completed) {
