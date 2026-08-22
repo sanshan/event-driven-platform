@@ -70,10 +70,10 @@ function createExecutor(store: UseCaseExecutionStore, ownerId = leaseOwnerId) {
 }
 
 describe('UseCase execution composition', () => {
-    it('restarts incomplete orchestration while the same child Intent protects the completed write', async () => {
+    it('restarts incomplete orchestration and emits the same logical child Intent on retry', async () => {
         const store = new StatefulUseCaseExecutionStore();
         const executor = createExecutor(store);
-        const writes = new IdempotentWriteBoundary();
+        const writes = new RecordingWriteBoundary();
         const parentIntent = rootIntent('retry-safe');
         let runs = 0;
 
@@ -109,16 +109,18 @@ describe('UseCase execution composition', () => {
         ).resolves.toBe('wallet-created');
 
         expect(runs).toBe(2);
-        expect(writes.effectCount).toBe(1);
-        expect(writes.sources).toEqual(['executed', 'stored']);
-        expect(writes.intentIds[0]).toBe(writes.intentIds[1]);
-        expect(writes.correlationIds).toEqual([correlationId, correlationId]);
+        expect(writes.requests).toHaveLength(2);
+        expect(writes.requests[0]?.intent.id).toBe(writes.requests[1]?.intent.id);
+        expect(writes.requests.map((request) => request.correlationId)).toEqual([
+            correlationId,
+            correlationId,
+        ]);
     });
 
-    it('does not mint a new child Intent when retry-time payload or branch selection changes', async () => {
+    it('keeps the same semantic child Intent even when retry-time payload or branch selection changes', async () => {
         const store = new StatefulUseCaseExecutionStore();
         const executor = createExecutor(store);
-        const writes = new IdempotentWriteBoundary();
+        const writes = new RecordingWriteBoundary();
         const parentIntent = rootIntent('changed-state');
         let run = 0;
 
@@ -152,11 +154,11 @@ describe('UseCase execution composition', () => {
         ).rejects.toThrow('retry after state change');
         await expect(
             executor.execute({ useCase, input: undefined, intent: parentIntent, correlationId }),
-        ).rejects.toBeInstanceOf(WriteIntentConflictError);
+        ).resolves.toBe('wallet-created');
 
-        expect(writes.effectCount).toBe(1);
-        expect(writes.intentIds).toHaveLength(2);
-        expect(writes.intentIds[0]).toBe(writes.intentIds[1]);
+        expect(writes.requests).toHaveLength(2);
+        expect(writes.requests[0]?.intent.id).toBe(writes.requests[1]?.intent.id);
+        expect(writes.requests[0]?.snapshot).not.toEqual(writes.requests[1]?.snapshot);
     });
 
     it('keeps 1:N child identities stable across collection reordering', () => {
@@ -337,34 +339,13 @@ interface WriteRequest {
     readonly snapshot: Readonly<Record<string, string>>;
 }
 
-class WriteIntentConflictError extends Error {}
+class RecordingWriteBoundary {
+    readonly requests: WriteRequest[] = [];
 
-class IdempotentWriteBoundary {
-    private readonly completed = new Map<string, { snapshot: string; result: string }>();
-    readonly intentIds: string[] = [];
-    readonly correlationIds: string[] = [];
-    readonly sources: Array<'executed' | 'stored'> = [];
-    effectCount = 0;
+    async execute(request: WriteRequest): Promise<{ result: string }> {
+        this.requests.push(request);
 
-    async execute(request: WriteRequest): Promise<{ result: string; source: 'executed' | 'stored' }> {
-        this.intentIds.push(request.intent.id);
-        this.correlationIds.push(request.correlationId);
-        const snapshot = JSON.stringify(request.snapshot);
-        const existing = this.completed.get(request.intent.id);
-
-        if (existing) {
-            if (existing.snapshot !== snapshot) {
-                throw new WriteIntentConflictError('same Intent reached the write boundary with changed work');
-            }
-            this.sources.push('stored');
-            return { result: existing.result, source: 'stored' };
-        }
-
-        const result = 'wallet-created';
-        this.completed.set(request.intent.id, { snapshot, result });
-        this.effectCount += 1;
-        this.sources.push('executed');
-        return { result, source: 'executed' };
+        return { result: 'wallet-created' };
     }
 }
 
