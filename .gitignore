@@ -95,6 +95,7 @@ vitest.config.*.timestamp*
 # VuePress
 .vuepress/dist/
 .temp/
+tmp
 
 # VitePress
 **/.vitepress/dist/

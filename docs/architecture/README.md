@@ -13,6 +13,221 @@ Architecture in this document uses two maturity states:
 
 A planned or hypothetical concept is not `Draft`. If it has no established repository implementation or approved current contract, it does not belong in this document.
 
+## Stable: application orchestration and durable UseCase execution
+
+The implemented application-orchestration layer sits above the two independent execution pipelines:
+
+```text
+REST / gRPC / Consumer / Webhook / Cron
+                  |
+                  v
+          UseCaseExecutor
+                  |
+                  v
+               UseCase
+              /       \
+          Runner       Reader
+             |           |
+          Command       Query
+             |           |
+         Operation       Read
+```
+
+Service/application entrypoints covered by this architecture invoke business flows through `UseCaseExecutor -> UseCase`. Direct `useCase.execute(...)` remains useful for isolated tests and internal composition, but it is not the supported service entrypoint path because it bypasses durable invocation claim and completed-result replay.
+
+### UseCase
+
+A `UseCase<TInput, TResult>` is a typed application/business orchestrator. It receives `UseCaseContext`, which contains the authoritative parent `Intent` and the distributed-flow `correlationId`.
+
+Concrete UseCases may:
+
+- call Operations through Runner using Commands;
+- call Reads through Reader using Queries;
+- use previous results to decide later work;
+- coordinate multiple application features;
+- execute independent work sequentially or in parallel when business semantics allow it;
+- return a typed final result.
+
+The generic UseCase contract does not own durable invocation state, retries, rate limiting, guards, transaction orchestration, Outbox/event publication, Operation execution semantics, Read execution semantics, or transport behavior. It does not depend on Runner or Reader; concrete application composition supplies those boundaries.
+
+Operations still execute only through Runner and Reads still execute only through Reader. UseCase does not merge or replace either pipeline.
+
+### UseCaseExecutor
+
+`UseCaseExecutor` is a narrow durable invocation boundary. Its responsibilities are limited to:
+
+- deriving execution identity from the supplied UseCase Intent;
+- atomically claiming one logical invocation through `UseCaseExecutionStore`;
+- requesting a fixed 30 second lease for a new claim;
+- rejecting an active duplicate;
+- reclaiming a released or reclaimable incomplete invocation through the store contract;
+- executing the UseCase after a successful claim;
+- passing the supplied CorrelationId unchanged into UseCaseContext;
+- durably persisting the final successful UseCase result through fenced completion;
+- returning the exact stored result without entering the UseCase when the invocation is already completed;
+- preventing a stale executor from completing/releasing after another owner has advanced the lease generation.
+
+The Executor does not renew leases and does not attempt to infer whether a still-running UseCase is healthy, progressing, or stuck. The fixed lease is a recovery/exclusivity window, not an execution timeout. A UseCase may continue running after its lease becomes reclaimable.
+
+UseCaseExecutor does not execute Commands, Operations, Queries, or Reads. It does not implement Runner-style retries, timeout, guards, rate limiting, attempts, transactions, Outbox/event handling, child-step checkpoints, broker behavior, heartbeat, progress detection, cancellation, or CorrelationId generation. Its generic production dependency graph remains independent from Runner, Reader, EventEnvelope, and broker implementations.
+
+### Durable completion and retry semantics
+
+The durable UseCase execution record is authoritative only for whole-invocation completion.
+
+After durable completion:
+
+```text
+same parent Intent
+-> store reports completed
+-> exact previous final result is returned
+-> UseCase is not executed again
+-> Reads and child Operations are not rerun
+```
+
+Before durable completion, a reclaimable retry behaves differently:
+
+```text
+same parent Intent
+-> prior claim released or becomes reclaimable after the fixed lease window
+-> claim or reclaim
+-> UseCase starts again from the beginning
+```
+
+UseCaseExecutor does not checkpoint individual orchestration steps and does not infer completion from child Operations. Reads, orchestration, and branch decisions may therefore run again and may observe changed state. This architecture does not promise exactly-once UseCase code execution or deterministic replay of Reads/branches.
+
+A UseCase that continues after lease expiry is not automatically cancelled. Once the store allows reclaim, another Executor may start the same incomplete invocation. Concurrent orchestration is therefore possible before durable completion.
+
+Write-side safety across such retries comes from deterministic child Operation Intents and the existing Runner idempotency/conflict boundary. An already encountered logical write is reconstructed with the same child Intent; unfinished child work may proceed on the retry.
+
+A normal thrown UseCase error is rethrown after a best-effort fenced release. Retry cadence remains external to the Executor. Successful completion is accepted only through the lease returned by `claim`; if another owner has reclaimed and advanced the lease generation, the stale completion is rejected and the stale Executor must not return that result as durable success.
+
+### UseCase execution store
+
+`UseCaseExecutionStore` is a separate technology-neutral persistence port rather than reuse of the Operation-specific execution-log lifecycle. It reuses generic execution identity and lease primitives where semantics match, but its transition surface is only:
+
+```text
+claim
+complete
+release
+```
+
+The Executor currently supplies `leaseDurationMs = 30_000` to `claim`. The store is responsible for atomic claim/reclaim eligibility and for generating a newer fenced lease generation on reclaim. `complete` and `release` require the current lease reference and must reject stale owner/version pairs.
+
+The store has no renewal transition and does not own liveness/progress detection.
+
+The store does not own Runner attempts, failure history, Operation snapshots, Outbox state, retry bookkeeping, guards, rate limits, execution transactions, or child-step state.
+
+No production database/Redis adapter is supplied by the UseCase execution layer. Applications must provide an adapter whose claim/reclaim/complete/release transitions are atomic and durable for their storage technology. In-memory test doubles are not cross-process durability or crash recovery.
+
+### Synchronous causal Intent lineage
+
+Intent is the logical identity used for UseCase and Operation execution. CorrelationId is not part of that identity.
+
+For one logical child effect:
+
+```text
+parent UseCase Intent
++ semantic child slot
+-> child Operation Intent
+```
+
+For repeated logical child effects:
+
+```text
+parent UseCase Intent
++ semantic child slot
++ stable business discriminator
+-> child Operation Intent
+```
+
+The same logical child retains the same Intent across retries. Array position, collection iteration order, process-local counters, timestamps, random values, current Read order, Operation payload, and concrete Operation type are not logical child identity.
+
+Mutable Read data may change the reconstructed Operation payload or may cause a mutually exclusive alternative Operation implementation to be selected. If both represent the same semantic effect, they use the same child slot and therefore the same child Intent. This preserves Runner's existing Operation-snapshot idempotency/conflict protection instead of hiding changed work behind a newly minted Intent. Separate slots are for genuinely distinct effects that may both legitimately occur.
+
+### Event-driven continuation
+
+An Event-triggered downstream UseCase is a new logical invocation, not a direct/nested UseCase call. The supported asynchronous continuation is:
+
+```text
+UseCase U1
+ -> Runner
+ -> Operation O1
+ -> Event E1
+ -> Outbox / Topic
+ -> Consumer
+ -> UseCaseExecutor
+ -> UseCase U2
+```
+
+The existing EventEnvelope carries the producing Operation Intent ID, stable Event ID, and CorrelationId. Consumer composition derives the downstream UseCase Intent from:
+
+```text
+parentIntentId = EventEnvelope.intentId
+reactionSlot   = stable business/application reaction slot
+sourceEventId  = EventEnvelope.eventId
+```
+
+Conceptually:
+
+```text
+producing Operation Intent O1
++ reaction slot R1
++ source Event E1
+-> downstream UseCase Intent U2
+```
+
+The downstream Intent exposes O1 as its immediate parent and retains the source Event as derivation data. Redelivery of the same Event to the same reaction slot derives the same U2. Different Events or different reaction slots derive different downstream Intents. Broker partition, offset, delivery-attempt identity, consumer instance, timestamps, randomness, and CorrelationId do not participate in that identity.
+
+The consumer invokes downstream work through UseCaseExecutor and passes `EventEnvelope.correlationId` unchanged. Intent derivation itself remains transport-neutral and does not depend on EventEnvelope or broker types.
+
+### CorrelationId
+
+Intent lineage and CorrelationId are orthogonal:
+
+```text
+Intent / lineage -> logical action identity, causation, idempotency
+CorrelationId    -> membership in one distributed end-to-end flow
+```
+
+The supported propagation chain is:
+
+```text
+root UseCase U1          correlationId = C1
+  -> Command / Operation O1            C1 via CommandContext
+  -> Query                              C1 via QueryContext
+  -> Event E1                           C1 in EventEnvelope
+  -> Consumer
+  -> downstream UseCase U2              C1
+  -> downstream Command / Query         C1
+```
+
+UseCaseExecutor consumes rather than generates the correlation value. Concrete UseCases propagate it unchanged into child CommandContext and QueryContext. Existing Operation event-envelope creation copies CommandContext correlation into the EventEnvelope. Event consumers continue the same value into downstream UseCaseExecutor requests.
+
+CorrelationId is never an idempotency key and never participates in Intent derivation.
+
+## UseCase-layer architectural invariants
+
+The following are current architecture constraints:
+
+- supported service/application entrypoints execute business flows through `UseCaseExecutor -> UseCase`;
+- UseCase owns application/business orchestration rather than Operation/Read execution infrastructure;
+- UseCaseExecutor owns only durable invocation claim, fixed-lease fencing, durable completion, and completed-result replay;
+- UseCase claims use a fixed 30 second lease with no heartbeat or renewal;
+- lease expiry does not cancel a running UseCase and does not prove that it is unhealthy;
+- reclaim may cause concurrent orchestration before durable completion, while fenced completion protects the current durable owner;
+- Runner remains the only supported Operation execution boundary;
+- Reader remains the only supported Read execution boundary;
+- UseCaseExecutor does not checkpoint child steps or infer whole-UseCase completion from child Operations;
+- retries before durable completion restart UseCase orchestration from the beginning;
+- completed retries replay the exact stored final result without entering the UseCase;
+- child write identity derives from parent Intent plus semantic slot and, for 1:N effects, a stable business discriminator;
+- replay-varying Read/payload data and concrete Operation choice do not mint a new Intent for the same logical effect;
+- Event-triggered downstream UseCases are new invocations reached through `Event -> Consumer -> UseCaseExecutor`, not direct UseCase-to-UseCase calls;
+- downstream Event-driven Intent identity derives from producing Operation Intent + reaction slot + source Event ID;
+- CorrelationId continues unchanged through the distributed flow but never acts as idempotency identity;
+- no concrete durable UseCase execution-store adapter is implied by the technology-neutral store contract.
+
 ## Stable: write execution pipeline
 
 The implemented write-side execution architecture is:
@@ -233,6 +448,10 @@ The following are current architecture constraints:
 ## Architecture vs public API and release state
 
 This document explains architectural concepts, responsibilities, and boundaries. It is not a package catalog or export reference.
+
+For the reviewed UseCase execution public package/export boundary, see:
+
+- [`../use-case-execution-public-api.md`](../use-case-execution-public-api.md)
 
 For the reviewed write-side public package/export boundary, see:
 

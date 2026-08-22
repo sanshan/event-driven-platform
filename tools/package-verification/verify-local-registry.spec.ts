@@ -38,6 +38,9 @@ const consumerDependencies = [
     '@event-driven-platform/subject',
     '@event-driven-platform/tenant-reference',
     '@event-driven-platform/types',
+    '@event-driven-platform/use-case',
+    '@event-driven-platform/use-case-execution-store',
+    '@event-driven-platform/use-case-executor',
 ];
 
 function run(command: string, args: string[], cwd: string) {
@@ -84,5 +87,6 @@ describe('published workspace packages', () => {
         run('pnpm', ['exec', 'tsc', '--project', 'tsconfig.json'], fixtureDirectory);
         run('node', [join(fixtureDirectory, 'dist/index.js')], fixtureDirectory);
         run('node', [join(fixtureDirectory, 'dist/read.js')], fixtureDirectory);
+        run('node', [join(fixtureDirectory, 'dist/use-case.js')], fixtureDirectory);
     });
 });
