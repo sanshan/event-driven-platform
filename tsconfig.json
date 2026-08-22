@@ -118,6 +118,9 @@
         },
         {
             "path": "./packages/use-case"
+        },
+        {
+            "path": "./packages/use-case-execution-store"
         }
     ]
 }
