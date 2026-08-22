@@ -22,8 +22,6 @@ import type {
     CompleteUseCaseExecutionResult,
     ReleaseUseCaseExecutionRequest,
     ReleaseUseCaseExecutionResult,
-    RenewUseCaseExecutionLeaseRequest,
-    RenewUseCaseExecutionLeaseResult,
     UseCaseExecutionStore,
 } from '@event-driven-platform/use-case-execution-store';
 import { DefaultUseCaseExecutor } from '@event-driven-platform/use-case-executor';
@@ -103,7 +101,6 @@ const executor = new DefaultUseCaseExecutor(
     },
     {
         leaseOwnerId: 'external-executor' as ExecutionLeaseOwnerId,
-        leaseDurationMs: 60_000,
     },
 );
 
@@ -235,35 +232,6 @@ class MemoryUseCaseExecutionStore implements UseCaseExecutionStore {
         });
 
         return { type: 'claimed', lease };
-    }
-
-    async renewLease(
-        request: RenewUseCaseExecutionLeaseRequest,
-    ): Promise<RenewUseCaseExecutionLeaseResult> {
-        const record = this.records.get(request.executionId);
-
-        if (!record || record.state !== 'in-progress' || !record.lease) {
-            return { type: 'not-in-progress' };
-        }
-
-        if (
-            record.lease.ownerId !== request.lease.ownerId ||
-            record.lease.version !== request.lease.version
-        ) {
-            return { type: 'lease-conflict' };
-        }
-
-        record.version += 1;
-        record.lease = {
-            ownerId: record.lease.ownerId,
-            version: record.version,
-            acquiredAt: request.requestedAt,
-            expiresAt: new Date(
-                Date.parse(request.requestedAt) + request.leaseDurationMs,
-            ).toISOString(),
-        } as ExecutionLease;
-
-        return { type: 'renewed', lease: record.lease };
     }
 
     async complete<TResult>(
