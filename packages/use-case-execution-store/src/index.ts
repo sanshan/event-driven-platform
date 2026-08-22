@@ -22,12 +22,6 @@ export type {
 } from './lib/release-use-case-execution.js';
 
 export type {
-    RenewUseCaseExecutionLeaseRequest,
-    RenewUseCaseExecutionLeaseResult,
-    UseCaseExecutionLeaseRenewed,
-} from './lib/renew-use-case-execution-lease.js';
-
-export type {
     UseCaseExecutionLeaseConflict,
     UseCaseExecutionNotFound,
     UseCaseExecutionNotInProgress,
