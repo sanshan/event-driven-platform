@@ -2,6 +2,7 @@ import type { Clock } from '@event-driven-platform/clock';
 import type {
     ExecutionId,
     ExecutionIdFactory,
+    ExecutionLease,
     ExecutionLeaseOwnerId,
 } from '@event-driven-platform/execution';
 import type { Intent } from '@event-driven-platform/intent';
@@ -24,7 +25,7 @@ const lease = {
     version: 1,
     acquiredAt: '2026-08-22T05:00:00.000Z',
     expiresAt: '2026-08-22T05:01:00.000Z',
-} as const;
+} as ExecutionLease;
 
 function createExecutor(store: UseCaseExecutionStore) {
     const clock: Clock = { now: () => '2026-08-22T05:00:00.000Z' };
