@@ -11,7 +11,6 @@ import type { UseCaseExecutionStore } from '@event-driven-platform/use-case-exec
 import { describe, expect, it } from 'vitest';
 
 import { DefaultUseCaseExecutor } from './default-use-case-executor.js';
-import type { UseCaseExecutorTimer, UseCaseExecutorTimerHandle } from './use-case-executor-timer.js';
 
 const correlationId = 'flow-correlation-1';
 const clock = { now: () => '2026-08-22T06:30:00.000Z' };
@@ -35,11 +34,9 @@ describe('UseCase correlation composition', () => {
                 clock,
                 executionIdFactory: new DefaultExecutionIdFactory(),
                 store,
-                timer: new InertTimer(),
             },
             {
                 leaseOwnerId: 'executor-1' as ExecutionLeaseOwnerId,
-                leaseDurationMs: 60_000,
             },
         );
 
@@ -99,12 +96,6 @@ describe('UseCase correlation composition', () => {
     });
 });
 
-class InertTimer implements UseCaseExecutorTimer {
-    schedule(_delayMs: number, _callback: () => void): UseCaseExecutorTimerHandle {
-        return { cancel: () => undefined };
-    }
-}
-
 class SingleClaimStore implements UseCaseExecutionStore {
     private completed = false;
     private result: unknown;
@@ -112,7 +103,7 @@ class SingleClaimStore implements UseCaseExecutionStore {
         ownerId: 'executor-1' as ExecutionLeaseOwnerId,
         version: 1,
         acquiredAt: clock.now(),
-        expiresAt: '2026-08-22T06:31:00.000Z',
+        expiresAt: '2026-08-22T06:30:30.000Z',
     } as ExecutionLease;
 
     async claim<TResult>() {
@@ -125,10 +116,6 @@ class SingleClaimStore implements UseCaseExecutionStore {
         }
 
         return { type: 'claimed' as const, lease: this.lease };
-    }
-
-    async renewLease() {
-        return { type: 'renewed' as const, lease: this.lease };
     }
 
     async complete<TResult>(request: { readonly result: TResult }) {
