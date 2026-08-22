@@ -26,7 +26,7 @@ export class DefaultUseCaseExecutor implements UseCaseExecutor {
         private readonly runtime: UseCaseExecutorRuntime,
     ) {
         this.renewalIntervalMs = resolveRenewalInterval(runtime);
-        this.timer = dependencies.timer ?? new SystemUseCaseExecutorTimer();
+        this.timer = new SystemUseCaseExecutorTimer();
     }
 
     public async execute<TInput, TResult>(
