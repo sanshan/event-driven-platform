@@ -121,6 +121,9 @@
         },
         {
             "path": "./packages/use-case-execution-store"
+        },
+        {
+            "path": "./packages/use-case-executor"
         }
     ]
 }
