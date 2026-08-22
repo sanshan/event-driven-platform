@@ -1,11 +1,17 @@
 {
     "name": "@event-driven-platform/use-case",
     "version": "0.0.1",
-    "private": true,
+    "description": "Typed application UseCase orchestration contract for the event-driven platform.",
     "type": "module",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.js.map",
+        "dist/**/*.d.ts",
+        "dist/**/*.d.ts.map"
+    ],
     "exports": {
         "./package.json": "./package.json",
         ".": {
@@ -14,7 +20,17 @@
             "default": "./dist/index.js"
         }
     },
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sanshan/event-driven-platform.git",
+        "directory": "packages/use-case"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
     "dependencies": {
-        "tslib": "^2.3.0"
+        "@event-driven-platform/intent": "workspace:*",
+        "tslib": "catalog:"
     }
 }
