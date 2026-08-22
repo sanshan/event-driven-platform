@@ -8,7 +8,7 @@ const nonEmptyStringSchema = z
     .refine((value) => value === value.trim(), 'must not contain leading or trailing whitespace.');
 
 export const intentDerivationRequestSchema = z.strictObject({
-    parent: z.strictObject({
+    parent: z.object({
         id: nonEmptyStringSchema,
     }),
     slot: z.string().regex(SLOT_PATTERN, 'must use lowercase kebab-case.'),
