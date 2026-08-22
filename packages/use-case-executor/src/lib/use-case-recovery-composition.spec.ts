@@ -1,5 +1,9 @@
 import type { CommandContext } from '@event-driven-platform/command';
-import { DefaultExecutionIdFactory, type ExecutionLeaseOwnerId } from '@event-driven-platform/execution';
+import {
+    DefaultExecutionIdFactory,
+    type ExecutionLease,
+    type ExecutionLeaseOwnerId,
+} from '@event-driven-platform/execution';
 import { DefaultEventIdFactory, type AnyEvent } from '@event-driven-platform/event';
 import {
     DefaultIntentFactory,
@@ -237,7 +241,7 @@ class ReplayStore implements UseCaseExecutionStore {
         version: 1,
         acquiredAt: clock.now(),
         expiresAt: '2026-08-22T07:01:00.000Z',
-    } as const;
+    } as ExecutionLease;
 
     async claim<TResult>() {
         if (this.state === 'completed') {
