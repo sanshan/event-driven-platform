@@ -35,9 +35,29 @@ describe('DefaultIntentFactory causal derivation', () => {
             slot: 'reserve-funds',
         });
         expectTypeOf(first).toEqualTypeOf<Intent>();
+
+        if (first.parent === undefined || first.derivation === undefined) {
+            throw new Error('Derived Intent must expose parent and derivation metadata.');
+        }
+
         expect(Object.isFrozen(first)).toBe(true);
         expect(Object.isFrozen(first.parent)).toBe(true);
         expect(Object.isFrozen(first.derivation)).toBe(true);
+    });
+
+    it('accepts a full Intent as the parent reference', () => {
+        const factory = new DefaultIntentFactory();
+        const parentIntent: Intent = {
+            id: parentA.id,
+            key: 'wallet:create:v1:tenantType=merchant&tenantId=merchant-1:userId=user-1',
+        };
+
+        const child = factory.derive({
+            parent: parentIntent,
+            slot: 'reserve-funds',
+        });
+
+        expect(child.parent).toEqual(parentA);
     });
 
     it('derives deterministic 1:N children from stable discriminators', () => {
@@ -98,7 +118,7 @@ describe('DefaultIntentFactory causal derivation', () => {
         expect(first.id).not.toBe(second.id);
     });
 
-    it('does not accept Operation snapshot data as derivation identity', () => {
+    it('keeps the same logical child identity when replay-time Operation snapshot changes', () => {
         const factory = new DefaultIntentFactory();
         const firstOperationSnapshot = {
             amount: 100,
@@ -193,7 +213,7 @@ describe('DefaultIntentFactory causal derivation', () => {
         expect(first).toEqual(second);
     });
 
-    it('rejects ambiguous or unstable-looking derivation inputs through existing validation style', () => {
+    it('rejects invalid derivation inputs through existing validation style', () => {
         const factory = new DefaultIntentFactory();
 
         expect(() =>
