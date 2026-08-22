@@ -30,3 +30,17 @@ export class UseCaseExecutionTransitionError extends Error {
         this.name = 'UseCaseExecutionTransitionError';
     }
 }
+
+export class UseCaseExecutionOwnershipLostError extends Error {
+    public constructor(readonly executionId: ExecutionId) {
+        super(`UseCase execution ${executionId} ownership was lost or could not be confirmed.`);
+        this.name = 'UseCaseExecutionOwnershipLostError';
+    }
+}
+
+export class UseCaseExecutorConfigurationError extends Error {
+    public constructor(message: string) {
+        super(message);
+        this.name = 'UseCaseExecutorConfigurationError';
+    }
+}
