@@ -1,6 +1,28 @@
 ## 0.2.0 (2026-08-24)
 
-This was a version bump only for @event-driven-platform/intent to align it with other projects, there were no code changes.
+### 💥 Breaking Changes
+
+- **intent:** replace the instance-based `DefaultIntentFactory` API with the static `IntentFactory.create(...)` and `IntentFactory.derive(...)` API ([#129](https://github.com/sanshan/event-driven-platform/pull/129))
+
+### Migration
+
+Replace:
+
+```ts
+const intentFactory = new DefaultIntentFactory();
+
+intentFactory.create(...);
+intentFactory.derive(...);
+```
+
+with:
+
+```ts
+IntentFactory.create(...);
+IntentFactory.derive(...);
+```
+
+Intent identity, canonical key generation, UUIDv5 generation, and derivation semantics remain unchanged.
 
 ## 0.1.3 (2026-08-22)
 
