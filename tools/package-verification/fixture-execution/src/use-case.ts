@@ -7,7 +7,7 @@ import {
     type ExecutionLeaseOwnerId,
 } from '@event-driven-platform/execution';
 import { DefaultEventIdFactory, type AnyEvent } from '@event-driven-platform/event';
-import { DefaultIntentFactory, type IntentDescriptor } from '@event-driven-platform/intent';
+import { IntentFactory, type IntentDescriptor } from '@event-driven-platform/intent';
 import type { AnyOperation } from '@event-driven-platform/operation';
 import { DefaultOperationEventEnvelopeFactory } from '@event-driven-platform/operation-event-envelope-factory';
 import type { Query } from '@event-driven-platform/query';
@@ -76,16 +76,15 @@ function sameLease(current: ExecutionLease, candidate: { readonly ownerId: Execu
 }
 
 const clock: Clock = { now: () => '2026-08-22T08:00:00.000Z' };
-const intentFactory = new DefaultIntentFactory();
 const tenant = { type: 'merchant', id: 'merchant-1' } as IntentDescriptor['tenant'];
 const correlationId = 'external-flow-1';
 const runner = { execute: async () => ({ status: 'success', data: null, events: [] }), executeDetailed: async () => { throw new Error('Detailed Runner execution is not used by this fixture.'); } } as unknown as Runner;
 const reader = { execute: async () => ({ available: true }) } as unknown as Reader;
-const rootIntent = intentFactory.create({ namespace: 'package-verification', action: 'provision-wallet', version: 1, tenant, components: { requestId: 'request-1' } });
+const rootIntent = IntentFactory.create({ namespace: 'package-verification', action: 'provision-wallet', version: 1, tenant, components: { requestId: 'request-1' } });
 
 const useCase: UseCase<void, string> = {
     execute: async (_input, context) => {
-        const childIntent = intentFactory.derive({ parent: { id: context.intent.id }, slot: 'create-wallet' });
+        const childIntent = IntentFactory.derive({ parent: { id: context.intent.id }, slot: 'create-wallet' });
         const operation = { name: 'CreateWallet', schemaVersion: 1, intent: childIntent, actor: { type: 'user', id: 'user-1', origin: {} }, tenant, subject: { type: 'user', id: 'user-1' }, aggregate: { type: 'wallet', id: 'wallet-1' }, payload: { currency: 'EUR' } } as AnyOperation;
         const command: Command<AnyOperation> = { operation, context: { correlationId: context.correlationId } };
         await runner.execute(command);
@@ -106,11 +105,11 @@ const firstResult = await executor.execute({ useCase, input: undefined, intent: 
 const replayedResult = await executor.execute({ useCase, input: undefined, intent: rootIntent, correlationId: 'different-correlation-same-intent' });
 if (firstResult !== 'wallet-ready' || replayedResult !== firstResult) throw new Error('UseCase execution/replay verification failed.');
 
-const producingIntent = intentFactory.derive({ parent: { id: rootIntent.id }, slot: 'create-wallet' });
+const producingIntent = IntentFactory.derive({ parent: { id: rootIntent.id }, slot: 'create-wallet' });
 const producingOperation = { name: 'CreateWallet', schemaVersion: 1, intent: producingIntent, actor: { type: 'user', id: 'user-1', origin: {} }, tenant, subject: { type: 'user', id: 'user-1' }, aggregate: { type: 'wallet', id: 'wallet-1' }, payload: { currency: 'EUR' } } as AnyOperation;
 const [envelope] = new DefaultOperationEventEnvelopeFactory(clock, new DefaultEventIdFactory()).createMany({ operation: producingOperation, context: { correlationId }, events: [{ name: 'wallet.created', schemaVersion: 1, payload: { walletId: 'wallet-1' } } as AnyEvent] });
 if (!envelope) throw new Error('Expected an EventEnvelope.');
 
-const downstreamIntent = intentFactory.derive({ parent: { id: envelope.intentId }, slot: 'start-wallet-fulfillment', discriminator: envelope.eventId });
+const downstreamIntent = IntentFactory.derive({ parent: { id: envelope.intentId }, slot: 'start-wallet-fulfillment', discriminator: envelope.eventId });
 const downstreamResult = await executor.execute({ useCase: { execute: async (_input, context) => { if (context.correlationId !== envelope.correlationId) throw new Error('CorrelationId did not continue across the Event boundary.'); return 'fulfillment-started'; } }, input: undefined, intent: downstreamIntent, correlationId: envelope.correlationId });
 if (downstreamResult !== 'fulfillment-started') throw new Error('Event-triggered UseCase composition verification failed.');
