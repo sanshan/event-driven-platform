@@ -1,3 +1,9 @@
+## 0.0.5 (2026-08-24)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/operation to 0.1.4
+
 ## 0.0.4 (2026-08-22)
 
 ### 🧱 Updated Dependencies

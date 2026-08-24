@@ -1,48 +1,48 @@
 {
-    "name": "@event-driven-platform/command",
-    "version": "0.0.4",
-    "description": "Execution transport contracts that carry Operations and infrastructure execution policies.",
-    "type": "module",
-    "main": "./dist/index.js",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "files": [
-        "dist/**/*.js",
-        "dist/**/*.js.map",
-        "dist/**/*.d.ts",
-        "dist/**/*.d.ts.map"
-    ],
-    "exports": {
-        "./package.json": "./package.json",
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "default": "./dist/index.js"
-        }
-    },
-    "license": "Apache-2.0",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/sanshan/event-driven-platform.git",
-        "directory": "packages/command"
-    },
-    "publishConfig": {
-        "access": "public"
-    },
-    "dependencies": {
-        "@event-driven-platform/guard": "workspace:*",
-        "@event-driven-platform/operation": "workspace:*",
-        "@event-driven-platform/rate-limit": "workspace:*",
-        "@event-driven-platform/retry": "workspace:*",
-        "tslib": "catalog:"
-    },
-    "devDependencies": {
-        "@event-driven-platform/actor": "workspace:*",
-        "@event-driven-platform/aggregate-reference": "workspace:*",
-        "@event-driven-platform/intent": "workspace:*",
-        "@event-driven-platform/operation-result": "workspace:*",
-        "@event-driven-platform/subject": "workspace:*",
-        "@event-driven-platform/tenant-reference": "workspace:*",
-        "@event-driven-platform/types": "workspace:*"
+  "name": "@event-driven-platform/command",
+  "version": "0.0.5",
+  "description": "Execution transport contracts that carry Operations and infrastructure execution policies.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sanshan/event-driven-platform.git",
+    "directory": "packages/command"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@event-driven-platform/guard": "workspace:*",
+    "@event-driven-platform/operation": "workspace:*",
+    "@event-driven-platform/rate-limit": "workspace:*",
+    "@event-driven-platform/retry": "workspace:*",
+    "tslib": "catalog:"
+  },
+  "devDependencies": {
+    "@event-driven-platform/actor": "workspace:*",
+    "@event-driven-platform/aggregate-reference": "workspace:*",
+    "@event-driven-platform/intent": "workspace:*",
+    "@event-driven-platform/operation-result": "workspace:*",
+    "@event-driven-platform/subject": "workspace:*",
+    "@event-driven-platform/tenant-reference": "workspace:*",
+    "@event-driven-platform/types": "workspace:*"
+  }
 }

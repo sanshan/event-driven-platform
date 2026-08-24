@@ -1,3 +1,9 @@
+## 0.0.3 (2026-08-24)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/intent to 0.2.0
+
 ## 0.0.2 (2026-08-22)
 
 ### 🚀 Features
