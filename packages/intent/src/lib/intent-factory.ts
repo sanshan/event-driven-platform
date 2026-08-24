@@ -4,10 +4,14 @@ import { buildIntentKey } from './build-intent-key.js';
 import { intentDerivationRequestSchema } from './intent-derivation-schema.js';
 import { intentDescriptorSchema } from './intent-descriptor-schema.js';
 import { INTENT_UUID_NAMESPACE } from './intent-namespace.js';
-import type { Intent, IntentDerivationRequest, IntentDescriptor, IntentFactory } from './intent.js';
+import type { Intent, IntentDerivationRequest, IntentDescriptor } from './intent.js';
 
-export class DefaultIntentFactory implements IntentFactory {
-    create(descriptor: IntentDescriptor): Intent {
+export class IntentFactory {
+    private constructor() {
+        // Static API only.
+    }
+
+    static create(descriptor: IntentDescriptor): Intent {
         const parsed = intentDescriptorSchema.parse(descriptor);
 
         const validatedDescriptor: IntentDescriptor = {
@@ -19,7 +23,6 @@ export class DefaultIntentFactory implements IntentFactory {
         };
 
         const key = buildIntentKey(validatedDescriptor);
-
         const id = uuidV5(key, INTENT_UUID_NAMESPACE);
 
         return Object.freeze({
@@ -28,7 +31,7 @@ export class DefaultIntentFactory implements IntentFactory {
         });
     }
 
-    derive(request: IntentDerivationRequest): Intent {
+    static derive(request: IntentDerivationRequest): Intent {
         const parsed = intentDerivationRequestSchema.parse(request);
 
         const validatedRequest: IntentDerivationRequest = {

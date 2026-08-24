@@ -12,7 +12,7 @@ import type {
 } from '@event-driven-platform/execution-log-store';
 import type { ExecutionTransaction } from '@event-driven-platform/execution-transaction';
 import { DefaultEventIdFactory } from '@event-driven-platform/event';
-import { DefaultIntentFactory } from '@event-driven-platform/intent';
+import { IntentFactory } from '@event-driven-platform/intent';
 import type { Operation, OperationResultOf } from '@event-driven-platform/operation';
 import { DefaultOperationEventEnvelopeFactory } from '@event-driven-platform/operation-event-envelope-factory';
 import type { OperationHandlerResolver } from '@event-driven-platform/operation-handler-resolver';
@@ -53,7 +53,7 @@ const subject = new DefaultSubjectFactory().create({
     id: 'account-1',
 });
 
-const intent = new DefaultIntentFactory().create({
+const intent = IntentFactory.create({
     namespace: 'release-verification',
     action: 'execute',
     version: 1,
