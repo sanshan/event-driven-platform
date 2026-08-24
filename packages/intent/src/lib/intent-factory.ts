@@ -7,7 +7,9 @@ import { INTENT_UUID_NAMESPACE } from './intent-namespace.js';
 import type { Intent, IntentDerivationRequest, IntentDescriptor } from './intent.js';
 
 export class IntentFactory {
-    private constructor() {}
+    private constructor() {
+        // Static API only.
+    }
 
     static create(descriptor: IntentDescriptor): Intent {
         const parsed = intentDescriptorSchema.parse(descriptor);
