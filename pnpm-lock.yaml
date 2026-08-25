@@ -706,9 +706,6 @@ importers:
       '@event-driven-platform/execution':
         specifier: workspace:*
         version: link:../execution
-      '@event-driven-platform/intent':
-        specifier: workspace:*
-        version: link:../intent
       '@event-driven-platform/use-case':
         specifier: workspace:*
         version: link:../use-case
