@@ -722,6 +722,9 @@ importers:
       '@event-driven-platform/event':
         specifier: workspace:*
         version: link:../event
+      '@event-driven-platform/intent':
+        specifier: workspace:*
+        version: link:../intent
       '@event-driven-platform/operation':
         specifier: workspace:*
         version: link:../operation
