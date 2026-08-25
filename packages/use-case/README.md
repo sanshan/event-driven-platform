@@ -7,8 +7,12 @@ A `UseCase` coordinates application/business work. Concrete UseCases may compose
 ## Contract
 
 ```ts
-interface UseCase<TInput, TResult> {
-    execute(input: TInput, context: UseCaseContext): Promise<TResult>;
+interface UseCase<
+    TInput,
+    TResult,
+    TContext extends UseCaseContext = UseCaseContext,
+> {
+    execute(input: TInput, context: TContext): Promise<TResult>;
 }
 
 interface UseCaseContext {
@@ -17,9 +21,13 @@ interface UseCaseContext {
 }
 ```
 
+Concrete UseCases may extend `UseCaseContext` with invocation-specific metadata. The base context remains the default for simple UseCases. EDP owns only the `intent` and `correlationId` semantics; additional fields are consumer-owned and opaque to the execution platform.
+
 `intent` is the authoritative identity of the logical UseCase invocation. It is also the parent Intent available to orchestration when deterministic child Operation Intent derivation is needed.
 
 `correlationId` is distributed correlation context. Concrete UseCases propagate it unchanged to child `CommandContext` and `QueryContext` values. It is not an idempotency key and does not participate in Intent identity.
+
+Stable reusable dependencies belong on the concrete UseCase rather than in invocation context.
 
 ## Supported application flow
 
@@ -46,6 +54,6 @@ When an incomplete durable invocation is retried, UseCaseExecutor starts the Use
 
 ## Boundaries
 
-This package does not provide durable invocation state, deduplication, leases, retries, timeouts, guards, rate limiting, Outbox behavior, transport adapters, CorrelationId generation, child Intent derivation, Operation execution, or Read execution.
+This package does not provide durable invocation state, deduplication, leases, retries, timeouts, guards, rate limiting, Outbox behavior, transport adapters, CorrelationId generation, child Intent derivation, Operation execution, Read execution, or ambient/request context.
 
 Operations remain executable only through `Runner`. Reads remain executable only through `Reader`.
