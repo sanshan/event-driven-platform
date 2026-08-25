@@ -2,7 +2,7 @@
 
 Durable invocation boundary for application UseCases.
 
-`UseCaseExecutor` derives execution identity from the supplied UseCase `Intent`, claims the invocation through `UseCaseExecutionStore`, executes only a safely claimed UseCase, persists successful completion, and replays the exact stored result for an already completed invocation.
+`UseCaseExecutor` derives execution identity from the supplied UseCase context `Intent`, claims the invocation through `UseCaseExecutionStore`, executes only a safely claimed UseCase, persists successful completion, and replays the exact stored result for an already completed invocation.
 
 ## Supported entrypoint boundary
 
@@ -15,6 +15,12 @@ entrypoint -> UseCaseExecutor -> UseCase
 A `UseCase` remains directly callable for isolated tests and internal composition, but direct `useCase.execute(...)` is not the supported service entrypoint path because it bypasses durable invocation claim and completion replay.
 
 Concrete UseCases may invoke Operations through `Runner` and Reads through `Reader`. `UseCaseExecutor` does not execute Operations or Reads itself and has no production dependency on Runner or Reader.
+
+## Invocation context
+
+Every execution request carries one authoritative `context`. Its concrete type extends the base `UseCaseContext`, whose EDP-owned fields are `intent` and `correlationId`. A concrete UseCase may add invocation-specific metadata to that context; the Executor treats those additional fields as opaque and forwards the same context object unchanged to `useCase.execute()`.
+
+Stable reusable UseCase dependencies belong in the UseCase itself rather than in invocation context. EDP does not add actor, tenant, transport, DI, or ambient-context semantics to the base contract.
 
 ## Fixed lease semantics
 
@@ -55,7 +61,7 @@ A rejected durable completion is surfaced as `UseCaseExecutionTransitionError` r
 
 ## Identity and correlation
 
-`Intent` is the authoritative logical invocation identity. `correlationId` is propagated unchanged into `UseCaseContext` for distributed-flow grouping and never participates in execution identity or idempotency.
+`context.intent` is the authoritative logical invocation identity. `context.correlationId` is used unchanged for distributed-flow grouping and never participates in execution identity or idempotency.
 
 ## Public API
 

@@ -6,7 +6,7 @@ import type {
     ExecutionLeaseOwnerId,
 } from '@event-driven-platform/execution';
 import type { Intent } from '@event-driven-platform/intent';
-import type { UseCase } from '@event-driven-platform/use-case';
+import type { UseCase, UseCaseContext } from '@event-driven-platform/use-case';
 import type { UseCaseExecutionStore } from '@event-driven-platform/use-case-execution-store';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -18,6 +18,7 @@ import { DefaultUseCaseExecutor } from './default-use-case-executor.js';
 const executionId = 'execution-1' as ExecutionId;
 const leaseOwnerId = 'owner-1' as ExecutionLeaseOwnerId;
 const intent = { id: 'intent-1' } as Intent;
+const context: UseCaseContext = { intent, correlationId: 'c-1' };
 const lease = {
     ownerId: leaseOwnerId,
     version: 1,
@@ -47,8 +48,7 @@ describe('DefaultUseCaseExecutor', () => {
         await createExecutor(store).execute({
             useCase: { execute: async () => 'result' },
             input: undefined,
-            intent,
-            correlationId: 'c-1',
+            context,
         });
 
         expect(executionIdFactory.create).toHaveBeenCalledWith(intent.id);
@@ -66,7 +66,7 @@ describe('DefaultUseCaseExecutor', () => {
         const store = createStore({ type: 'completed', result: 'stored-result', completedAt: clock.now() });
         const useCase: UseCase<string, string> = { execute: vi.fn() };
 
-        await expect(createExecutor(store).execute({ useCase, input: 'input', intent, correlationId: 'c-1' })).resolves.toBe('stored-result');
+        await expect(createExecutor(store).execute({ useCase, input: 'input', context })).resolves.toBe('stored-result');
         expect(useCase.execute).not.toHaveBeenCalled();
         expect(store.complete).not.toHaveBeenCalled();
     });
@@ -75,7 +75,7 @@ describe('DefaultUseCaseExecutor', () => {
         const store = createStore({ type: 'already-in-progress', lease });
         const useCase: UseCase<string, string> = { execute: vi.fn() };
 
-        await expect(createExecutor(store).execute({ useCase, input: 'input', intent, correlationId: 'c-1' })).rejects.toBeInstanceOf(UseCaseAlreadyInProgressError);
+        await expect(createExecutor(store).execute({ useCase, input: 'input', context })).rejects.toBeInstanceOf(UseCaseAlreadyInProgressError);
         expect(useCase.execute).not.toHaveBeenCalled();
     });
 
@@ -83,16 +83,27 @@ describe('DefaultUseCaseExecutor', () => {
         const store = createStore({ type: 'intent-conflict', existingIntentId: 'other-intent' });
         const useCase: UseCase<string, string> = { execute: vi.fn() };
 
-        await expect(createExecutor(store).execute({ useCase, input: 'input', intent, correlationId: 'c-1' })).rejects.toBeInstanceOf(UseCaseIntentConflictError);
+        await expect(createExecutor(store).execute({ useCase, input: 'input', context })).rejects.toBeInstanceOf(UseCaseIntentConflictError);
         expect(useCase.execute).not.toHaveBeenCalled();
     });
 
-    it('passes input and context unchanged and completes with the claimed lease', async () => {
-        const store = createStore({ type: 'claimed', lease });
-        const useCase: UseCase<string, string> = { execute: vi.fn(async () => 'result') };
+    it('forwards a concrete invocation context unchanged and completes with the claimed lease', async () => {
+        interface ConcreteContext extends UseCaseContext {
+            readonly metadata: { readonly value: string };
+        }
 
-        await expect(createExecutor(store).execute({ useCase, input: 'input', intent, correlationId: 'c-42' })).resolves.toBe('result');
-        expect(useCase.execute).toHaveBeenCalledWith('input', { intent, correlationId: 'c-42' });
+        const store = createStore({ type: 'claimed', lease });
+        const concreteContext: ConcreteContext = {
+            intent,
+            correlationId: 'c-42',
+            metadata: { value: 'opaque' },
+        };
+        const useCase: UseCase<string, string, ConcreteContext> = {
+            execute: vi.fn(async () => 'result'),
+        };
+
+        await expect(createExecutor(store).execute({ useCase, input: 'input', context: concreteContext })).resolves.toBe('result');
+        expect(useCase.execute).toHaveBeenCalledWith('input', concreteContext);
         expect(store.complete).toHaveBeenCalledWith({ executionId, lease, result: 'result', completedAt: clock.now() });
     });
 
@@ -100,7 +111,7 @@ describe('DefaultUseCaseExecutor', () => {
         const store = createStore({ type: 'claimed', lease });
         store.complete = vi.fn(async () => ({ type: 'lease-conflict' })) as UseCaseExecutionStore['complete'];
 
-        await expect(createExecutor(store).execute({ useCase: { execute: async () => 'result' }, input: undefined, intent, correlationId: 'c-1' })).rejects.toBeInstanceOf(UseCaseExecutionTransitionError);
+        await expect(createExecutor(store).execute({ useCase: { execute: async () => 'result' }, input: undefined, context })).rejects.toBeInstanceOf(UseCaseExecutionTransitionError);
     });
 
     it('attempts fenced release on UseCase failure and preserves the original error', async () => {
@@ -111,8 +122,7 @@ describe('DefaultUseCaseExecutor', () => {
         await expect(createExecutor(store).execute({
             useCase: { execute: async () => { throw originalError; } },
             input: undefined,
-            intent,
-            correlationId: 'c-1',
+            context,
         })).rejects.toBe(originalError);
         expect(store.release).toHaveBeenCalledWith({ executionId, lease, releasedAt: clock.now() });
     });

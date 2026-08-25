@@ -1,9 +1,11 @@
-import type { Intent } from '@event-driven-platform/intent';
-import type { UseCase } from '@event-driven-platform/use-case';
+import type { UseCase, UseCaseContext } from '@event-driven-platform/use-case';
 
-export interface UseCaseExecutionRequest<TInput, TResult> {
-    readonly useCase: UseCase<TInput, TResult>;
+export interface UseCaseExecutionRequest<
+    TInput,
+    TResult,
+    TContext extends UseCaseContext = UseCaseContext,
+> {
+    readonly useCase: UseCase<TInput, TResult, TContext>;
     readonly input: TInput;
-    readonly intent: Intent;
-    readonly correlationId: string;
+    readonly context: TContext;
 }

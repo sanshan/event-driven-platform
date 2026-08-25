@@ -32,7 +32,6 @@
   "dependencies": {
     "@event-driven-platform/clock": "workspace:*",
     "@event-driven-platform/execution": "workspace:*",
-    "@event-driven-platform/intent": "workspace:*",
     "@event-driven-platform/use-case": "workspace:*",
     "@event-driven-platform/use-case-execution-store": "workspace:*",
     "tslib": "catalog:"
@@ -40,6 +39,7 @@
   "devDependencies": {
     "@event-driven-platform/command": "workspace:*",
     "@event-driven-platform/event": "workspace:*",
+    "@event-driven-platform/intent": "workspace:*",
     "@event-driven-platform/operation": "workspace:*",
     "@event-driven-platform/operation-event-envelope-factory": "workspace:*",
     "@event-driven-platform/query": "workspace:*"
