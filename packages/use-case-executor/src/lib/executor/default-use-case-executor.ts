@@ -1,3 +1,5 @@
+import type { UseCaseContext } from '@event-driven-platform/use-case';
+
 import { UseCaseAlreadyInProgressError } from '../errors/use-case-already-in-progress.error.js';
 import { UseCaseExecutionTransitionError } from '../errors/use-case-execution-transition.error.js';
 import { UseCaseIntentConflictError } from '../errors/use-case-intent-conflict.error.js';
@@ -14,14 +16,14 @@ export class DefaultUseCaseExecutor implements UseCaseExecutor {
         private readonly runtime: UseCaseExecutorRuntime,
     ) {}
 
-    public async execute<TInput, TResult>(
-        request: UseCaseExecutionRequest<TInput, TResult>,
+    public async execute<TInput, TResult, TContext extends UseCaseContext = UseCaseContext>(
+        request: UseCaseExecutionRequest<TInput, TResult, TContext>,
     ): Promise<TResult> {
-        const executionId = this.dependencies.executionIdFactory.create(request.intent.id);
+        const executionId = this.dependencies.executionIdFactory.create(request.context.intent.id);
         const claim = await this.dependencies.store.claim<TResult>({
             executionId,
-            intent: request.intent,
-            correlationId: request.correlationId,
+            intent: request.context.intent,
+            correlationId: request.context.correlationId,
             leaseOwnerId: this.runtime.leaseOwnerId,
             leaseDurationMs: USE_CASE_EXECUTION_LEASE_DURATION_MS,
             requestedAt: this.dependencies.clock.now(),
@@ -41,10 +43,7 @@ export class DefaultUseCaseExecutor implements UseCaseExecutor {
         let result: TResult;
 
         try {
-            result = await request.useCase.execute(request.input, {
-                intent: request.intent,
-                correlationId: request.correlationId,
-            });
+            result = await request.useCase.execute(request.input, request.context);
         } catch (error) {
             try {
                 await this.dependencies.store.release({
