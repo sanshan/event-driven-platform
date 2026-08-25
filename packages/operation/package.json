@@ -1,44 +1,44 @@
 {
-  "name": "@event-driven-platform/operation",
-  "version": "0.1.4",
-  "description": "Versioned atomic domain operation contracts for the event-driven platform.",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist/**/*.js",
-    "dist/**/*.js.map",
-    "dist/**/*.d.ts",
-    "dist/**/*.d.ts.map"
-  ],
-  "exports": {
-    "./package.json": "./package.json",
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "name": "@event-driven-platform/operation",
+    "version": "0.1.5",
+    "description": "Versioned atomic domain operation contracts for the event-driven platform.",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.js.map",
+        "dist/**/*.d.ts",
+        "dist/**/*.d.ts.map"
+    ],
+    "exports": {
+        "./package.json": "./package.json",
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sanshan/event-driven-platform.git",
+        "directory": "packages/operation"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "dependencies": {
+        "@event-driven-platform/actor": "workspace:*",
+        "@event-driven-platform/aggregate-reference": "workspace:*",
+        "@event-driven-platform/intent": "workspace:*",
+        "@event-driven-platform/subject": "workspace:*",
+        "@event-driven-platform/tenant-reference": "workspace:*",
+        "@event-driven-platform/operation-result": "workspace:*",
+        "tslib": "catalog:"
+    },
+    "devDependencies": {
+        "@event-driven-platform/types": "workspace:*"
     }
-  },
-  "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sanshan/event-driven-platform.git",
-    "directory": "packages/operation"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "dependencies": {
-    "@event-driven-platform/actor": "workspace:*",
-    "@event-driven-platform/aggregate-reference": "workspace:*",
-    "@event-driven-platform/intent": "workspace:*",
-    "@event-driven-platform/subject": "workspace:*",
-    "@event-driven-platform/tenant-reference": "workspace:*",
-    "@event-driven-platform/operation-result": "workspace:*",
-    "tslib": "catalog:"
-  },
-  "devDependencies": {
-    "@event-driven-platform/types": "workspace:*"
-  }
 }

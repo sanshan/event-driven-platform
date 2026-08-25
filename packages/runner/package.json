@@ -1,54 +1,54 @@
 {
-  "name": "@event-driven-platform/runner",
-  "version": "0.0.6",
-  "description": "Centralized execution engine for Commands, idempotency, policies, transactions, and Outbox persistence.",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist/**/*.js",
-    "dist/**/*.js.map",
-    "dist/**/*.d.ts",
-    "dist/**/*.d.ts.map"
-  ],
-  "exports": {
-    "./package.json": "./package.json",
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "name": "@event-driven-platform/runner",
+    "version": "0.0.7",
+    "description": "Centralized execution engine for Commands, idempotency, policies, transactions, and Outbox persistence.",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.js.map",
+        "dist/**/*.d.ts",
+        "dist/**/*.d.ts.map"
+    ],
+    "exports": {
+        "./package.json": "./package.json",
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sanshan/event-driven-platform.git",
+        "directory": "packages/runner"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "dependencies": {
+        "@event-driven-platform/clock": "workspace:*",
+        "@event-driven-platform/command": "workspace:*",
+        "@event-driven-platform/execution": "workspace:*",
+        "@event-driven-platform/execution-log": "workspace:*",
+        "@event-driven-platform/execution-log-store": "workspace:*",
+        "@event-driven-platform/execution-transaction": "workspace:*",
+        "@event-driven-platform/operation": "workspace:*",
+        "@event-driven-platform/operation-result": "workspace:*",
+        "@event-driven-platform/operation-event-envelope-factory": "workspace:*",
+        "@event-driven-platform/operation-handler-resolver": "workspace:*",
+        "@event-driven-platform/outbox": "workspace:*",
+        "@event-driven-platform/outbox-store": "workspace:*",
+        "tslib": "^2.3.0"
+    },
+    "devDependencies": {
+        "@event-driven-platform/aggregate-reference": "workspace:*",
+        "@event-driven-platform/event": "workspace:*",
+        "@event-driven-platform/operation-handler": "workspace:*",
+        "@event-driven-platform/tenant-reference": "workspace:*",
+        "@event-driven-platform/types": "workspace:*"
     }
-  },
-  "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sanshan/event-driven-platform.git",
-    "directory": "packages/runner"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "dependencies": {
-    "@event-driven-platform/clock": "workspace:*",
-    "@event-driven-platform/command": "workspace:*",
-    "@event-driven-platform/execution": "workspace:*",
-    "@event-driven-platform/execution-log": "workspace:*",
-    "@event-driven-platform/execution-log-store": "workspace:*",
-    "@event-driven-platform/execution-transaction": "workspace:*",
-    "@event-driven-platform/operation": "workspace:*",
-    "@event-driven-platform/operation-result": "workspace:*",
-    "@event-driven-platform/operation-event-envelope-factory": "workspace:*",
-    "@event-driven-platform/operation-handler-resolver": "workspace:*",
-    "@event-driven-platform/outbox": "workspace:*",
-    "@event-driven-platform/outbox-store": "workspace:*",
-    "tslib": "^2.3.0"
-  },
-  "devDependencies": {
-    "@event-driven-platform/aggregate-reference": "workspace:*",
-    "@event-driven-platform/event": "workspace:*",
-    "@event-driven-platform/operation-handler": "workspace:*",
-    "@event-driven-platform/tenant-reference": "workspace:*",
-    "@event-driven-platform/types": "workspace:*"
-  }
 }

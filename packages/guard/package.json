@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/guard",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "Declarative execution guard policy contracts for event-driven platform Commands.",
     "type": "module",
     "main": "./dist/index.js",

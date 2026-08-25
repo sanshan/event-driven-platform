@@ -1,43 +1,43 @@
 {
-  "name": "@event-driven-platform/operation-handler-resolver",
-  "version": "0.0.5",
-  "description": "Resolver contract for mapping Operations to handlers in the event-driven platform Runner.",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist/**/*.js",
-    "dist/**/*.js.map",
-    "dist/**/*.d.ts",
-    "dist/**/*.d.ts.map"
-  ],
-  "exports": {
-    "./package.json": "./package.json",
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "name": "@event-driven-platform/operation-handler-resolver",
+    "version": "0.0.6",
+    "description": "Resolver contract for mapping Operations to handlers in the event-driven platform Runner.",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.js.map",
+        "dist/**/*.d.ts",
+        "dist/**/*.d.ts.map"
+    ],
+    "exports": {
+        "./package.json": "./package.json",
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sanshan/event-driven-platform.git",
+        "directory": "packages/operation-handler-resolver"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "dependencies": {
+        "@event-driven-platform/operation": "workspace:*",
+        "@event-driven-platform/operation-handler": "workspace:*",
+        "tslib": "catalog:"
+    },
+    "devDependencies": {
+        "@event-driven-platform/aggregate-reference": "workspace:*",
+        "@event-driven-platform/operation-result": "workspace:*",
+        "@event-driven-platform/tenant-reference": "workspace:*",
+        "@event-driven-platform/types": "workspace:*"
     }
-  },
-  "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sanshan/event-driven-platform.git",
-    "directory": "packages/operation-handler-resolver"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "dependencies": {
-    "@event-driven-platform/operation": "workspace:*",
-    "@event-driven-platform/operation-handler": "workspace:*",
-    "tslib": "catalog:"
-  },
-  "devDependencies": {
-    "@event-driven-platform/aggregate-reference": "workspace:*",
-    "@event-driven-platform/operation-result": "workspace:*",
-    "@event-driven-platform/tenant-reference": "workspace:*",
-    "@event-driven-platform/types": "workspace:*"
-  }
 }

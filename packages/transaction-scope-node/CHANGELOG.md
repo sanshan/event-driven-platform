@@ -1,3 +1,10 @@
+## 0.0.5 (2026-08-25)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/transaction-scope to 0.0.5
+- Updated @event-driven-platform/transaction-host to 0.0.5
+
 ## 0.0.4 (2026-08-22)
 
 ### 🧱 Updated Dependencies

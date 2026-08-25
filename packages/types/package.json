@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/types",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "description": "Shared TypeScript utility types for the event-driven platform.",
     "type": "module",
     "main": "./dist/index.js",

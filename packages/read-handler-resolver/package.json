@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/read-handler-resolver",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "ReadHandler resolution contracts for the event-driven platform read pipeline.",
     "type": "module",
     "main": "./dist/index.js",

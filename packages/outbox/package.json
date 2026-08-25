@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/outbox",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "description": "Transactional Outbox record contracts and factories for event-driven platform execution.",
     "type": "module",
     "main": "./dist/index.js",

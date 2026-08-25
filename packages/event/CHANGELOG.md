@@ -1,3 +1,11 @@
+## 0.1.4 (2026-08-25)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/aggregate-reference to 0.1.4
+- Updated @event-driven-platform/tenant-reference to 0.1.4
+- Updated @event-driven-platform/types to 0.1.4
+
 ## 0.1.3 (2026-08-22)
 
 ### 🧱 Updated Dependencies
