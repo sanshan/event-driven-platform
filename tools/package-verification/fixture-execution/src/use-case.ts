@@ -101,8 +101,8 @@ const executor = createUseCaseExecutor({
     runtime: { leaseOwnerId: 'external-executor' as ExecutionLeaseOwnerId },
 });
 
-const firstResult = await executor.execute({ useCase, input: undefined, intent: rootIntent, correlationId });
-const replayedResult = await executor.execute({ useCase, input: undefined, intent: rootIntent, correlationId: 'different-correlation-same-intent' });
+const firstResult = await executor.execute({ useCase, input: undefined, context: { intent: rootIntent, correlationId } });
+const replayedResult = await executor.execute({ useCase, input: undefined, context: { intent: rootIntent, correlationId: 'different-correlation-same-intent' } });
 if (firstResult !== 'wallet-ready' || replayedResult !== firstResult) throw new Error('UseCase execution/replay verification failed.');
 
 const producingIntent = IntentFactory.derive({ parent: { id: rootIntent.id }, slot: 'create-wallet' });
@@ -111,5 +111,5 @@ const [envelope] = new DefaultOperationEventEnvelopeFactory(clock, new DefaultEv
 if (!envelope) throw new Error('Expected an EventEnvelope.');
 
 const downstreamIntent = IntentFactory.derive({ parent: { id: envelope.intentId }, slot: 'start-wallet-fulfillment', discriminator: envelope.eventId });
-const downstreamResult = await executor.execute({ useCase: { execute: async (_input, context) => { if (context.correlationId !== envelope.correlationId) throw new Error('CorrelationId did not continue across the Event boundary.'); return 'fulfillment-started'; } }, input: undefined, intent: downstreamIntent, correlationId: envelope.correlationId });
+const downstreamResult = await executor.execute({ useCase: { execute: async (_input, context) => { if (context.correlationId !== envelope.correlationId) throw new Error('CorrelationId did not continue across the Event boundary.'); return 'fulfillment-started'; } }, input: undefined, context: { intent: downstreamIntent, correlationId: envelope.correlationId } });
 if (downstreamResult !== 'fulfillment-started') throw new Error('Event-triggered UseCase composition verification failed.');
