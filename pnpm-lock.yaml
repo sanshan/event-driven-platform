@@ -270,8 +270,11 @@ importers:
 
   packages/observability:
     dependencies:
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
       tslib:
-        specifier: ^2.3.0
+        specifier: 'catalog:'
         version: 2.8.1
 
   packages/operation:
