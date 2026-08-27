@@ -163,7 +163,13 @@ describe('DefaultRunner observability', () => {
 
         const created = createObservedRunner(observer, { retryDelay });
         kitRef = created.kit;
-        created.kit.handler.error = new Error('transient');
+        created.kit.handler.error = {
+            executionFailure: {
+                code: 'transient-test-failure',
+                message: 'transient',
+                retryable: true,
+            },
+        };
 
         await created.runner.execute({
             ...command,
