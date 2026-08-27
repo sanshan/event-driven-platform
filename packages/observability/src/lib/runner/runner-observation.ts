@@ -18,7 +18,6 @@ export type RunnerObservation =
           readonly context: RunnerObservationContext;
           readonly outcome: RunnerExecutionOutcome;
           readonly durationMs: number;
-          readonly failureType?: string;
       }
     | { readonly type: 'idempotency.hit'; readonly context: RunnerObservationContext }
     | {
@@ -38,7 +37,6 @@ export type RunnerObservation =
           readonly outcome: RunnerAttemptOutcome;
           readonly retryable: boolean;
           readonly durationMs: number;
-          readonly failureType?: string;
       }
     | {
           readonly type: 'retry.scheduled';
