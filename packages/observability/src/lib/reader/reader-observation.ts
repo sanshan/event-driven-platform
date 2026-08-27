@@ -13,7 +13,6 @@ export type ReaderObservation =
           readonly context: ReaderObservationContext;
           readonly outcome: ReaderOutcome;
           readonly durationMs: number;
-          readonly failureType?: string;
       }
     | {
           readonly type: 'cache.lookup.completed';
