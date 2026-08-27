@@ -1,0 +1,12 @@
+{
+  "name": "event-driven-platform",
+  "version": "1.0.0",
+  "description": "Helps Claude Code use Event Driven Platform packages while preserving their architectural boundaries.",
+  "repository": "https://github.com/sanshan/event-driven-platform",
+  "license": "MIT",
+  "keywords": [
+    "event-driven-platform",
+    "distributed-systems",
+    "architecture"
+  ]
+}
