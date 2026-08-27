@@ -2,11 +2,13 @@
 
 Technology-neutral observability contracts for EDP execution boundaries.
 
-The package defines separate typed lifecycle models for Runner, Reader, and UseCaseExecutor. Each observer exposes one operation:
+The package defines separate typed lifecycle models for Runner, Reader, and UseCaseExecutor. Each observer exposes one synchronous operation:
 
 ```ts
-observe(observation): void
+observe(observation): undefined
 ```
+
+Returning `undefined` keeps observation synchronous at the type boundary, so failures can be contained before they reach an execution pipeline.
 
 Observations describe execution facts. They do not prescribe counters, histograms, spans, logs, exporters, or a telemetry backend. The canonical measurement catalog is documented in [`docs/observability.md`](../../docs/observability.md).
 
@@ -26,7 +28,7 @@ One observation may feed several telemetry signals. A consumer can map the same 
 
 ```ts
 class ApplicationRunnerObserver implements RunnerObserver {
-    observe(observation: RunnerObservation): void {
+    observe(observation: RunnerObservation): undefined {
         if (observation.type === 'execution.completed') {
             metrics.executionDuration.record(observation.durationMs, {
                 operation: observation.context.operation,
@@ -36,6 +38,8 @@ class ApplicationRunnerObserver implements RunnerObserver {
             trace.finishExecution(observation);
             logger.info('runner execution completed', observation);
         }
+
+        return undefined;
     }
 }
 ```
