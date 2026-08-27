@@ -1,7 +1,8 @@
 import type { Observer } from './observer.js';
 
 export class NoopObserver<TObservation> implements Observer<TObservation> {
-    public observe(observation: TObservation): void {
+    public observe(observation: TObservation): undefined {
         void observation;
+        return undefined;
     }
 }
