@@ -1,3 +1,3 @@
 export interface Observer<TObservation> {
-    observe(observation: TObservation): void;
+    observe(observation: TObservation): undefined;
 }
