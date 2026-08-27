@@ -25,7 +25,7 @@ The skill is model-invoked when a task involves designing, implementing, reviewi
 It can also be invoked explicitly when needed:
 
 ```text
-/using-event-driven-platform
+/event-driven-platform:using-event-driven-platform
 ```
 
 The plugin intentionally contains no hooks, commands, agents, MCP servers, generators, or runtime code.
