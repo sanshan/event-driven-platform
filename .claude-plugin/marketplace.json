@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "event-driven-platform",
+  "version": "1.0.0",
+  "description": "Claude Code tooling for consuming Event Driven Platform packages.",
+  "owner": {
+    "name": "Event Driven Platform"
+  },
+  "plugins": [
+    {
+      "name": "event-driven-platform",
+      "description": "Guidance for designing and implementing applications with Event Driven Platform packages.",
+      "source": "./plugins/event-driven-platform",
+      "category": "development"
+    }
+  ]
+}
