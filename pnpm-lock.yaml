@@ -520,6 +520,12 @@ importers:
 
   packages/reader:
     dependencies:
+      '@event-driven-platform/clock':
+        specifier: workspace:*
+        version: link:../clock
+      '@event-driven-platform/observability':
+        specifier: workspace:*
+        version: link:../observability
       '@event-driven-platform/query':
         specifier: workspace:*
         version: link:../query
