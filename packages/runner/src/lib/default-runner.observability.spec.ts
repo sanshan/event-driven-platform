@@ -1,13 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { DefaultEventIdFactory } from '@event-driven-platform/event';
-import {
-    DefaultOperationEventEnvelopeFactory,
-} from '@event-driven-platform/operation-event-envelope-factory';
-import type {
-    RunnerObservation,
-    RunnerObserver,
-} from '@event-driven-platform/observability';
+import { DefaultOperationEventEnvelopeFactory } from '@event-driven-platform/operation-event-envelope-factory';
+import type { RunnerObservation, RunnerObserver } from '@event-driven-platform/observability';
 import { DefaultOutboxRecordFactory } from '@event-driven-platform/outbox';
 
 import { DefaultRunner } from './runner/default-runner.js';
@@ -19,7 +14,7 @@ import {
     leaseOwnerId,
     operation,
     successResult,
-} from '../test/runner-test-kit.js';
+} from '../../test/runner-test-kit.js';
 
 class RecordingRunnerObserver implements RunnerObserver {
     readonly observations: RunnerObservation[] = [];
@@ -151,18 +146,17 @@ describe('DefaultRunner observability', () => {
 
     it('emits failed attempt and retry facts before the next attempt', async () => {
         const observer = new RecordingRunnerObserver();
-        let kitRef: ReturnType<typeof createRunnerTestKit> | undefined;
-
+        const state: { kit?: ReturnType<typeof createRunnerTestKit> } = {};
         const retryDelay = {
             wait: async () => {
-                if (kitRef !== undefined) {
-                    kitRef.handler.error = null;
+                if (state.kit !== undefined) {
+                    state.kit.handler.error = null;
                 }
             },
         };
 
         const created = createObservedRunner(observer, { retryDelay });
-        kitRef = created.kit;
+        state.kit = created.kit;
         created.kit.handler.error = {
             executionFailure: {
                 code: 'transient-test-failure',
