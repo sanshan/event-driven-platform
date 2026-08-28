@@ -10,17 +10,13 @@ observe(observation): undefined
 
 Returning `undefined` keeps observation synchronous at the type boundary, so failures can be contained before they reach an execution pipeline.
 
-Observations describe execution facts. They do not prescribe counters, histograms, spans, logs, exporters, or a telemetry backend. The canonical measurement catalog is documented in [`docs/observability.md`](../../docs/observability.md).
+Observations describe execution facts. They do not prescribe counters, histograms, spans, logs, exporters, or a telemetry backend. The canonical measurement catalog is documented in [`docs/architecture/observability.md`](../../docs/architecture/observability.md).
 
 ## Safety
 
-Observability must not affect execution correctness. Wrap consumer observers with `SafeObserver` before supplying them to an execution pipeline:
+Observability must not affect execution correctness. Runner, Reader, and UseCaseExecutor internally wrap a supplied observer with `SafeObserver`, and use no-op observability when no observer is configured. Consumers can therefore provide their observer directly to those execution boundaries without adding a second safety wrapper.
 
-```ts
-const observer = new SafeObserver(new ApplicationTelemetryObserver());
-```
-
-`SafeObserver` contains delegate exceptions. `NoopObserver` is available when observability is not configured.
+`SafeObserver` and `NoopObserver` remain public utilities for custom composition outside those built-in boundaries.
 
 ## Metrics, traces, and logs
 
