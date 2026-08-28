@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { SystemClock } from '@event-driven-platform/clock';
+import { SystemClock, type Clock } from '@event-driven-platform/clock';
 import {
     NoopObserver,
     SafeObserver,
@@ -23,7 +23,7 @@ import type { Reader } from './reader.js';
 export type { DefaultReaderDependencies } from './default-reader-dependencies.js';
 
 export class DefaultReader implements Reader {
-    private readonly clock;
+    private readonly clock: Clock;
     private readonly observer: ReaderObserver;
     private readonly sourceExecutor: ReadSourceExecutor;
     private readonly cachedExecutor: CachedReadExecutor;
