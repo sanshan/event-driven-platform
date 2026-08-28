@@ -30,6 +30,8 @@
         "access": "public"
     },
     "dependencies": {
+        "@event-driven-platform/clock": "workspace:*",
+        "@event-driven-platform/observability": "workspace:*",
         "@event-driven-platform/query": "workspace:*",
         "@event-driven-platform/read": "workspace:*",
         "@event-driven-platform/read-execution-coordinator": "workspace:*",
