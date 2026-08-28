@@ -268,6 +268,15 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  packages/observability:
+    dependencies:
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
+
   packages/operation:
     dependencies:
       '@event-driven-platform/actor':
@@ -511,6 +520,12 @@ importers:
 
   packages/reader:
     dependencies:
+      '@event-driven-platform/clock':
+        specifier: workspace:*
+        version: link:../clock
+      '@event-driven-platform/observability':
+        specifier: workspace:*
+        version: link:../observability
       '@event-driven-platform/query':
         specifier: workspace:*
         version: link:../query
@@ -566,6 +581,9 @@ importers:
       '@event-driven-platform/execution-transaction':
         specifier: workspace:*
         version: link:../execution-transaction
+      '@event-driven-platform/observability':
+        specifier: workspace:*
+        version: link:../observability
       '@event-driven-platform/operation':
         specifier: workspace:*
         version: link:../operation
@@ -706,6 +724,9 @@ importers:
       '@event-driven-platform/execution':
         specifier: workspace:*
         version: link:../execution
+      '@event-driven-platform/observability':
+        specifier: workspace:*
+        version: link:../observability
       '@event-driven-platform/use-case':
         specifier: workspace:*
         version: link:../use-case

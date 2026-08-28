@@ -1,3 +1,5 @@
+import type { Clock } from '@event-driven-platform/clock';
+import type { ReaderObservationContext, ReaderObserver } from '@event-driven-platform/observability';
 import type { ReadExecutionCoordinator } from '@event-driven-platform/read-execution-coordinator';
 import type { Query, QueryCachePlan } from '@event-driven-platform/query';
 import type { AnyRead, ReadResultOf } from '@event-driven-platform/read';
@@ -12,6 +14,8 @@ export interface CachedReadExecutorDependencies {
     readonly sourceExecutor: ReadSourceExecutor;
     readonly readExecutionCoordinator?: ReadExecutionCoordinator;
     readonly ownerIdFactory: () => string;
+    readonly clock: Clock;
+    readonly observer: ReaderObserver;
 }
 
 type SharedCacheResult<TResult> =
@@ -20,19 +24,26 @@ type SharedCacheResult<TResult> =
 
 export class CachedReadExecutor {
     private readonly localReadInFlight = new LocalReadInFlight();
-    private readonly cacheTraversal = new ReadCacheTraversal();
+    private readonly cacheTraversal: ReadCacheTraversal;
 
-    public constructor(private readonly dependencies: CachedReadExecutorDependencies) {}
+    public constructor(private readonly dependencies: CachedReadExecutorDependencies) {
+        this.cacheTraversal = new ReadCacheTraversal({
+            clock: dependencies.clock,
+            observer: dependencies.observer,
+        });
+    }
 
     public async execute<TRead extends AnyRead>(
         query: Query<TRead>,
         cachePlan: QueryCachePlan<ReadResultOf<TRead>>,
+        context: ReaderObservationContext,
     ): Promise<ReadResultOf<TRead>> {
         const firstSharedIndex = cachePlan.levels.findIndex((level) => level.scope === 'shared');
         const localEndIndex = firstSharedIndex === -1 ? cachePlan.levels.length : firstSharedIndex;
         const localHit = await this.cacheTraversal.findHit(
             cachePlan.levels.slice(0, localEndIndex),
             cachePlan.key,
+            context,
         );
 
         if (localHit !== undefined) {
@@ -40,12 +51,17 @@ export class CachedReadExecutor {
                 cachePlan.levels.slice(0, localHit.index),
                 cachePlan.key,
                 localHit.value,
+                context,
             );
             return localHit.value;
         }
 
-        return this.localReadInFlight.run(cachePlan.key, () =>
-            this.executeLocalLeader(query, cachePlan, localEndIndex),
+        return this.localReadInFlight.run(
+            cachePlan.key,
+            () => this.executeLocalLeader(query, cachePlan, localEndIndex, context),
+            () => {
+                this.dependencies.observer.observe({ type: 'local-inflight.joined', context });
+            },
         );
     }
 
@@ -53,10 +69,12 @@ export class CachedReadExecutor {
         query: Query<TRead>,
         cachePlan: QueryCachePlan<ReadResultOf<TRead>>,
         localEndIndex: number,
+        context: ReaderObservationContext,
     ): Promise<ReadResultOf<TRead>> {
         const localHit = await this.cacheTraversal.findHit(
             cachePlan.levels.slice(0, localEndIndex),
             cachePlan.key,
+            context,
         );
 
         if (localHit !== undefined) {
@@ -64,17 +82,18 @@ export class CachedReadExecutor {
                 cachePlan.levels.slice(0, localHit.index),
                 cachePlan.key,
                 localHit.value,
+                context,
             );
             return localHit.value;
         }
 
-        const shared = await this.findSharedCacheResult(cachePlan, localEndIndex);
+        const shared = await this.findSharedCacheResult(cachePlan, localEndIndex, context);
         if (shared.status === 'hit') {
             return shared.value;
         }
 
         if (cachePlan.coordination === undefined) {
-            return this.executeSourceAndBackfill(query, cachePlan);
+            return this.executeSourceAndBackfill(query, cachePlan, context);
         }
 
         if (localEndIndex === cachePlan.levels.length) {
@@ -99,24 +118,31 @@ export class CachedReadExecutor {
             );
         }
 
-        return new DistributedReadFlight(coordinator).run({
+        return new DistributedReadFlight({
+            coordinator,
+            clock: this.dependencies.clock,
+            observer: this.dependencies.observer,
+            context,
+        }).run({
             key: cachePlan.key,
             ownerId: this.dependencies.ownerIdFactory(),
             leaseDurationMs: cachePlan.coordination.leaseDurationMs,
-            readShared: () => this.findSharedCacheResult(cachePlan, localEndIndex),
-            executeSource: () => this.dependencies.sourceExecutor.execute(query.read),
+            readShared: () => this.findSharedCacheResult(cachePlan, localEndIndex, context),
+            executeSource: () => this.dependencies.sourceExecutor.execute(query.read, context),
             publishSourceResult: (result) =>
-                this.cacheTraversal.populate(cachePlan.levels, cachePlan.key, result),
+                this.cacheTraversal.populate(cachePlan.levels, cachePlan.key, result, context),
         });
     }
 
     private async findSharedCacheResult<TResult>(
         cachePlan: QueryCachePlan<TResult>,
         firstSharedIndex: number,
+        context: ReaderObservationContext,
     ): Promise<SharedCacheResult<TResult>> {
         const hit = await this.cacheTraversal.findHit(
             cachePlan.levels.slice(firstSharedIndex),
             cachePlan.key,
+            context,
             firstSharedIndex,
         );
 
@@ -128,6 +154,7 @@ export class CachedReadExecutor {
             cachePlan.levels.slice(0, hit.index),
             cachePlan.key,
             hit.value,
+            context,
         );
 
         return { status: 'hit', value: hit.value };
@@ -136,9 +163,10 @@ export class CachedReadExecutor {
     private async executeSourceAndBackfill<TRead extends AnyRead>(
         query: Query<TRead>,
         cachePlan: QueryCachePlan<ReadResultOf<TRead>>,
+        context: ReaderObservationContext,
     ): Promise<ReadResultOf<TRead>> {
-        const sourceResult = await this.dependencies.sourceExecutor.execute(query.read);
-        await this.cacheTraversal.populate(cachePlan.levels, cachePlan.key, sourceResult);
+        const sourceResult = await this.dependencies.sourceExecutor.execute(query.read, context);
+        await this.cacheTraversal.populate(cachePlan.levels, cachePlan.key, sourceResult, context);
         return sourceResult;
     }
 }

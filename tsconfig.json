@@ -124,6 +124,9 @@
         },
         {
             "path": "./packages/use-case-executor"
+        },
+        {
+            "path": "./packages/observability"
         }
     ]
 }
