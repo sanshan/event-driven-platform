@@ -2,6 +2,7 @@ import type { Clock } from '@event-driven-platform/clock';
 import type { ExecutionIdFactory } from '@event-driven-platform/execution';
 import type { ExecutionLogStore } from '@event-driven-platform/execution-log-store';
 import type { ExecutionTransaction } from '@event-driven-platform/execution-transaction';
+import type { RunnerObserver } from '@event-driven-platform/observability';
 import type { OperationEventEnvelopeFactory } from '@event-driven-platform/operation-event-envelope-factory';
 import type { OperationHandlerResolver } from '@event-driven-platform/operation-handler-resolver';
 import type { OutboxRecordFactory } from '@event-driven-platform/outbox';
@@ -22,6 +23,8 @@ export interface RunnerDependencies {
     readonly executionTimeout?: ExecutionTimeout;
 
     readonly guardEvaluator?: GuardEvaluator;
+
+    readonly observer?: RunnerObserver;
 
     readonly rateLimiter?: RateLimiter;
 

@@ -575,6 +575,9 @@ importers:
       '@event-driven-platform/execution-transaction':
         specifier: workspace:*
         version: link:../execution-transaction
+      '@event-driven-platform/observability':
+        specifier: workspace:*
+        version: link:../observability
       '@event-driven-platform/operation':
         specifier: workspace:*
         version: link:../operation
