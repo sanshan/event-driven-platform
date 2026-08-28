@@ -8,6 +8,7 @@ import { DefaultOutboxRecordFactory } from '@event-driven-platform/outbox';
 import { DefaultRunner } from './runner/default-runner.js';
 import type { RunnerDependencies } from './runner/runner-dependencies.js';
 import {
+    claimedEntry,
     command,
     createRunnerTestKit,
     FixedClock,
@@ -130,7 +131,7 @@ describe('DefaultRunner observability', () => {
 
         rejected.kit.executionLogStore.claimResult = {
             type: 'already-in-progress',
-            entry: rejected.kit.executionLogStore.claimResult.entry,
+            entry: claimedEntry,
         };
 
         await expect(rejected.runner.execute(command)).rejects.toThrow();
