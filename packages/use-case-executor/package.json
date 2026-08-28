@@ -32,6 +32,7 @@
     "dependencies": {
         "@event-driven-platform/clock": "workspace:*",
         "@event-driven-platform/execution": "workspace:*",
+        "@event-driven-platform/observability": "workspace:*",
         "@event-driven-platform/use-case": "workspace:*",
         "@event-driven-platform/use-case-execution-store": "workspace:*",
         "tslib": "catalog:"
