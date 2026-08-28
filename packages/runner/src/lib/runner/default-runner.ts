@@ -239,7 +239,7 @@ export class DefaultRunner implements Runner {
                 context,
                 attempt: handlerAttemptNumber,
                 outcome: outcome.error instanceof ExecutionTimedOutError ? 'timed-out' : 'error',
-                retryable: canRetry,
+                retryable: failure.retryable,
                 durationMs: this.durationSince(attemptStartedAt),
             });
 
