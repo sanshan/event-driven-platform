@@ -724,6 +724,9 @@ importers:
       '@event-driven-platform/execution':
         specifier: workspace:*
         version: link:../execution
+      '@event-driven-platform/observability':
+        specifier: workspace:*
+        version: link:../observability
       '@event-driven-platform/use-case':
         specifier: workspace:*
         version: link:../use-case
