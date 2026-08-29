@@ -24,6 +24,12 @@
             "path": "../query/tsconfig.lib.json"
         },
         {
+            "path": "../observability/tsconfig.lib.json"
+        },
+        {
+            "path": "../clock/tsconfig.lib.json"
+        },
+        {
             "path": "../read-execution-coordinator-redis/tsconfig.lib.json"
         },
         {
