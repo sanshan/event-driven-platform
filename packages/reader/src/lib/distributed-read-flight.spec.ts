@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { FixedClock } from '@event-driven-platform/clock';
+import type { ReaderObservation, ReaderObserver } from '@event-driven-platform/observability';
 import type {
     ClaimReadExecutionResult,
     ReadExecutionCoordinator,
@@ -7,17 +9,35 @@ import type {
     RenewReadExecutionResult,
     WaitForReadExecutionResult,
 } from '@event-driven-platform/read-execution-coordinator';
-import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
+import type { AnyRead } from '@event-driven-platform/read';
 
 import { ReadExecutionCoordinatorUnavailableError } from './errors/read-execution-coordinator-unavailable.error.js';
 import { DistributedReadFlight } from './inflight/distributed-read-flight.js';
 
-const key: ReadCacheKey = {
-    namespace: 'wallet.get',
-    version: '1',
-    partition: 'tenant:tenant-1',
-    value: 'wallet:wallet-1',
+const tenant = {
+    type: 'merchant',
+    id: 'tenant-1' as AnyRead['tenant']['id'],
+} as const;
+
+const key: TenantScopedReadCacheKey = {
+    tenant,
+    key: {
+        namespace: 'wallet.get',
+        version: '1',
+        partition: 'wallets',
+        value: 'wallet:wallet-1',
+    },
 };
+
+class RecordingReaderObserver implements ReaderObserver {
+    readonly observations: ReaderObservation[] = [];
+
+    observe(observation: ReaderObservation): undefined {
+        this.observations.push(observation);
+        return undefined;
+    }
+}
 
 function coordinatorWith(options: {
     claims: ClaimReadExecutionResult[];
@@ -61,6 +81,18 @@ function coordinatorWith(options: {
     };
 }
 
+function createFlight(coordinator: ReadExecutionCoordinator, observer = new RecordingReaderObserver()) {
+    return {
+        observer,
+        flight: new DistributedReadFlight({
+            coordinator,
+            clock: new FixedClock('2026-08-28T05:00:00.000Z'),
+            observer,
+            context: { read: 'wallet.get', tenant },
+        }),
+    };
+}
+
 describe('DistributedReadFlight', () => {
     it('double-checks shared cache after acquiring ownership before source execution', async () => {
         const coordinator = coordinatorWith({
@@ -73,7 +105,7 @@ describe('DistributedReadFlight', () => {
         });
         let sourceExecutions = 0;
         let publishes = 0;
-        const flight = new DistributedReadFlight(coordinator);
+        const { flight, observer } = createFlight(coordinator);
 
         await expect(
             flight.run({
@@ -97,6 +129,12 @@ describe('DistributedReadFlight', () => {
         expect(sourceExecutions).toBe(0);
         expect(publishes).toBe(0);
         expect(coordinator.releaseCalls).toBe(1);
+        expect(observer.observations).toContainEqual(
+            expect.objectContaining({
+                type: 'distributed-coordination.completed',
+                outcome: 'owner',
+            }),
+        );
     });
 
     it('re-contends after follower wait when shared cache is still a miss', async () => {
@@ -113,7 +151,7 @@ describe('DistributedReadFlight', () => {
         let sharedReads = 0;
         let sourceExecutions = 0;
         let publishes = 0;
-        const flight = new DistributedReadFlight(coordinator);
+        const { flight, observer } = createFlight(coordinator);
 
         await expect(
             flight.run({
@@ -139,14 +177,17 @@ describe('DistributedReadFlight', () => {
         expect(sharedReads).toBe(2);
         expect(sourceExecutions).toBe(1);
         expect(publishes).toBe(1);
+        expect(observer.observations.map((observation) =>
+            observation.type === 'distributed-coordination.completed' ? observation.outcome : null,
+        )).toEqual(expect.arrayContaining(['waiter', 'owner']));
     });
 
-    it('fails closed when the distributed coordinator is unavailable', async () => {
+    it('fails closed and observes unavailable coordination', async () => {
         const coordinator = coordinatorWith({
             claims: [{ status: 'unavailable', reason: 'redis unavailable' }],
         });
         let sourceExecutions = 0;
-        const flight = new DistributedReadFlight(coordinator);
+        const { flight, observer } = createFlight(coordinator);
 
         await expect(
             flight.run({
@@ -160,10 +201,14 @@ describe('DistributedReadFlight', () => {
                 },
                 publishSourceResult: async () => undefined,
             }),
-        ).rejects.toEqual(
-            new ReadExecutionCoordinatorUnavailableError('redis unavailable'),
-        );
+        ).rejects.toEqual(new ReadExecutionCoordinatorUnavailableError('redis unavailable'));
 
         expect(sourceExecutions).toBe(0);
+        expect(observer.observations).toContainEqual(
+            expect.objectContaining({
+                type: 'distributed-coordination.completed',
+                outcome: 'unavailable',
+            }),
+        );
     });
 });

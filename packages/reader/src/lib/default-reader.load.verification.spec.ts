@@ -9,8 +9,8 @@ import {
     RedisReadCacheWriter,
 } from '@event-driven-platform/read-cache-redis';
 import { RedisReadExecutionCoordinator } from '@event-driven-platform/read-execution-coordinator-redis';
-import type { Query, ReadCacheKey } from '@event-driven-platform/query';
-import type { Read } from '@event-driven-platform/read';
+import type { Query, ReadCacheKey, TenantScopedReadCacheKey } from '@event-driven-platform/query';
+import type { AnyRead, Read } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
 import { DefaultReader } from '../index.js';
@@ -20,8 +20,18 @@ interface WalletView {
     readonly balance: number;
 }
 
-type GetWalletRead = Read<'wallet.get', { readonly walletId: string }, WalletView>;
+type GetWalletRead = Read<
+    'wallet.get',
+    AnyRead['tenant'],
+    { readonly walletId: string },
+    WalletView
+>;
 type GetWalletQuery = Query<GetWalletRead>;
+
+const verificationTenant: AnyRead['tenant'] = {
+    type: 'merchant',
+    id: 'verification-merchant' as AnyRead['tenant']['id'],
+};
 
 const redisUrl = process.env.READ_COORDINATOR_REDIS_URL;
 
@@ -33,7 +43,7 @@ function resolverWith(
     resolution: ReadHandlerResolution<GetWalletRead>,
 ): ReadHandlerResolver {
     return {
-        resolve: <TRead extends Read<string, unknown, unknown>>(_read: TRead) =>
+        resolve: <TRead extends AnyRead>(_read: TRead) =>
             resolution as unknown as ReadHandlerResolution<TRead>,
     };
 }
@@ -53,8 +63,15 @@ function cacheKeyFor(walletId: string): ReadCacheKey {
     return {
         namespace: 'wallet.get',
         version: '1',
-        partition: 'tenant:verification',
+        partition: 'verification',
         value: `wallet:${walletId}`,
+    };
+}
+
+function scopedCacheKeyFor(walletId: string): TenantScopedReadCacheKey {
+    return {
+        tenant: verificationTenant,
+        key: cacheKeyFor(walletId),
     };
 }
 
@@ -73,6 +90,7 @@ function queryFor(
                 id: 'verification-user',
                 origin: {},
             },
+            tenant: verificationTenant,
             parameters: { walletId },
         },
         context: { correlationId: `verification:${walletId}` },
@@ -175,7 +193,7 @@ describe('DefaultReader load and recovery verification', () => {
         expect(results).toHaveLength(100);
         expect(results.every((result) => result.balance === 42)).toBe(true);
         expect(sourceExecutions).toBe(1);
-        await expect(localCache.read(cacheKeyFor('hot-1'))).resolves.toEqual({
+        await expect(localCache.read(scopedCacheKeyFor('hot-1'))).resolves.toEqual({
             status: 'hit',
             value: { id: 'hot-1', balance: 42 },
         });
@@ -222,8 +240,8 @@ describe('DefaultReader load and recovery verification', () => {
 
         expect(results).toHaveLength(100);
         expect(sourceExecutions).toBe(1);
-        await expect(firstLocal.read(cacheKeyFor('hot-2'))).resolves.toMatchObject({ status: 'hit' });
-        await expect(secondLocal.read(cacheKeyFor('hot-2'))).resolves.toMatchObject({ status: 'hit' });
+        await expect(firstLocal.read(scopedCacheKeyFor('hot-2'))).resolves.toMatchObject({ status: 'hit' });
+        await expect(secondLocal.read(scopedCacheKeyFor('hot-2'))).resolves.toMatchObject({ status: 'hit' });
     });
 
     it('keeps unrelated keys independently concurrent', async () => {
@@ -333,7 +351,7 @@ describe('DefaultReader load and recovery verification', () => {
         const localCache = new InMemoryReadCache<WalletView>({ capacity, ttlMs: 60_000 });
 
         for (let index = 0; index < 5_000; index += 1) {
-            await localCache.write(cacheKeyFor(`bounded-${index}`), {
+            await localCache.write(scopedCacheKeyFor(`bounded-${index}`), {
                 id: `bounded-${index}`,
                 balance: index,
             });

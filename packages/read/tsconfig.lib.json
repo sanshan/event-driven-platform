@@ -12,6 +12,9 @@
     "include": ["src/**/*.ts"],
     "references": [
         {
+            "path": "../tenant-reference/tsconfig.lib.json"
+        },
+        {
             "path": "../actor/tsconfig.lib.json"
         },
         {

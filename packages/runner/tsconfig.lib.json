@@ -24,7 +24,13 @@
             "path": "../operation-event-envelope-factory/tsconfig.lib.json"
         },
         {
+            "path": "../operation-result/tsconfig.lib.json"
+        },
+        {
             "path": "../operation/tsconfig.lib.json"
+        },
+        {
+            "path": "../observability/tsconfig.lib.json"
         },
         {
             "path": "../execution-transaction/tsconfig.lib.json"
@@ -49,9 +55,6 @@
         },
         {
             "path": "../tenant-reference/tsconfig.lib.json"
-        },
-        {
-            "path": "../operation-result/tsconfig.lib.json"
         },
         {
             "path": "../operation-handler/tsconfig.lib.json"

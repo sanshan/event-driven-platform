@@ -1,8 +1,10 @@
+import type { Clock } from '@event-driven-platform/clock';
+import type { ReaderObservationContext, ReaderObserver } from '@event-driven-platform/observability';
 import type {
     ReadExecutionCoordinator,
     ReadExecutionLeaseReference,
 } from '@event-driven-platform/read-execution-coordinator';
-import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
 
 import { ReadExecutionCoordinatorUnavailableError } from '../errors/read-execution-coordinator-unavailable.error.js';
 import { ReadExecutionOwnershipLostError } from '../errors/read-execution-ownership-lost.error.js';
@@ -12,7 +14,7 @@ type SharedReadResult<TResult> =
     | { readonly status: 'miss' };
 
 interface DistributedReadFlightRequest<TResult> {
-    readonly key: ReadCacheKey;
+    readonly key: TenantScopedReadCacheKey;
     readonly ownerId: string;
     readonly leaseDurationMs: number;
     readonly readShared: () => Promise<SharedReadResult<TResult>>;
@@ -20,23 +22,32 @@ interface DistributedReadFlightRequest<TResult> {
     readonly publishSourceResult: (result: TResult) => Promise<void>;
 }
 
+export interface DistributedReadFlightDependencies {
+    readonly coordinator: ReadExecutionCoordinator;
+    readonly clock: Clock;
+    readonly observer: ReaderObserver;
+    readonly context: ReaderObservationContext;
+}
+
 export class DistributedReadFlight {
-    constructor(private readonly coordinator: ReadExecutionCoordinator) {}
+    constructor(private readonly dependencies: DistributedReadFlightDependencies) {}
 
     async run<TResult>(request: DistributedReadFlightRequest<TResult>): Promise<TResult> {
         while (true) {
-            const claim = await this.coordinator.claim({
+            const startedAt = this.dependencies.clock.now();
+            const claim = await this.dependencies.coordinator.claim({
                 key: request.key,
                 ownerId: request.ownerId,
                 leaseDurationMs: request.leaseDurationMs,
             });
 
             if (claim.status === 'unavailable') {
+                this.observeCoordination('unavailable', startedAt);
                 throw new ReadExecutionCoordinatorUnavailableError(claim.reason);
             }
 
             if (claim.status === 'already-in-progress') {
-                const afterWait = await this.waitForCurrentFlight(request);
+                const afterWait = await this.waitForCurrentFlight(request, startedAt);
                 if (afterWait.status === 'hit') {
                     return afterWait.value;
                 }
@@ -44,22 +55,26 @@ export class DistributedReadFlight {
                 continue;
             }
 
+            this.observeCoordination('owner', startedAt);
             return this.runAsOwner(request, claim.lease);
         }
     }
 
     private async waitForCurrentFlight<TResult>(
         request: DistributedReadFlightRequest<TResult>,
+        startedAt: string,
     ): Promise<SharedReadResult<TResult>> {
-        const wait = await this.coordinator.wait({
+        const wait = await this.dependencies.coordinator.wait({
             key: request.key,
             timeoutMs: request.leaseDurationMs,
         });
 
         if (wait.status === 'unavailable') {
+            this.observeCoordination('unavailable', startedAt);
             throw new ReadExecutionCoordinatorUnavailableError(wait.reason);
         }
 
+        this.observeCoordination('waiter', startedAt);
         return request.readShared();
     }
 
@@ -87,7 +102,8 @@ export class DistributedReadFlight {
                 return;
             }
 
-            const result = await this.coordinator.renew({
+            const startedAt = this.dependencies.clock.now();
+            const result = await this.dependencies.coordinator.renew({
                 key: request.key,
                 lease,
                 leaseDurationMs: request.leaseDurationMs,
@@ -95,12 +111,14 @@ export class DistributedReadFlight {
 
             if (result.status === 'ownership-lost') {
                 leaseState = 'lost';
+                this.observeCoordination('ownership-lost', startedAt);
                 return;
             }
 
             if (result.status === 'unavailable') {
                 leaseState = 'unavailable';
                 unavailableReason = result.reason;
+                this.observeCoordination('unavailable', startedAt);
                 return;
             }
 
@@ -147,7 +165,7 @@ export class DistributedReadFlight {
             }
 
             try {
-                await this.coordinator.release({ key: request.key, lease });
+                await this.dependencies.coordinator.release({ key: request.key, lease });
             } catch {
                 // The lease is TTL-bounded; release failure must not replace a completed business read.
             }
@@ -167,5 +185,20 @@ export class DistributedReadFlight {
                 unavailableReason ?? 'lease renewal failed',
             );
         }
+    }
+
+    private observeCoordination(
+        outcome: 'owner' | 'waiter' | 'unavailable' | 'ownership-lost',
+        startedAt: string,
+    ): void {
+        this.dependencies.observer.observe({
+            type: 'distributed-coordination.completed',
+            context: this.dependencies.context,
+            outcome,
+            durationMs: Math.max(
+                0,
+                Date.parse(this.dependencies.clock.now()) - Date.parse(startedAt),
+            ),
+        });
     }
 }

@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/use-case-executor",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "Durable UseCase invocation executor for the event-driven platform.",
     "type": "module",
     "main": "./dist/index.js",
@@ -32,6 +32,7 @@
     "dependencies": {
         "@event-driven-platform/clock": "workspace:*",
         "@event-driven-platform/execution": "workspace:*",
+        "@event-driven-platform/observability": "workspace:*",
         "@event-driven-platform/use-case": "workspace:*",
         "@event-driven-platform/use-case-execution-store": "workspace:*",
         "tslib": "catalog:"

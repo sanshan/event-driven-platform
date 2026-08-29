@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
 
 import type {
     ClaimReadExecutionRequest,
@@ -95,8 +95,15 @@ class TestReadExecutionCoordinator implements ReadExecutionCoordinator {
         return { status: 'released' };
     }
 
-    private identity(key: ReadCacheKey): string {
-        return JSON.stringify([key.namespace, key.version, key.partition, key.value]);
+    private identity({ tenant, key }: TenantScopedReadCacheKey): string {
+        return JSON.stringify([
+            tenant.type,
+            tenant.id,
+            key.namespace,
+            key.version,
+            key.partition,
+            key.value,
+        ]);
     }
 
     private matches(
@@ -111,11 +118,17 @@ class TestReadExecutionCoordinator implements ReadExecutionCoordinator {
     }
 }
 
-const key: ReadCacheKey = {
-    namespace: 'wallet.get',
-    version: '1',
-    partition: 'tenant:tenant-1',
-    value: 'wallet:wallet-1',
+const key: TenantScopedReadCacheKey = {
+    tenant: {
+        type: 'merchant',
+        id: 'tenant-1' as TenantScopedReadCacheKey['tenant']['id'],
+    },
+    key: {
+        namespace: 'wallet.get',
+        version: '1',
+        partition: 'wallets',
+        value: 'wallet:wallet-1',
+    },
 };
 
 describe('ReadExecutionCoordinator contract', () => {
@@ -194,6 +207,24 @@ describe('ReadExecutionCoordinator contract', () => {
         await expect(
             coordinator.wait({ key, timeoutMs: 10, signal: controller.signal }),
         ).resolves.toEqual({ status: 'cancelled' });
+    });
+
+    it('isolates the same logical read identity across tenants', async () => {
+        const coordinator = new TestReadExecutionCoordinator();
+        const otherTenantKey: TenantScopedReadCacheKey = {
+            tenant: {
+                type: 'merchant',
+                id: 'tenant-2' as TenantScopedReadCacheKey['tenant']['id'],
+            },
+            key: key.key,
+        };
+
+        await expect(
+            coordinator.claim({ key, ownerId: 'node-a', leaseDurationMs: 1000 }),
+        ).resolves.toMatchObject({ status: 'acquired' });
+        await expect(
+            coordinator.claim({ key: otherTenantKey, ownerId: 'node-b', leaseDurationMs: 1000 }),
+        ).resolves.toMatchObject({ status: 'acquired' });
     });
 
     it('exposes coordinator unavailability as an explicit typed outcome', () => {

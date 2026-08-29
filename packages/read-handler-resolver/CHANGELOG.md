@@ -1,3 +1,10 @@
+## 0.0.5 (2026-08-29)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/read-handler to 0.0.5
+- Updated @event-driven-platform/read to 0.0.6
+
 ## 0.0.4 (2026-08-25)
 
 ### 🧱 Updated Dependencies

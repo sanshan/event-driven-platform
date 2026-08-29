@@ -7,7 +7,7 @@ import type {
     QueryCacheLevel,
     ReadCacheKey,
 } from '@event-driven-platform/query';
-import type { Read } from '@event-driven-platform/read';
+import type { AnyRead, Read } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
 import { DefaultReader } from './reader/default-reader.js';
@@ -17,7 +17,12 @@ interface WalletView {
     readonly balance: number;
 }
 
-type GetWalletRead = Read<'wallet.get', { readonly walletId: string }, WalletView>;
+type GetWalletRead = Read<
+    'wallet.get',
+    AnyRead['tenant'],
+    { readonly walletId: string },
+    WalletView
+>;
 type GetWalletQuery = Query<GetWalletRead>;
 
 const key: ReadCacheKey = {
@@ -35,6 +40,10 @@ const baseQuery: Omit<GetWalletQuery, 'options'> = {
             id: 'user-1',
             origin: {},
         },
+        tenant: {
+            type: 'merchant',
+            id: 'merchant-1' as AnyRead['tenant']['id'],
+        },
         parameters: { walletId: 'wallet-1' },
     },
     context: {
@@ -46,7 +55,7 @@ function resolverWith(
     resolution: ReadHandlerResolution<GetWalletRead>,
 ): ReadHandlerResolver {
     return {
-        resolve: <TRead extends Read<string, unknown, unknown>>(_read: TRead) =>
+        resolve: <TRead extends AnyRead>(_read: TRead) =>
             resolution as unknown as ReadHandlerResolution<TRead>,
     };
 }

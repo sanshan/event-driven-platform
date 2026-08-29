@@ -1,13 +1,18 @@
-import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
 
 export class LocalReadInFlight {
     private readonly flights = new Map<string, Promise<unknown>>();
 
-    run<TResult>(key: ReadCacheKey, execute: () => Promise<TResult>): Promise<TResult> {
+    run<TResult>(
+        key: TenantScopedReadCacheKey,
+        execute: () => Promise<TResult>,
+        onJoined: () => void = () => undefined,
+    ): Promise<TResult> {
         const identity = this.identityOf(key);
         const active = this.flights.get(identity);
 
         if (active !== undefined) {
+            onJoined();
             return active as Promise<TResult>;
         }
 
@@ -22,7 +27,14 @@ export class LocalReadInFlight {
         return flight;
     }
 
-    private identityOf(key: ReadCacheKey): string {
-        return JSON.stringify([key.namespace, key.version, key.partition, key.value]);
+    private identityOf({ tenant, key }: TenantScopedReadCacheKey): string {
+        return JSON.stringify([
+            tenant.type,
+            tenant.id,
+            key.namespace,
+            key.version,
+            key.partition,
+            key.value,
+        ]);
     }
 }

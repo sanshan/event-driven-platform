@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/execution-log-store",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "Persistence port for atomic execution claims, completion, and failure transitions.",
     "type": "module",
     "main": "./dist/index.js",

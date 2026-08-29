@@ -1,3 +1,22 @@
+## 0.0.6 (2026-08-29)
+
+### 🚀 Features
+
+- **query:** scope cache writer keys by tenant ([0f9e433](https://github.com/sanshan/event-driven-platform/commit/0f9e433))
+- **query:** scope cache reader keys by tenant ([009cab9](https://github.com/sanshan/event-driven-platform/commit/009cab9))
+- **query:** export tenant-scoped cache key ([313eda5](https://github.com/sanshan/event-driven-platform/commit/313eda5))
+- **query:** add tenant-scoped read cache key ([730c85a](https://github.com/sanshan/event-driven-platform/commit/730c85a))
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/actor to 0.1.5
+- Updated @event-driven-platform/types to 0.1.5
+- Updated @event-driven-platform/read to 0.0.6
+
+### ❤️ Thank You
+
+- Aleksandr Lihih @sanshan
+
 ## 0.0.5 (2026-08-25)
 
 ### 🧱 Updated Dependencies

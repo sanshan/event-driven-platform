@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/reader",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "Centralized execution engine for Queries, cache traversal, coalescing, and ReadHandler dispatch.",
     "type": "module",
     "main": "./dist/index.js",
@@ -30,6 +30,8 @@
         "access": "public"
     },
     "dependencies": {
+        "@event-driven-platform/clock": "workspace:*",
+        "@event-driven-platform/observability": "workspace:*",
         "@event-driven-platform/query": "workspace:*",
         "@event-driven-platform/read": "workspace:*",
         "@event-driven-platform/read-execution-coordinator": "workspace:*",

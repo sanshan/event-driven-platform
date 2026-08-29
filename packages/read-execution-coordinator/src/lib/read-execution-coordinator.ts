@@ -1,4 +1,4 @@
-import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
 
 export interface ReadExecutionLeaseReference {
     readonly ownerId: string;
@@ -6,7 +6,7 @@ export interface ReadExecutionLeaseReference {
 }
 
 export interface ClaimReadExecutionRequest {
-    readonly key: ReadCacheKey;
+    readonly key: TenantScopedReadCacheKey;
     readonly ownerId: string;
     readonly leaseDurationMs: number;
 }
@@ -25,7 +25,7 @@ export type ClaimReadExecutionResult =
       };
 
 export interface WaitForReadExecutionRequest {
-    readonly key: ReadCacheKey;
+    readonly key: TenantScopedReadCacheKey;
     readonly timeoutMs: number;
     readonly signal?: AbortSignal;
 }
@@ -37,7 +37,7 @@ export type WaitForReadExecutionResult =
     | { readonly status: 'unavailable'; readonly reason: string };
 
 export interface RenewReadExecutionRequest {
-    readonly key: ReadCacheKey;
+    readonly key: TenantScopedReadCacheKey;
     readonly lease: ReadExecutionLeaseReference;
     readonly leaseDurationMs: number;
 }
@@ -51,7 +51,7 @@ export type RenewReadExecutionResult =
     | { readonly status: 'unavailable'; readonly reason: string };
 
 export interface ReleaseReadExecutionRequest {
-    readonly key: ReadCacheKey;
+    readonly key: TenantScopedReadCacheKey;
     readonly lease: ReadExecutionLeaseReference;
 }
 
