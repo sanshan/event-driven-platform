@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { FixedClock } from '@event-driven-platform/clock';
 import type { ReaderObservation, ReaderObserver } from '@event-driven-platform/observability';
 import type { Query, QueryCacheLevel, ReadCacheKey } from '@event-driven-platform/query';
-import type { Read } from '@event-driven-platform/read';
+import type { AnyRead, Read } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
 import { DefaultReader } from './reader/default-reader.js';
@@ -13,8 +13,18 @@ interface WalletView {
     readonly balance: number;
 }
 
-type GetWalletRead = Read<'wallet.get', { readonly walletId: string }, WalletView>;
+type GetWalletRead = Read<
+    'wallet.get',
+    AnyRead['tenant'],
+    { readonly walletId: string },
+    WalletView
+>;
 type GetWalletQuery = Query<GetWalletRead>;
+
+const tenant: AnyRead['tenant'] = {
+    type: 'merchant',
+    id: 'merchant-1' as AnyRead['tenant']['id'],
+};
 
 const read: GetWalletRead = {
     name: 'wallet.get',
@@ -23,6 +33,7 @@ const read: GetWalletRead = {
         id: 'user-1',
         origin: {},
     },
+    tenant,
     parameters: { walletId: 'wallet-1' },
 };
 
@@ -51,7 +62,7 @@ function resolverWith(
     resolution: ReadHandlerResolution<GetWalletRead>,
 ): ReadHandlerResolver {
     return {
-        resolve: <TRead extends Read<string, unknown, unknown>>(_read: TRead) =>
+        resolve: <TRead extends AnyRead>(_read: TRead) =>
             resolution as unknown as ReadHandlerResolution<TRead>,
     };
 }
@@ -78,7 +89,7 @@ function cachedQuery(level: QueryCacheLevel<WalletView>): GetWalletQuery {
 }
 
 describe('DefaultReader observability', () => {
-    it('emits the successful read and source lifecycle with stable read identity', async () => {
+    it('emits the successful read and source lifecycle with stable tenant-scoped read identity', async () => {
         const observer = new RecordingReaderObserver();
         const reader = new DefaultReader({
             clock: new FixedClock('2026-08-28T05:00:00.000Z'),
@@ -92,17 +103,17 @@ describe('DefaultReader observability', () => {
         await reader.execute(baseQuery);
 
         expect(observer.observations).toEqual([
-            { type: 'read.requested', context: { read: 'wallet.get' } },
-            { type: 'read.started', context: { read: 'wallet.get' } },
+            { type: 'read.requested', context: { read: 'wallet.get', tenant } },
+            { type: 'read.started', context: { read: 'wallet.get', tenant } },
             {
                 type: 'source.completed',
-                context: { read: 'wallet.get' },
+                context: { read: 'wallet.get', tenant },
                 outcome: 'success',
                 durationMs: 0,
             },
             {
                 type: 'read.completed',
-                context: { read: 'wallet.get' },
+                context: { read: 'wallet.get', tenant },
                 outcome: 'success',
                 durationMs: 0,
             },
