@@ -1,4 +1,5 @@
-import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
+import type { AnyRead } from '@event-driven-platform/read';
 
 import {
     createJsonReadCacheCodec,
@@ -6,24 +7,52 @@ import {
     defaultRedisReadCacheKeyEncoder,
 } from './read-cache-redis.js';
 
-const key: ReadCacheKey = {
-    namespace: 'user',
-    version: 'v1',
-    partition: 'tenant-a',
-    value: '1',
+const key: TenantScopedReadCacheKey = {
+    tenant: {
+        type: 'merchant',
+        id: 'tenant-a' as AnyRead['tenant']['id'],
+    },
+    key: {
+        namespace: 'user',
+        version: 'v1',
+        partition: 'users',
+        value: '1',
+    },
 };
 
 describe('Redis read cache policies', () => {
-    it('encodes read identity deterministically and collision-safely', () => {
-        expect(defaultRedisReadCacheKeyEncoder.encode(key)).toBe('read-cache:user:v1:tenant-a:1');
+    it('encodes tenant and logical read identity deterministically and collision-safely', () => {
+        expect(defaultRedisReadCacheKeyEncoder.encode(key)).toBe(
+            'read-cache:merchant:tenant-a:user:v1:users:1',
+        );
         expect(
             defaultRedisReadCacheKeyEncoder.encode({
-                namespace: 'user:a',
-                version: 'v1',
-                partition: 'tenant/a',
-                value: '1 2',
+                tenant: {
+                    type: 'merchant:type',
+                    id: 'tenant/a' as AnyRead['tenant']['id'],
+                },
+                key: {
+                    namespace: 'user:a',
+                    version: 'v1',
+                    partition: 'users/all',
+                    value: '1 2',
+                },
             }),
-        ).toBe('read-cache:user%3Aa:v1:tenant%2Fa:1%202');
+        ).toBe('read-cache:merchant%3Atype:tenant%2Fa:user%3Aa:v1:users%2Fall:1%202');
+    });
+
+    it('produces different identities for the same logical key across tenants', () => {
+        const otherTenantKey: TenantScopedReadCacheKey = {
+            tenant: {
+                type: 'merchant',
+                id: 'tenant-b' as AnyRead['tenant']['id'],
+            },
+            key: key.key,
+        };
+
+        expect(defaultRedisReadCacheKeyEncoder.encode(otherTenantKey)).not.toBe(
+            defaultRedisReadCacheKeyEncoder.encode(key),
+        );
     });
 
     it('serializes and deserializes JSON values explicitly', () => {
