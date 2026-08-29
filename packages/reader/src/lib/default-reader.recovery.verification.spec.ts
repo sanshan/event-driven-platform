@@ -13,7 +13,7 @@ import type {
     ReadExecutionLeaseReference,
 } from '@event-driven-platform/read-execution-coordinator';
 import { RedisReadExecutionCoordinator } from '@event-driven-platform/read-execution-coordinator-redis';
-import type { Query, ReadCacheKey } from '@event-driven-platform/query';
+import type { Query, ReadCacheKey, TenantScopedReadCacheKey } from '@event-driven-platform/query';
 import type { AnyRead, Read } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
@@ -35,6 +35,11 @@ type GetWalletRead = Read<
     WalletView
 >;
 type GetWalletQuery = Query<GetWalletRead>;
+
+const verificationTenant: AnyRead['tenant'] = {
+    type: 'merchant',
+    id: 'verification-merchant' as AnyRead['tenant']['id'],
+};
 
 const redisUrl = process.env.READ_COORDINATOR_REDIS_URL;
 
@@ -64,8 +69,15 @@ function keyFor(walletId: string): ReadCacheKey {
     return {
         namespace: 'wallet.get',
         version: '1',
-        partition: 'tenant:verification-recovery',
+        partition: 'verification-recovery',
         value: `wallet:${walletId}`,
+    };
+}
+
+function scopedKeyFor(walletId: string): TenantScopedReadCacheKey {
+    return {
+        tenant: verificationTenant,
+        key: keyFor(walletId),
     };
 }
 
@@ -84,10 +96,7 @@ function queryFor(
                 id: 'verification-user',
                 origin: {},
             },
-            tenant: {
-                type: 'merchant',
-                id: 'verification-merchant' as AnyRead['tenant']['id'],
-            },
+            tenant: verificationTenant,
             parameters: { walletId },
         },
         context: { correlationId: `verification-recovery:${walletId}` },
@@ -204,7 +213,7 @@ describe('DefaultReader distributed recovery verification', () => {
         await expect(first).rejects.toThrow('leader source failed');
         await expect(follower).resolves.toEqual({ id: 'leader-failure', balance: 91 });
         expect(sourceExecutions).toBe(2);
-        await expect(secondLocal.read(keyFor('leader-failure'))).resolves.toMatchObject({
+        await expect(secondLocal.read(scopedKeyFor('leader-failure'))).resolves.toMatchObject({
             status: 'hit',
         });
     });
@@ -279,7 +288,7 @@ describe('DefaultReader distributed recovery verification', () => {
         sourceGate.resolve();
 
         await expect(execution).rejects.toEqual(new ReadExecutionOwnershipLostError());
-        await expect(localCache.read(keyFor('ownership-loss'))).resolves.toEqual({ status: 'miss' });
+        await expect(localCache.read(scopedKeyFor('ownership-loss'))).resolves.toEqual({ status: 'miss' });
     });
 
     it('removes per-key Redis lease state after completed distinct-key flights', async () => {
