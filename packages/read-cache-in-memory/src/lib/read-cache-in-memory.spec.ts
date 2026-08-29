@@ -1,19 +1,35 @@
-import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
 
 import { InMemoryReadCache } from './read-cache-in-memory.js';
 
-const firstKey: ReadCacheKey = {
-    namespace: 'user',
-    version: 'v1',
-    partition: 'tenant-a',
-    value: '1',
+const tenantA = {
+    type: 'merchant',
+    id: 'tenant-a' as TenantScopedReadCacheKey['tenant']['id'],
 };
 
-const secondKey: ReadCacheKey = {
-    namespace: 'user',
-    version: 'v1',
-    partition: 'tenant-a',
-    value: '2',
+const tenantB = {
+    type: 'merchant',
+    id: 'tenant-b' as TenantScopedReadCacheKey['tenant']['id'],
+};
+
+const firstKey: TenantScopedReadCacheKey = {
+    tenant: tenantA,
+    key: {
+        namespace: 'user',
+        version: 'v1',
+        partition: 'users',
+        value: '1',
+    },
+};
+
+const secondKey: TenantScopedReadCacheKey = {
+    tenant: tenantA,
+    key: {
+        namespace: 'user',
+        version: 'v1',
+        partition: 'users',
+        value: '2',
+    },
 };
 
 describe('InMemoryReadCache', () => {
@@ -25,6 +41,18 @@ describe('InMemoryReadCache', () => {
         await cache.write(firstKey, 'value-1');
 
         await expect(cache.read(firstKey)).resolves.toEqual({ status: 'hit', value: 'value-1' });
+    });
+
+    it('isolates the same logical key between tenants', async () => {
+        const cache = new InMemoryReadCache<string>({ capacity: 2, ttlMs: 1_000 });
+        const otherTenantKey: TenantScopedReadCacheKey = {
+            tenant: tenantB,
+            key: firstKey.key,
+        };
+
+        await cache.write(firstKey, 'tenant-a-value');
+
+        await expect(cache.read(otherTenantKey)).resolves.toEqual({ status: 'miss' });
     });
 
     it('expires entries deterministically without timers', async () => {

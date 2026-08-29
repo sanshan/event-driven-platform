@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import type { Read } from '@event-driven-platform/read';
+import type { AnyRead, Read } from '@event-driven-platform/read';
 import type { ReadHandler } from '@event-driven-platform/read-handler';
 
 import type {
@@ -13,7 +13,13 @@ interface WalletView {
     readonly balance: number;
 }
 
-type GetWalletRead = Read<'wallet.get', { readonly walletId: string }, WalletView>;
+type WalletTenant = Omit<AnyRead['tenant'], 'type'> & { readonly type: 'merchant' };
+type GetWalletRead = Read<
+    'wallet.get',
+    WalletTenant,
+    { readonly walletId: string },
+    WalletView
+>;
 
 describe('ReadHandlerResolver', () => {
     it('supports one-or-more typed handlers in deterministic order', () => {
@@ -49,16 +55,17 @@ describe('ReadHandlerResolver', () => {
         });
     });
 
-    it('binds resolver output to the input Read type', () => {
+    it('binds resolver output to the complete input Read type', () => {
         const resolver: ReadHandlerResolver = {
-            resolve: <TRead extends Read<string, unknown, unknown>>(
-                _read: TRead,
-            ): ReadHandlerResolution<TRead> => ({ status: 'not-found' }),
+            resolve: <TRead extends AnyRead>(_read: TRead): ReadHandlerResolution<TRead> => ({
+                status: 'not-found',
+            }),
         };
 
         const read = {} as GetWalletRead;
         const resolution = resolver.resolve(read);
 
         expectTypeOf(resolution).toEqualTypeOf<ReadHandlerResolution<GetWalletRead>>();
+        expectTypeOf<GetWalletRead['tenant']>().toEqualTypeOf<WalletTenant>();
     });
 });

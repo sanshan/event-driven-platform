@@ -55,11 +55,13 @@ Packages are independently versioned through Nx Release. Consumers rely on publi
 
 ### `@event-driven-platform/read`
 
-Defines the reusable business-oriented `Read` contract and its result typing. A Read contains its name, actor, read parameters, and a type-only association with the expected result. It does not contain cache, timeout, storage, Redis, or other execution infrastructure.
+Defines the reusable business-oriented `Read` contract and its result typing. A Read contains its name, actor, tenant, read parameters, and a type-only association with the expected result. `Read.tenant` is the single source of tenant identity for Reader execution. Read does not contain cache, timeout, storage, Redis, or other execution infrastructure.
 
 ### `@event-driven-platform/query`
 
-Defines `Query`, caller execution options, deterministic `ReadCacheKey`, ordered cache plans, cache reader/writer capabilities, cache scopes, and optional distributed coordination options.
+Defines `Query`, caller execution options, deterministic logical `ReadCacheKey`, ordered cache plans, cache reader/writer capabilities, cache scopes, optional distributed coordination options, and the tenant-scoped key contract used by Reader infrastructure.
+
+A Query cache plan carries only the logical read/cache key. Tenant is not repeated in `QueryContext` or cache-plan configuration. Reader combines `Read.tenant` with the logical key before cache, local in-flight, or distributed coordination work.
 
 Query is declarative configuration. It does not execute cache readers, write caches, resolve handlers, or coordinate work.
 
@@ -67,23 +69,27 @@ Query is declarative configuration. It does not execute cache readers, write cac
 
 Defines the typed `ReadHandler` source boundary. A handler reads from one source responsibility and returns the result associated with its Read. Handlers do not write caches or invoke Reader.
 
+Handlers receive the complete Read, including `read.tenant`. For tenant-scoped data, the source handler/storage adapter must use that tenant when selecting data, including reads that otherwise look uniquely addressable by an ID. Reader provides the tenant context but does not implement persistence-specific tenant filtering or authorization.
+
 ### `@event-driven-platform/read-handler-resolver`
 
-Defines explicit handler-resolution outcomes. Resolver implementations perform lookup/composition only; Reader owns execution.
+Defines explicit handler-resolution outcomes. Resolver implementations perform lookup/composition only; Reader owns execution. Tenant is carried by the Read but does not form a separate handler-resolution rule or select tenant-specific handler implementations.
 
 ### `@event-driven-platform/read-execution-coordinator`
 
-Defines transient cross-instance ownership, renewal, release, and bounded follower waiting. The coordinator transports no read result and persists no durable execution history.
+Defines transient cross-instance ownership, renewal, release, and bounded follower waiting. Coordination identity is tenant-scoped by construction. The coordinator transports no read result and persists no durable execution history.
 
 ### `@event-driven-platform/reader`
 
 Exports the `Reader` contract and `DefaultReader` composition entry point together with the supported dependency/runtime contracts and typed Reader errors.
 
+Reader derives one effective tenant-scoped identity from `Read.tenant` plus the Query's logical cache key and uses it consistently for cache access, local in-flight coalescing, and distributed coordination. Identical logical keys from different tenants therefore cannot share cache entries or coordinated execution.
+
 Internal execution services used by `DefaultReader` are not public API. Consumers must import from the package root rather than `src/lib/*` paths.
 
 ### Cache and coordinator adapters
 
-The InMemory cache implements local `CacheReader`/`CacheWriter` capabilities. The Redis cache implements shared cache capabilities with explicit codec, key encoding, TTL, and jitter policy. The Redis coordinator implements the technology-neutral coordination contract with ownership-safe leases and follower wake-up.
+The InMemory cache implements local `CacheReader`/`CacheWriter` capabilities. The Redis cache implements shared cache capabilities with explicit codec, key encoding, TTL, and jitter policy. Both cache adapters receive tenant-scoped keys from Reader. The Redis coordinator implements the technology-neutral coordination contract with tenant-scoped ownership-safe leases and follower wake-up.
 
 Adapter implementation details are not architectural contracts merely because they are used internally by the package.
 
@@ -91,14 +97,14 @@ Adapter implementation details are not architectural contracts merely because th
 
 A consuming repository is expected to:
 
-1. define reusable domain Read types;
-2. implement source-specific ReadHandlers;
-3. provide a ReadHandlerResolver;
+1. define reusable domain Read types with an explicit tenant;
+2. implement source-specific ReadHandlers that use `read.tenant` when source access is tenant-scoped;
+3. provide a ReadHandlerResolver whose resolution semantics are independent from tenant isolation;
 4. construct `DefaultReader` with the resolver and, only when distributed coordination is used, a `ReadExecutionCoordinator`;
-5. create Queries containing caller controls and optional cache plans;
+5. create Queries containing caller controls and optional cache plans with logical cache keys;
 6. execute Queries only through Reader.
 
-A cache plan declares cache topology explicitly. Local and shared scope are properties of cache levels, not of Read itself. Reader interprets the plan.
+A cache plan declares cache topology explicitly. Local and shared scope are properties of cache levels, not of Read itself. Tenant identity is not configured on cache levels or Query context; Reader derives the tenant-scoped effective identity from the Read.
 
 A distributed cache plan requires a shared cache level because the coordinator carries ownership only; successful results rendezvous through shared cache.
 

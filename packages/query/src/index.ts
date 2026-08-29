@@ -9,3 +9,4 @@ export type { QueryContext } from './lib/query-context.js';
 export type { QueryOptions } from './lib/query-options.js';
 export type { QueryReadCoordinationOptions } from './lib/query-read-coordination-options.js';
 export type { ReadCacheKey } from './lib/read-cache-key.js';
+export type { TenantScopedReadCacheKey } from './lib/tenant-scoped-read-cache-key.js';

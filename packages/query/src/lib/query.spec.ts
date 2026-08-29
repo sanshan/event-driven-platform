@@ -1,12 +1,13 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { Actor } from '@event-driven-platform/actor';
-import type { Read } from '@event-driven-platform/read';
+import type { AnyRead, Read } from '@event-driven-platform/read';
 import type { Brand } from '@event-driven-platform/types';
 
 import type { Query, QueryResultOf } from './query.js';
 
 type WalletId = Brand<string, 'WalletId'>;
+type WalletTenant = Omit<AnyRead['tenant'], 'type'> & { readonly type: 'merchant' };
 
 interface GetWalletParameters {
     readonly walletId: WalletId;
@@ -18,7 +19,7 @@ interface WalletView {
     readonly balance: number;
 }
 
-type GetWalletRead = Read<'wallet.get', GetWalletParameters, WalletView>;
+type GetWalletRead = Read<'wallet.get', WalletTenant, GetWalletParameters, WalletView>;
 
 type GetWalletQuery = Query<GetWalletRead>;
 
@@ -29,12 +30,16 @@ describe('Query', () => {
             id: 'user-1',
             origin: {},
         };
-
+        const tenant: WalletTenant = {
+            type: 'merchant',
+            id: 'merchant-1' as WalletTenant['id'],
+        };
         const walletId = 'wallet-1' as WalletId;
 
         const read: GetWalletRead = {
             name: 'wallet.get',
             actor,
+            tenant,
             parameters: {
                 walletId,
             },
@@ -61,7 +66,7 @@ describe('Query', () => {
         });
 
         expectTypeOf(query.read).toEqualTypeOf<GetWalletRead>();
-
+        expectTypeOf(query.read.tenant).toEqualTypeOf<WalletTenant>();
         expectTypeOf(query.context.correlationId).toEqualTypeOf<string>();
     });
 

@@ -1,4 +1,10 @@
-import type { CacheReadResult, CacheReader, CacheWriter, ReadCacheKey } from '@event-driven-platform/query';
+import type {
+    CacheReadResult,
+    CacheReader,
+    CacheWriter,
+    ReadCacheKey,
+    TenantScopedReadCacheKey,
+} from '@event-driven-platform/query';
 import type { RedisClientType } from 'redis';
 
 export interface ReadCacheCodec<TResult> {
@@ -31,9 +37,11 @@ export class RedisReadCacheReader<TResult> implements CacheReader<TResult> {
         this.keyEncoder = options.keyEncoder ?? defaultRedisReadCacheKeyEncoder;
     }
 
-    public async read(key: ReadCacheKey): Promise<CacheReadResult<TResult>> {
+    public async read(key: TenantScopedReadCacheKey): Promise<CacheReadResult<TResult>> {
         try {
-            const raw = await this.options.client.get(this.keyEncoder.encode(key));
+            const raw = await this.options.client.get(
+                encodeTenantScopedRedisReadCacheKey(key, this.keyEncoder),
+            );
             if (raw === null) {
                 return { status: 'miss' };
             }
@@ -55,14 +63,18 @@ export class RedisReadCacheWriter<TResult> implements CacheWriter<TResult> {
         this.keyEncoder = options.keyEncoder ?? defaultRedisReadCacheKeyEncoder;
     }
 
-    public async write(key: ReadCacheKey, value: TResult): Promise<void> {
+    public async write(key: TenantScopedReadCacheKey, value: TResult): Promise<void> {
         const ttlMs = this.options.ttlPolicy.resolveTtlMs();
         if (!Number.isInteger(ttlMs) || ttlMs <= 0) {
             throw new RangeError('Redis read cache TTL must resolve to a positive integer number of milliseconds.');
         }
 
         const serialized = this.options.codec.serialize(value);
-        await this.options.client.set(this.keyEncoder.encode(key), serialized, { PX: ttlMs });
+        await this.options.client.set(
+            encodeTenantScopedRedisReadCacheKey(key, this.keyEncoder),
+            serialized,
+            { PX: ttlMs },
+        );
     }
 }
 
@@ -109,3 +121,10 @@ export const defaultRedisReadCacheKeyEncoder: RedisReadCacheKeyEncoder = {
     encode: (key) =>
         `read-cache:${encodeURIComponent(key.namespace)}:${encodeURIComponent(key.version)}:${encodeURIComponent(key.partition)}:${encodeURIComponent(key.value)}`,
 };
+
+function encodeTenantScopedRedisReadCacheKey(
+    { tenant, key }: TenantScopedReadCacheKey,
+    keyEncoder: RedisReadCacheKeyEncoder,
+): string {
+    return `read-cache:${encodeURIComponent(tenant.type)}:${encodeURIComponent(tenant.id)}:${encodeURIComponent(keyEncoder.encode(key))}`;
+}
