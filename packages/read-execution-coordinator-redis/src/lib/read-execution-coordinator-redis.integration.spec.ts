@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createClient, type RedisClientType } from 'redis';
 
-import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
 
 import { RedisReadExecutionCoordinator } from './read-execution-coordinator-redis.js';
 
@@ -11,11 +11,27 @@ if (redisUrl === undefined || redisUrl.length === 0) {
     throw new Error('READ_COORDINATOR_REDIS_URL is required for Redis integration tests');
 }
 
-const key: ReadCacheKey = {
+const logicalKey = {
     namespace: 'wallet.get',
     version: '1',
-    partition: 'tenant:tenant-1',
+    partition: 'wallets',
     value: 'wallet:wallet-1',
+} as const;
+
+const key: TenantScopedReadCacheKey = {
+    tenant: {
+        type: 'merchant',
+        id: 'tenant-1' as TenantScopedReadCacheKey['tenant']['id'],
+    },
+    key: logicalKey,
+};
+
+const otherTenantKey: TenantScopedReadCacheKey = {
+    tenant: {
+        type: 'merchant',
+        id: 'tenant-2' as TenantScopedReadCacheKey['tenant']['id'],
+    },
+    key: logicalKey,
 };
 
 describe('RedisReadExecutionCoordinator integration', () => {
@@ -55,6 +71,23 @@ describe('RedisReadExecutionCoordinator integration', () => {
             await expect(coordinatorB.release({ key, lease: acquired.lease })).resolves.toMatchObject({
                 status: expect.stringMatching(/released|ownership-lost/),
             });
+        }
+    });
+
+    it('allows the same logical key to be owned independently by different tenants', async () => {
+        const [first, second] = await Promise.all([
+            coordinatorA.claim({ key, ownerId: 'node-a', leaseDurationMs: 1000 }),
+            coordinatorB.claim({ key: otherTenantKey, ownerId: 'node-b', leaseDurationMs: 1000 }),
+        ]);
+
+        expect(first.status).toBe('acquired');
+        expect(second.status).toBe('acquired');
+
+        if (first.status === 'acquired') {
+            await coordinatorA.release({ key, lease: first.lease });
+        }
+        if (second.status === 'acquired') {
+            await coordinatorB.release({ key: otherTenantKey, lease: second.lease });
         }
     });
 
