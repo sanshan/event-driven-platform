@@ -1,4 +1,9 @@
-import type { CacheReadResult, CacheReader, CacheWriter, ReadCacheKey } from '@event-driven-platform/query';
+import type {
+    CacheReadResult,
+    CacheReader,
+    CacheWriter,
+    TenantScopedReadCacheKey,
+} from '@event-driven-platform/query';
 
 export interface InMemoryReadCacheOptions {
     readonly capacity: number;
@@ -27,7 +32,7 @@ export class InMemoryReadCache<TResult> implements CacheReader<TResult>, CacheWr
         this.now = options.now ?? Date.now;
     }
 
-    public async read(key: ReadCacheKey): Promise<CacheReadResult<TResult>> {
+    public async read(key: TenantScopedReadCacheKey): Promise<CacheReadResult<TResult>> {
         const identity = encodeReadCacheKey(key);
         const entry = this.entries.get(identity);
 
@@ -43,7 +48,7 @@ export class InMemoryReadCache<TResult> implements CacheReader<TResult>, CacheWr
         return { status: 'hit', value: entry.value };
     }
 
-    public async write(key: ReadCacheKey, value: TResult): Promise<void> {
+    public async write(key: TenantScopedReadCacheKey, value: TResult): Promise<void> {
         const identity = encodeReadCacheKey(key);
 
         this.entries.delete(identity);
@@ -76,6 +81,13 @@ export class InMemoryReadCache<TResult> implements CacheReader<TResult>, CacheWr
     }
 }
 
-function encodeReadCacheKey(key: ReadCacheKey): string {
-    return JSON.stringify([key.namespace, key.version, key.partition, key.value]);
+function encodeReadCacheKey(scopedKey: TenantScopedReadCacheKey): string {
+    return JSON.stringify([
+        scopedKey.tenant.type,
+        scopedKey.tenant.id,
+        scopedKey.key.namespace,
+        scopedKey.key.version,
+        scopedKey.key.partition,
+        scopedKey.key.value,
+    ]);
 }
