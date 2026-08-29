@@ -4,7 +4,6 @@ import { createClient } from 'redis';
 import {
     createJsonReadCacheCodec,
     createRedisReadCacheTtlPolicy,
-    defaultRedisReadCacheKeyEncoder,
     RedisReadCacheReader,
     RedisReadCacheWriter,
 } from './read-cache-redis.js';
@@ -72,6 +71,11 @@ describe('Redis read cache integration', () => {
     });
 
     it('returns an error outcome when deserialization fails', async () => {
+        const writer = new RedisReadCacheWriter({
+            client,
+            codec: createJsonReadCacheCodec<{ readonly id: number }>(),
+            ttlPolicy: createRedisReadCacheTtlPolicy({ ttlMs: 5_000 }),
+        });
         const reader = new RedisReadCacheReader<{ readonly id: number }>({
             client,
             codec: {
@@ -82,7 +86,7 @@ describe('Redis read cache integration', () => {
             },
         });
 
-        await client.set(defaultRedisReadCacheKeyEncoder.encode(key), '{"id":1}', { PX: 5_000 });
+        await writer.write(key, { id: 1 });
 
         const result = await reader.read(key);
         expect(result.status).toBe('error');
