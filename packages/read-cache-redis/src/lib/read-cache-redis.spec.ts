@@ -1,5 +1,4 @@
 import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
-import type { AnyRead } from '@event-driven-platform/read';
 
 import {
     createJsonReadCacheCodec,
@@ -10,7 +9,7 @@ import {
 const key: TenantScopedReadCacheKey = {
     tenant: {
         type: 'merchant',
-        id: 'tenant-a' as AnyRead['tenant']['id'],
+        id: 'tenant-a' as TenantScopedReadCacheKey['tenant']['id'],
     },
     key: {
         namespace: 'user',
@@ -29,7 +28,7 @@ describe('Redis read cache policies', () => {
             defaultRedisReadCacheKeyEncoder.encode({
                 tenant: {
                     type: 'merchant:type',
-                    id: 'tenant/a' as AnyRead['tenant']['id'],
+                    id: 'tenant/a' as TenantScopedReadCacheKey['tenant']['id'],
                 },
                 key: {
                     namespace: 'user:a',
@@ -45,7 +44,7 @@ describe('Redis read cache policies', () => {
         const otherTenantKey: TenantScopedReadCacheKey = {
             tenant: {
                 type: 'merchant',
-                id: 'tenant-b' as AnyRead['tenant']['id'],
+                id: 'tenant-b' as TenantScopedReadCacheKey['tenant']['id'],
             },
             key: key.key,
         };
