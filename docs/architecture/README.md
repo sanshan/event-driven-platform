@@ -340,21 +340,23 @@ The read pipeline is intentionally independent from the write execution pipeline
 
 ### Read
 
-A `Read<TName, TParameters, TResult>` represents a typed business intent to obtain data. It carries the read name, actor, read parameters, and a type-only association with the expected result.
+A `Read<TName, TTenant, TParameters, TResult>` represents a typed tenant-scoped business intent to obtain data. It carries the read name, actor, tenant, read parameters, and a type-only association with the expected result.
 
-Read remains independent from execution infrastructure. It does not contain cache topology, storage technology, handler resolution, in-flight coordination, Redis clients, or Reader behavior.
+`Read.tenant` is the single source of tenant identity for Reader execution. Read remains independent from execution infrastructure: it does not contain cache topology, storage technology, handler resolution, in-flight coordination, Redis clients, or Reader behavior.
 
 ### Query
 
 A `Query<TRead>` transports an existing Read through the read execution pipeline together with query context and optional execution configuration.
 
-Query may declaratively describe timeout, cancellation, an ordered cache plan, and distributed coordination options. It does not execute the Read, traverse caches, write caches, resolve handlers, or perform coordination itself.
+Query may declaratively describe timeout, cancellation, an ordered cache plan, and distributed coordination options. Cache plans carry a logical `ReadCacheKey`; tenant is not duplicated into `QueryContext` or cache-plan configuration. Query does not execute the Read, traverse caches, write caches, resolve handlers, or perform coordination itself.
 
 Keeping Query separate from Read allows the same business read intent to remain independent from the execution policy used for a particular invocation.
 
 ### Reader
 
 `Reader` is the centralized read execution engine. It accepts Queries and owns orchestration of the implemented read execution concerns.
+
+For cached execution, Reader derives one effective tenant-scoped identity from `Read.tenant` plus the Query's logical cache key. The same effective identity is used for cache access, process-local in-flight coalescing, and distributed coordination, so identical logical keys from different tenants do not share cache entries or coordinated execution.
 
 Depending on the Query configuration, Reader coordinates:
 
@@ -373,15 +375,17 @@ Consumers must not move these orchestration responsibilities into Read, Query, R
 
 `ReadHandler<TRead>` executes one source-specific read responsibility and returns the result type associated with the Read.
 
-A handler reads from one source only. It does not traverse or populate caches, coordinate in-flight execution, resolve other handlers, or invoke Reader.
+A handler receives the complete Read, including `read.tenant`, and reads from one source only. For tenant-scoped data, the source handler/storage adapter must use `read.tenant` when selecting data, including reads that otherwise appear uniquely addressable by an ID. Reader carries the tenant boundary but does not implement persistence-specific tenant filtering or authorization.
 
-`ReadHandlerResolver` maps a Read to an explicit deterministic resolution outcome. Reader owns interpretation of that outcome and source execution. Under the current handler contract, a resolved handler returns a result directly rather than a source-level miss, so Reader executes the first handler in the resolver's ordered resolved set rather than treating handlers as fallback cache levels.
+A handler does not traverse or populate caches, coordinate in-flight execution, resolve other handlers, or invoke Reader.
+
+`ReadHandlerResolver` maps a Read to an explicit deterministic resolution outcome. Tenant is carried through the Read but does not form a separate handler-resolution rule or select tenant-specific handler implementations. Reader owns interpretation of the resolution outcome and source execution. Under the current handler contract, a resolved handler returns a result directly rather than a source-level miss, so Reader executes the first handler in the resolver's ordered resolved set rather than treating handlers as fallback cache levels.
 
 ### Cache traversal and population
 
 Cache topology is declared by Query and executed by Reader. Each cache level exposes a read capability and may expose a separate write capability.
 
-Reader traverses cache levels in declared order:
+Reader traverses cache levels in declared order using the tenant-scoped effective identity:
 
 ```text
 L1 -> L2 -> ... -> Ln -> source
@@ -393,21 +397,23 @@ The first cache hit is returned. When a lower cache level hits, Reader promotes 
 source result -> Ln -> ... -> L2 -> L1
 ```
 
-Cache readers never write caches. Cache writers are separate capabilities and are invoked by Reader.
+Cache readers never write caches. Cache writers are separate capabilities and are invoked by Reader. Cache adapters receive the tenant-scoped key derived by Reader rather than re-deriving tenant from Query configuration.
 
 Cache IO is fail-open for result correctness: unavailable cache reads do not prevent traversal/source execution, and cache population failures do not replace an otherwise successful result. Source-handler failures remain authoritative.
 
 ### Process-local in-flight coalescing
 
-For cached Queries, Reader uses the deterministic `ReadCacheKey` as process-local single-flight identity after the leading local cache path has missed.
+For cached Queries, Reader uses the tenant-scoped effective cache identity as process-local single-flight identity after the leading local cache path has missed.
 
-Only one local leader for the same effective key continues through downstream shared-cache/source work while followers await that in-flight work. Different keys remain independent. A caller timeout or cancellation stops only that caller's wait and does not cancel shared in-flight work used by other callers.
+Only one local leader for the same tenant and logical key continues through downstream shared-cache/source work while followers await that in-flight work. The same logical key for different tenants remains independent. A caller timeout or cancellation stops only that caller's wait and does not cancel shared in-flight work used by other callers.
 
 This is transient execution coordination, not durable execution history or write-side idempotency.
 
 ### Distributed shared-cache rendezvous
 
 A cache plan may enable distributed coordination after shared-cache miss through the technology-neutral `ReadExecutionCoordinator` boundary.
+
+The coordinator receives the same tenant-scoped effective identity used by cache access and local in-flight coalescing. Identical logical keys for different tenants therefore have independent ownership, waits, and release signals.
 
 The coordinator provides transient ownership, renewal, bounded follower waiting, release, and ownership-generation fencing. It does not execute Reads and does not transport or persist read results.
 
@@ -431,15 +437,20 @@ The following are current architecture constraints:
 
 - `Read` and `Query` are separate concepts and must not be merged.
 - Reads are business-oriented and infrastructure-unaware.
+- every Read carries an explicit tenant; `Read.tenant` is the single tenant source for Reader execution.
+- tenant is not duplicated into `QueryContext`, logical cache keys, or cache-plan configuration.
 - Queries carry read execution configuration and contain no business logic.
 - Reader is the centralized read execution engine.
+- Reader derives one tenant-scoped effective identity and uses it for cache access, local in-flight coalescing, and distributed coordination.
+- ReadHandlers receive `read.tenant`; source implementations are responsible for applying it to tenant-scoped data access.
+- ReadHandler resolution semantics remain independent from tenant isolation.
 - ReadHandlers read from one source and do not orchestrate the read pipeline.
 - ReadHandlers do not write caches.
 - cache readers and cache writers are separate capabilities.
 - Reader owns cache traversal, promotion, and source-result backfill.
 - cache failures do not replace successful read results or source execution under the current fail-open cache policy.
-- process-local in-flight coalescing is transient and keyed by deterministic read/cache identity.
-- distributed coordination is optional, transient, and separate from result storage.
+- process-local in-flight coalescing is transient and keyed by tenant-scoped effective identity.
+- distributed coordination is optional, transient, tenant-scoped, and separate from result storage.
 - distributed coalescing requires shared cache rendezvous; the coordinator itself does not transport results.
 - distributed coordinator unavailability is fail-closed for a distributed cache plan.
 - caller timeout or cancellation does not cancel shared in-flight work for other callers.
