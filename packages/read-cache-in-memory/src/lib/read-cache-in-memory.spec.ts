@@ -1,16 +1,15 @@
 import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
-import type { AnyRead } from '@event-driven-platform/read';
 
 import { InMemoryReadCache } from './read-cache-in-memory.js';
 
 const tenantA = {
     type: 'merchant',
-    id: 'tenant-a' as AnyRead['tenant']['id'],
+    id: 'tenant-a' as TenantScopedReadCacheKey['tenant']['id'],
 };
 
 const tenantB = {
     type: 'merchant',
-    id: 'tenant-b' as AnyRead['tenant']['id'],
+    id: 'tenant-b' as TenantScopedReadCacheKey['tenant']['id'],
 };
 
 const firstKey: TenantScopedReadCacheKey = {
