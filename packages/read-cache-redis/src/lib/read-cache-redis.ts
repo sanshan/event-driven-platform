@@ -1,4 +1,9 @@
-import type { CacheReadResult, CacheReader, CacheWriter, ReadCacheKey } from '@event-driven-platform/query';
+import type {
+    CacheReadResult,
+    CacheReader,
+    CacheWriter,
+    TenantScopedReadCacheKey,
+} from '@event-driven-platform/query';
 import type { RedisClientType } from 'redis';
 
 export interface ReadCacheCodec<TResult> {
@@ -7,7 +12,7 @@ export interface ReadCacheCodec<TResult> {
 }
 
 export interface RedisReadCacheKeyEncoder {
-    readonly encode: (key: ReadCacheKey) => string;
+    readonly encode: (key: TenantScopedReadCacheKey) => string;
 }
 
 export interface RedisReadCacheTtlPolicy {
@@ -31,7 +36,7 @@ export class RedisReadCacheReader<TResult> implements CacheReader<TResult> {
         this.keyEncoder = options.keyEncoder ?? defaultRedisReadCacheKeyEncoder;
     }
 
-    public async read(key: ReadCacheKey): Promise<CacheReadResult<TResult>> {
+    public async read(key: TenantScopedReadCacheKey): Promise<CacheReadResult<TResult>> {
         try {
             const raw = await this.options.client.get(this.keyEncoder.encode(key));
             if (raw === null) {
@@ -55,7 +60,7 @@ export class RedisReadCacheWriter<TResult> implements CacheWriter<TResult> {
         this.keyEncoder = options.keyEncoder ?? defaultRedisReadCacheKeyEncoder;
     }
 
-    public async write(key: ReadCacheKey, value: TResult): Promise<void> {
+    public async write(key: TenantScopedReadCacheKey, value: TResult): Promise<void> {
         const ttlMs = this.options.ttlPolicy.resolveTtlMs();
         if (!Number.isInteger(ttlMs) || ttlMs <= 0) {
             throw new RangeError('Redis read cache TTL must resolve to a positive integer number of milliseconds.');
@@ -106,6 +111,6 @@ export function createJsonReadCacheCodec<TResult>(): ReadCacheCodec<TResult> {
 }
 
 export const defaultRedisReadCacheKeyEncoder: RedisReadCacheKeyEncoder = {
-    encode: (key) =>
-        `read-cache:${encodeURIComponent(key.namespace)}:${encodeURIComponent(key.version)}:${encodeURIComponent(key.partition)}:${encodeURIComponent(key.value)}`,
+    encode: ({ tenant, key }) =>
+        `read-cache:${encodeURIComponent(tenant.type)}:${encodeURIComponent(tenant.id)}:${encodeURIComponent(key.namespace)}:${encodeURIComponent(key.version)}:${encodeURIComponent(key.partition)}:${encodeURIComponent(key.value)}`,
 };

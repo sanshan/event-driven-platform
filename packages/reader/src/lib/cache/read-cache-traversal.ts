@@ -1,6 +1,6 @@
 import type { Clock } from '@event-driven-platform/clock';
 import type { ReaderObservationContext, ReaderObserver } from '@event-driven-platform/observability';
-import type { QueryCacheLevel, ReadCacheKey } from '@event-driven-platform/query';
+import type { QueryCacheLevel, TenantScopedReadCacheKey } from '@event-driven-platform/query';
 
 export interface ReadCacheHit<TResult> {
     readonly index: number;
@@ -17,7 +17,7 @@ export class ReadCacheTraversal {
 
     public async findHit<TResult>(
         levels: readonly QueryCacheLevel<TResult>[],
-        key: ReadCacheKey,
+        key: TenantScopedReadCacheKey,
         context: ReaderObservationContext,
         offset = 0,
     ): Promise<ReadCacheHit<TResult> | undefined> {
@@ -57,7 +57,7 @@ export class ReadCacheTraversal {
 
     public async populate<TResult>(
         levels: readonly QueryCacheLevel<TResult>[],
-        key: ReadCacheKey,
+        key: TenantScopedReadCacheKey,
         value: TResult,
         context: ReaderObservationContext,
         offset = 0,
