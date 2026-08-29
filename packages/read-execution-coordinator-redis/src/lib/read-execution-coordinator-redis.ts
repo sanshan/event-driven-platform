@@ -10,7 +10,7 @@ import type {
     WaitForReadExecutionRequest,
     WaitForReadExecutionResult,
 } from '@event-driven-platform/read-execution-coordinator';
-import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
 import type { RedisClientType } from 'redis';
 
 const claimScript = `
@@ -188,7 +188,7 @@ export class RedisReadExecutionCoordinator implements ReadExecutionCoordinator {
         });
     }
 
-    private leaseKey(key: ReadCacheKey): string {
+    private leaseKey(key: TenantScopedReadCacheKey): string {
         return `${this.keyPrefix}:lease:${this.identity(key)}`;
     }
 
@@ -196,12 +196,19 @@ export class RedisReadExecutionCoordinator implements ReadExecutionCoordinator {
         return `${this.keyPrefix}:generation`;
     }
 
-    private channelKey(key: ReadCacheKey): string {
+    private channelKey(key: TenantScopedReadCacheKey): string {
         return `${this.keyPrefix}:release:${this.identity(key)}`;
     }
 
-    private identity(key: ReadCacheKey): string {
-        return JSON.stringify([key.namespace, key.version, key.partition, key.value]);
+    private identity({ tenant, key }: TenantScopedReadCacheKey): string {
+        return JSON.stringify([
+            tenant.type,
+            tenant.id,
+            key.namespace,
+            key.version,
+            key.partition,
+            key.value,
+        ]);
     }
 
     private serializeLease(lease: ReadExecutionLeaseReference): string {
