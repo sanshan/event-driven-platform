@@ -1,9 +1,10 @@
-import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
 import { createClient } from 'redis';
 
 import {
     createJsonReadCacheCodec,
     createRedisReadCacheTtlPolicy,
+    defaultRedisReadCacheKeyEncoder,
     RedisReadCacheReader,
     RedisReadCacheWriter,
 } from './read-cache-redis.js';
@@ -14,11 +15,17 @@ if (redisUrl === undefined) {
     throw new Error('READ_CACHE_REDIS_URL is required for Redis cache integration tests.');
 }
 
-const key: ReadCacheKey = {
-    namespace: 'integration',
-    version: 'v1',
-    partition: 'tenant-a',
-    value: 'user-1',
+const key: TenantScopedReadCacheKey = {
+    tenant: {
+        type: 'merchant',
+        id: 'tenant-a' as TenantScopedReadCacheKey['tenant']['id'],
+    },
+    key: {
+        namespace: 'integration',
+        version: 'v1',
+        partition: 'users',
+        value: 'user-1',
+    },
 };
 
 describe('Redis read cache integration', () => {
@@ -75,7 +82,7 @@ describe('Redis read cache integration', () => {
             },
         });
 
-        await client.set('read-cache:integration:v1:tenant-a:user-1', '{"id":1}', { PX: 5_000 });
+        await client.set(defaultRedisReadCacheKeyEncoder.encode(key), '{"id":1}', { PX: 5_000 });
 
         const result = await reader.read(key);
         expect(result.status).toBe('error');
