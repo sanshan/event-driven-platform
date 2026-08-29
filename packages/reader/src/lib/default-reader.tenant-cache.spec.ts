@@ -8,7 +8,11 @@ import type {
     TenantScopedReadCacheKey,
 } from '@event-driven-platform/query';
 import type { AnyRead, Read } from '@event-driven-platform/read';
-import type { ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
+import type { ReadHandler } from '@event-driven-platform/read-handler';
+import type {
+    ReadHandlerResolution,
+    ReadHandlerResolver,
+} from '@event-driven-platform/read-handler-resolver';
 
 import { DefaultReader } from './reader/default-reader.js';
 
@@ -33,7 +37,7 @@ const logicalKey: ReadCacheKey = {
     value: 'wallet-1',
 };
 
-function queryFor(tenantId: string): GetWalletQuery {
+function queryFor(tenantId: string): Omit<GetWalletQuery, 'options'> {
     return {
         read: {
             name: 'wallet.get',
@@ -45,12 +49,13 @@ function queryFor(tenantId: string): GetWalletQuery {
             parameters: { walletId: 'wallet-1' },
         },
         context: { correlationId: `correlation-${tenantId}` },
-        options: {
-            cache: {
-                key: logicalKey,
-                levels: [],
-            },
-        },
+    };
+}
+
+function resolverWith(handler: ReadHandler<GetWalletRead>): ReadHandlerResolver {
+    return {
+        resolve: <TRead extends AnyRead>(_read: TRead) =>
+            ({ status: 'resolved', handlers: [handler] }) as unknown as ReadHandlerResolution<TRead>,
     };
 }
 
@@ -59,7 +64,7 @@ function identityOf({ tenant, key }: TenantScopedReadCacheKey): string {
 }
 
 describe('DefaultReader tenant-scoped cache identity', () => {
-    it('derives cache identity from Read tenant without duplicating tenant in Query cache configuration', async () => {
+    it('isolates the same logical cache key across Read tenants', async () => {
         const entries = new Map<string, WalletView>();
         const seenKeys: TenantScopedReadCacheKey[] = [];
         const cache: CacheReader<WalletView> & CacheWriter<WalletView> = {
@@ -73,32 +78,21 @@ describe('DefaultReader tenant-scoped cache identity', () => {
                 entries.set(identityOf(key), value);
             },
         };
-        const resolver: ReadHandlerResolver = {
-            resolve: (read) => ({
-                status: 'resolved',
-                handlers: [
-                    {
-                        execute: async () => ({
-                            id: 'wallet-1',
-                            tenant: String(read.tenant.id),
-                        }),
-                    },
-                ],
+        const handler: ReadHandler<GetWalletRead> = {
+            execute: async (read) => ({
+                id: 'wallet-1',
+                tenant: String(read.tenant.id),
             }),
         };
-        const reader = new DefaultReader({ readHandlerResolver: resolver });
-
-        const firstQuery = queryFor('tenant-a');
-        const secondQuery = queryFor('tenant-b');
-        firstQuery.options!.cache!.levels.push;
-
+        const reader = new DefaultReader({ readHandlerResolver: resolverWith(handler) });
         const level = { scope: 'local' as const, reader: cache, writer: cache };
+
         const first = await reader.execute({
-            ...firstQuery,
+            ...queryFor('tenant-a'),
             options: { cache: { key: logicalKey, levels: [level] } },
         });
         const second = await reader.execute({
-            ...secondQuery,
+            ...queryFor('tenant-b'),
             options: { cache: { key: logicalKey, levels: [level] } },
         });
 
