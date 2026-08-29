@@ -4,7 +4,7 @@ import type {
     ReadExecutionCoordinator,
     ReadExecutionLeaseReference,
 } from '@event-driven-platform/read-execution-coordinator';
-import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
 
 import { ReadExecutionCoordinatorUnavailableError } from '../errors/read-execution-coordinator-unavailable.error.js';
 import { ReadExecutionOwnershipLostError } from '../errors/read-execution-ownership-lost.error.js';
@@ -14,7 +14,7 @@ type SharedReadResult<TResult> =
     | { readonly status: 'miss' };
 
 interface DistributedReadFlightRequest<TResult> {
-    readonly key: ReadCacheKey;
+    readonly key: TenantScopedReadCacheKey;
     readonly ownerId: string;
     readonly leaseDurationMs: number;
     readonly readShared: () => Promise<SharedReadResult<TResult>>;
