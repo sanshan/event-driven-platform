@@ -1,9 +1,11 @@
 import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
+import type { RedisClientType } from 'redis';
 
 import {
     createJsonReadCacheCodec,
     createRedisReadCacheTtlPolicy,
     defaultRedisReadCacheKeyEncoder,
+    RedisReadCacheWriter,
 } from './read-cache-redis.js';
 
 const key: TenantScopedReadCacheKey = {
@@ -20,27 +22,32 @@ const key: TenantScopedReadCacheKey = {
 };
 
 describe('Redis read cache policies', () => {
-    it('encodes tenant and logical read identity deterministically and collision-safely', () => {
-        expect(defaultRedisReadCacheKeyEncoder.encode(key)).toBe(
-            'read-cache:merchant:tenant-a:user:v1:users:1',
-        );
+    it('encodes logical read identity deterministically and collision-safely', () => {
+        expect(defaultRedisReadCacheKeyEncoder.encode(key.key)).toBe('read-cache:user:v1:users:1');
         expect(
             defaultRedisReadCacheKeyEncoder.encode({
-                tenant: {
-                    type: 'merchant:type',
-                    id: 'tenant/a' as TenantScopedReadCacheKey['tenant']['id'],
-                },
-                key: {
-                    namespace: 'user:a',
-                    version: 'v1',
-                    partition: 'users/all',
-                    value: '1 2',
-                },
+                namespace: 'user:a',
+                version: 'v1',
+                partition: 'users/all',
+                value: '1 2',
             }),
-        ).toBe('read-cache:merchant%3Atype:tenant%2Fa:user%3Aa:v1:users%2Fall:1%202');
+        ).toBe('read-cache:user%3Aa:v1:users%2Fall:1%202');
     });
 
-    it('produces different identities for the same logical key across tenants', () => {
+    it('keeps tenant scope outside a custom logical key encoder', async () => {
+        const setKeys: string[] = [];
+        const client = {
+            set: async (redisKey: string) => {
+                setKeys.push(redisKey);
+                return 'OK';
+            },
+        } as unknown as RedisClientType;
+        const writer = new RedisReadCacheWriter<{ readonly id: string }>({
+            client,
+            codec: createJsonReadCacheCodec(),
+            ttlPolicy: { resolveTtlMs: () => 1_000 },
+            keyEncoder: { encode: () => 'constant' },
+        });
         const otherTenantKey: TenantScopedReadCacheKey = {
             tenant: {
                 type: 'merchant',
@@ -49,9 +56,13 @@ describe('Redis read cache policies', () => {
             key: key.key,
         };
 
-        expect(defaultRedisReadCacheKeyEncoder.encode(otherTenantKey)).not.toBe(
-            defaultRedisReadCacheKeyEncoder.encode(key),
-        );
+        await writer.write(key, { id: '1' });
+        await writer.write(otherTenantKey, { id: '1' });
+
+        expect(setKeys).toEqual([
+            'read-cache:merchant:tenant-a:constant',
+            'read-cache:merchant:tenant-b:constant',
+        ]);
     });
 
     it('serializes and deserializes JSON values explicitly', () => {
