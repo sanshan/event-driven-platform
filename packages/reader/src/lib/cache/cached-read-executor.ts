@@ -65,7 +65,7 @@ export class CachedReadExecutor {
         }
 
         return this.localReadInFlight.run(
-            cachePlan.key,
+            scopedKey,
             () => this.executeLocalLeader(query, cachePlan, scopedKey, localEndIndex, context),
             () => {
                 this.dependencies.observer.observe({ type: 'local-inflight.joined', context });
