@@ -31,6 +31,7 @@
     },
     "dependencies": {
         "@event-driven-platform/actor": "workspace:*",
+        "@event-driven-platform/tenant-reference": "workspace:*",
         "tslib": "catalog:"
     },
     "devDependencies": {

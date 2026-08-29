@@ -52,7 +52,10 @@ export class DefaultReader implements Reader {
     }
 
     public async execute<TRead extends AnyRead>(query: Query<TRead>): Promise<ReadResultOf<TRead>> {
-        const context: ReaderObservationContext = { read: query.read.name };
+        const context: ReaderObservationContext = {
+            read: query.read.name,
+            tenant: query.read.tenant,
+        };
         const startedAt = this.clock.now();
 
         this.observer.observe({ type: 'read.requested', context });

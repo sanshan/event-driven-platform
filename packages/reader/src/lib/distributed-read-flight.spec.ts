@@ -10,6 +10,7 @@ import type {
     WaitForReadExecutionResult,
 } from '@event-driven-platform/read-execution-coordinator';
 import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { AnyRead } from '@event-driven-platform/read';
 
 import { ReadExecutionCoordinatorUnavailableError } from './errors/read-execution-coordinator-unavailable.error.js';
 import { DistributedReadFlight } from './inflight/distributed-read-flight.js';
@@ -20,6 +21,11 @@ const key: ReadCacheKey = {
     partition: 'tenant:tenant-1',
     value: 'wallet:wallet-1',
 };
+
+const tenant = {
+    type: 'merchant',
+    id: 'tenant-1' as AnyRead['tenant']['id'],
+} as const;
 
 class RecordingReaderObserver implements ReaderObserver {
     readonly observations: ReaderObservation[] = [];
@@ -79,7 +85,7 @@ function createFlight(coordinator: ReadExecutionCoordinator, observer = new Reco
             coordinator,
             clock: new FixedClock('2026-08-28T05:00:00.000Z'),
             observer,
-            context: { read: 'wallet.get' },
+            context: { read: 'wallet.get', tenant },
         }),
     };
 }

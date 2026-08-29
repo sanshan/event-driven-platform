@@ -88,7 +88,7 @@ const useCase: UseCase<void, string> = {
         const operation = { name: 'CreateWallet', schemaVersion: 1, intent: childIntent, actor: { type: 'user', id: 'user-1', origin: {} }, tenant, subject: { type: 'user', id: 'user-1' }, aggregate: { type: 'wallet', id: 'wallet-1' }, payload: { currency: 'EUR' } } as AnyOperation;
         const command: Command<AnyOperation> = { operation, context: { correlationId: context.correlationId } };
         await runner.execute(command);
-        const read = { name: 'GetWallet', actor: operation.actor, parameters: { walletId: 'wallet-1' } } as AnyRead;
+        const read = { name: 'GetWallet', actor: operation.actor, tenant, parameters: { walletId: 'wallet-1' } } as AnyRead;
         const query: Query<AnyRead> = { read, context: { correlationId: context.correlationId } };
         await reader.execute(query);
         return 'wallet-ready';

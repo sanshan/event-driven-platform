@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import type { Read } from '@event-driven-platform/read';
+import type { AnyRead, Read } from '@event-driven-platform/read';
 
 import type {
     CacheReadResult,
@@ -23,7 +23,12 @@ interface OtherView {
     readonly label: string;
 }
 
-type GetWalletRead = Read<'wallet.get', { readonly walletId: string }, WalletView>;
+type GetWalletRead = Read<
+    'wallet.get',
+    AnyRead['tenant'],
+    { readonly walletId: string },
+    WalletView
+>;
 type GetWalletQuery = Query<GetWalletRead>;
 
 describe('QueryCachePlan', () => {
