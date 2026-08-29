@@ -133,7 +133,7 @@ export class CachedReadExecutor {
             observer: this.dependencies.observer,
             context,
         }).run({
-            key: cachePlan.key,
+            key: scopedKey,
             ownerId: this.dependencies.ownerIdFactory(),
             leaseDurationMs: cachePlan.coordination.leaseDurationMs,
             readShared: () => this.findSharedCacheResult(cachePlan, scopedKey, localEndIndex, context),
