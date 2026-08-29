@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/tenant-reference",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "Typed tenant references for the event-driven platform.",
     "type": "module",
     "main": "./dist/index.js",

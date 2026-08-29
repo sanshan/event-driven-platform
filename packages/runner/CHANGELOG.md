@@ -1,3 +1,26 @@
+## 0.0.10 (2026-08-29)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/operation-event-envelope-factory to 0.0.9
+- Updated @event-driven-platform/operation-handler-resolver to 0.0.8
+- Updated @event-driven-platform/execution-transaction to 0.0.7
+- Updated @event-driven-platform/aggregate-reference to 0.1.6
+- Updated @event-driven-platform/execution-log-store to 0.0.8
+- Updated @event-driven-platform/operation-handler to 0.0.8
+- Updated @event-driven-platform/operation-result to 0.1.6
+- Updated @event-driven-platform/tenant-reference to 0.1.6
+- Updated @event-driven-platform/execution-log to 0.0.8
+- Updated @event-driven-platform/observability to 0.0.4
+- Updated @event-driven-platform/outbox-store to 0.0.8
+- Updated @event-driven-platform/execution to 0.0.7
+- Updated @event-driven-platform/operation to 0.1.7
+- Updated @event-driven-platform/command to 0.0.8
+- Updated @event-driven-platform/outbox to 0.0.8
+- Updated @event-driven-platform/clock to 0.0.8
+- Updated @event-driven-platform/event to 0.1.6
+- Updated @event-driven-platform/types to 0.1.6
+
 ## 0.0.9 (2026-08-29)
 
 ### 🧱 Updated Dependencies

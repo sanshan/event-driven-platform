@@ -1,3 +1,10 @@
+## 0.0.6 (2026-08-29)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/read-execution-coordinator to 0.0.6
+- Updated @event-driven-platform/query to 0.0.7
+
 ## 0.0.5 (2026-08-29)
 
 ### 🚀 Features

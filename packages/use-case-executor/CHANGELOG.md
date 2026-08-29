@@ -1,3 +1,19 @@
+## 0.0.7 (2026-08-29)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/operation-event-envelope-factory to 0.0.9
+- Updated @event-driven-platform/use-case-execution-store to 0.0.6
+- Updated @event-driven-platform/observability to 0.0.4
+- Updated @event-driven-platform/execution to 0.0.7
+- Updated @event-driven-platform/operation to 0.1.7
+- Updated @event-driven-platform/use-case to 0.0.6
+- Updated @event-driven-platform/command to 0.0.8
+- Updated @event-driven-platform/intent to 0.2.3
+- Updated @event-driven-platform/clock to 0.0.8
+- Updated @event-driven-platform/event to 0.1.6
+- Updated @event-driven-platform/query to 0.0.7
+
 ## 0.0.6 (2026-08-29)
 
 ### 🧱 Updated Dependencies

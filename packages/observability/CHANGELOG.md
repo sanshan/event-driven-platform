@@ -1,3 +1,9 @@
+## 0.0.4 (2026-08-29)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/tenant-reference to 0.1.6
+
 ## 0.0.3 (2026-08-29)
 
 This was a version bump only for @event-driven-platform/observability to align it with other projects, there were no code changes.

@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/operation-event-envelope-factory",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "Factory contracts and defaults for wrapping Operation events in execution-aware envelopes.",
     "type": "module",
     "main": "./dist/index.js",
