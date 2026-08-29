@@ -18,7 +18,7 @@
             "path": "../use-case/tsconfig.lib.json"
         },
         {
-            "path": "../intent/tsconfig.lib.json"
+            "path": "../observability/tsconfig.lib.json"
         },
         {
             "path": "../execution/tsconfig.lib.json"
@@ -34,6 +34,9 @@
         },
         {
             "path": "../operation/tsconfig.lib.json"
+        },
+        {
+            "path": "../intent/tsconfig.lib.json"
         },
         {
             "path": "../event/tsconfig.lib.json"
