@@ -22,13 +22,23 @@ interface UserView {
     readonly name: string;
 }
 
-type GetUserRead = Read<'user.get', { readonly userId: string }, UserView>;
+type GetUserRead = Read<
+    'user.get',
+    AnyRead['tenant'],
+    { readonly userId: string },
+    UserView
+>;
 type GetUserQuery = Query<GetUserRead>;
 
 const actor = new DefaultActorFactory().create({
     type: 'service',
     id: 'read-release-verification',
 });
+
+const tenant: AnyRead['tenant'] = {
+    type: 'tenant',
+    id: 'tenant-1' as AnyRead['tenant']['id'],
+};
 
 function resolverFor(handler: ReadHandler<GetUserRead>): ReadHandlerResolver {
     return {
@@ -49,6 +59,7 @@ function queryFor(
         read: {
             name: 'user.get',
             actor,
+            tenant,
             parameters: { userId },
         },
         context: {
