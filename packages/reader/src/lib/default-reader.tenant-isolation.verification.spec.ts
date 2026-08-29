@@ -62,7 +62,7 @@ function identityOf({ tenant, key }: TenantScopedReadCacheKey): string {
     ]);
 }
 
-function queryFor(tenantId: string): GetWalletQuery {
+function queryFor(tenantId: string): Omit<GetWalletQuery, 'options'> {
     return {
         read: {
             name: 'wallet.get',
@@ -74,13 +74,6 @@ function queryFor(tenantId: string): GetWalletQuery {
             parameters: { walletId: 'wallet-1' },
         },
         context: { correlationId: `correlation-${tenantId}` },
-        options: {
-            cache: {
-                key: logicalKey,
-                levels: [],
-                coordination: { leaseDurationMs: 1_000 },
-            },
-        },
     };
 }
 
@@ -145,7 +138,11 @@ class TestCoordinator implements ReadExecutionCoordinator {
     }
 }
 
-function cachedQuery(query: GetWalletQuery, local: TestCache, shared: TestCache): GetWalletQuery {
+function cachedQuery(
+    query: Omit<GetWalletQuery, 'options'>,
+    local: TestCache,
+    shared: TestCache,
+): GetWalletQuery {
     return {
         ...query,
         options: {
