@@ -8,7 +8,6 @@ import type {
     TenantScopedReadCacheKey,
 } from '@event-driven-platform/query';
 import type { AnyRead, Read } from '@event-driven-platform/read';
-import type { ReadHandler } from '@event-driven-platform/read-handler';
 import type {
     ReadHandlerResolution,
     ReadHandlerResolver,
@@ -29,6 +28,10 @@ type GetWalletRead = Read<
 >;
 
 type GetWalletQuery = Query<GetWalletRead>;
+
+type GetWalletHandler = {
+    readonly execute: (read: GetWalletRead) => Promise<WalletView>;
+};
 
 const logicalKey: ReadCacheKey = {
     namespace: 'wallet.get',
@@ -52,7 +55,7 @@ function queryFor(tenantId: string): Omit<GetWalletQuery, 'options'> {
     };
 }
 
-function resolverWith(handler: ReadHandler<GetWalletRead>): ReadHandlerResolver {
+function resolverWith(handler: GetWalletHandler): ReadHandlerResolver {
     return {
         resolve: <TRead extends AnyRead>(_read: TRead) =>
             ({ status: 'resolved', handlers: [handler] }) as unknown as ReadHandlerResolution<TRead>,
@@ -78,7 +81,7 @@ describe('DefaultReader tenant-scoped cache identity', () => {
                 entries.set(identityOf(key), value);
             },
         };
-        const handler: ReadHandler<GetWalletRead> = {
+        const handler: GetWalletHandler = {
             execute: async (read) => ({
                 id: 'wallet-1',
                 tenant: String(read.tenant.id),
