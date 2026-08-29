@@ -10,6 +10,7 @@ import type {
     WaitForReadExecutionResult,
 } from '@event-driven-platform/read-execution-coordinator';
 import type { ReadCacheKey } from '@event-driven-platform/query';
+import type { AnyRead } from '@event-driven-platform/read';
 
 import { ReadExecutionCoordinatorUnavailableError } from './errors/read-execution-coordinator-unavailable.error.js';
 import { DistributedReadFlight } from './inflight/distributed-read-flight.js';
@@ -23,7 +24,7 @@ const key: ReadCacheKey = {
 
 const tenant = {
     type: 'merchant',
-    id: 'tenant-1',
+    id: 'tenant-1' as AnyRead['tenant']['id'],
 } as const;
 
 class RecordingReaderObserver implements ReaderObserver {
