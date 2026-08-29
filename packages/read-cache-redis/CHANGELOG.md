@@ -1,3 +1,21 @@
+## 0.0.5 (2026-08-29)
+
+### 🚀 Features
+
+- **read-cache-redis:** isolate keys by tenant ([1c94653](https://github.com/sanshan/event-driven-platform/commit/1c94653))
+
+### 🩹 Fixes
+
+- **read-cache-redis:** enforce tenant scope outside custom encoder ([5d00ff0](https://github.com/sanshan/event-driven-platform/commit/5d00ff0))
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/query to 0.0.6
+
+### ❤️ Thank You
+
+- Aleksandr Lihih @sanshan
+
 ## 0.0.4 (2026-08-25)
 
 ### 🧱 Updated Dependencies

@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/read-cache-redis",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "Redis-backed Read cache adapters, codec, keying, and TTL policy primitives.",
     "type": "module",
     "main": "./dist/index.js",

@@ -1,3 +1,12 @@
+## 0.0.6 (2026-08-29)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/transaction-scope-node to 0.0.6
+- Updated @event-driven-platform/execution-transaction to 0.0.6
+- Updated @event-driven-platform/transaction-adapter to 0.0.6
+- Updated @event-driven-platform/transaction-scope to 0.0.6
+
 ## 0.0.5 (2026-08-25)
 
 ### 🧱 Updated Dependencies

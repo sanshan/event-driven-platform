@@ -1,3 +1,15 @@
+## 0.1.6 (2026-08-29)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/aggregate-reference to 0.1.5
+- Updated @event-driven-platform/operation-result to 0.1.5
+- Updated @event-driven-platform/tenant-reference to 0.1.5
+- Updated @event-driven-platform/subject to 0.1.5
+- Updated @event-driven-platform/intent to 0.2.2
+- Updated @event-driven-platform/actor to 0.1.5
+- Updated @event-driven-platform/types to 0.1.5
+
 ## 0.1.5 (2026-08-25)
 
 ### 🧱 Updated Dependencies

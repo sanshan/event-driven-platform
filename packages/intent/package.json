@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/intent",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "description": "Deterministic operation intent contracts and factory for the event-driven platform.",
     "type": "module",
     "main": "./dist/index.js",

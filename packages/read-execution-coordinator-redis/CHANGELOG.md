@@ -1,3 +1,18 @@
+## 0.0.5 (2026-08-29)
+
+### 🚀 Features
+
+- **read-execution-coordinator-redis:** isolate tenants ([353f90c](https://github.com/sanshan/event-driven-platform/commit/353f90c))
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/read-execution-coordinator to 0.0.5
+- Updated @event-driven-platform/query to 0.0.6
+
+### ❤️ Thank You
+
+- Aleksandr Lihih @sanshan
+
 ## 0.0.4 (2026-08-25)
 
 ### 🧱 Updated Dependencies

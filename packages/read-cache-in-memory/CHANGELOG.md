@@ -1,3 +1,17 @@
+## 0.0.5 (2026-08-29)
+
+### 🚀 Features
+
+- **read-cache-in-memory:** isolate entries by tenant ([f035f6a](https://github.com/sanshan/event-driven-platform/commit/f035f6a))
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/query to 0.0.6
+
+### ❤️ Thank You
+
+- Aleksandr Lihih @sanshan
+
 ## 0.0.4 (2026-08-25)
 
 ### 🧱 Updated Dependencies

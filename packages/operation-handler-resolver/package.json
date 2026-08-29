@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/operation-handler-resolver",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "Resolver contract for mapping Operations to handlers in the event-driven platform Runner.",
     "type": "module",
     "main": "./dist/index.js",

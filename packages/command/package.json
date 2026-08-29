@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/command",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "Execution transport contracts that carry Operations and infrastructure execution policies.",
     "type": "module",
     "main": "./dist/index.js",
