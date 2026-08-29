@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { Query } from '@event-driven-platform/query';
-import type { Read } from '@event-driven-platform/read';
+import type { AnyRead, Read } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
 import {
@@ -18,7 +18,12 @@ interface WalletView {
     readonly balance: number;
 }
 
-type GetWalletRead = Read<'wallet.get', { readonly walletId: string }, WalletView>;
+type GetWalletRead = Read<
+    'wallet.get',
+    AnyRead['tenant'],
+    { readonly walletId: string },
+    WalletView
+>;
 type GetWalletQuery = Query<GetWalletRead>;
 
 const query: GetWalletQuery = {
@@ -28,6 +33,10 @@ const query: GetWalletQuery = {
             type: 'user',
             id: 'user-1',
             origin: {},
+        },
+        tenant: {
+            type: 'merchant',
+            id: 'merchant-1' as AnyRead['tenant']['id'],
         },
         parameters: { walletId: 'wallet-1' },
     },
@@ -40,7 +49,7 @@ function resolverWith(
     resolution: ReadHandlerResolution<GetWalletRead>,
 ): ReadHandlerResolver {
     return {
-        resolve: <TRead extends Read<string, unknown, unknown>>(_read: TRead) =>
+        resolve: <TRead extends AnyRead>(_read: TRead) =>
             resolution as unknown as ReadHandlerResolution<TRead>,
     };
 }
