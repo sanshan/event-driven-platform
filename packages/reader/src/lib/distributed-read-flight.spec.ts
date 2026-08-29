@@ -21,6 +21,11 @@ const key: ReadCacheKey = {
     value: 'wallet:wallet-1',
 };
 
+const tenant = {
+    type: 'merchant',
+    id: 'tenant-1',
+} as const;
+
 class RecordingReaderObserver implements ReaderObserver {
     readonly observations: ReaderObservation[] = [];
 
@@ -79,7 +84,7 @@ function createFlight(coordinator: ReadExecutionCoordinator, observer = new Reco
             coordinator,
             clock: new FixedClock('2026-08-28T05:00:00.000Z'),
             observer,
-            context: { read: 'wallet.get' },
+            context: { read: 'wallet.get', tenant },
         }),
     };
 }
