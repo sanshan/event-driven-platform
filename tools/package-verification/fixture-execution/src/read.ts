@@ -230,9 +230,10 @@ async function verifyRedisDistributed(redisUrl: string): Promise<void> {
             throw new Error('Published Read distributed verification failed.');
         }
 
+        const scopedCacheKey = { tenant, key: cacheKey };
         const [firstLocalHit, secondLocalHit] = await Promise.all([
-            firstL1.read(cacheKey),
-            secondL1.read(cacheKey),
+            firstL1.read(scopedCacheKey),
+            secondL1.read(scopedCacheKey),
         ]);
         if (firstLocalHit.status !== 'hit' || secondLocalHit.status !== 'hit') {
             throw new Error('Published Read distributed L1 promotion verification failed.');
