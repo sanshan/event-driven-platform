@@ -1,11 +1,19 @@
 import type { Actor } from '@event-driven-platform/actor';
+import type { AnyTenantReference } from '@event-driven-platform/tenant-reference';
 
 declare const readResultType: unique symbol;
 
-export interface Read<TName extends string, TParameters, TResult> {
+export interface Read<
+    TName extends string,
+    TTenant extends AnyTenantReference,
+    TParameters,
+    TResult,
+> {
     readonly name: TName;
 
     readonly actor: Actor;
+
+    readonly tenant: TTenant;
 
     readonly parameters: TParameters;
 
@@ -18,7 +26,9 @@ export interface Read<TName extends string, TParameters, TResult> {
     readonly [readResultType]?: TResult;
 }
 
-export type AnyRead = Read<string, unknown, unknown>;
+export type AnyRead = Read<string, AnyTenantReference, unknown, unknown>;
 
 export type ReadResultOf<TRead extends AnyRead> =
-    TRead extends Read<infer _TName, infer _TParameters, infer TResult> ? TResult : never;
+    TRead extends Read<infer _TName, infer _TTenant, infer _TParameters, infer TResult>
+        ? TResult
+        : never;
