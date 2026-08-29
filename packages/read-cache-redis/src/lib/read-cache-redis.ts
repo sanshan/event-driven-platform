@@ -2,6 +2,7 @@ import type {
     CacheReadResult,
     CacheReader,
     CacheWriter,
+    ReadCacheKey,
     TenantScopedReadCacheKey,
 } from '@event-driven-platform/query';
 import type { RedisClientType } from 'redis';
@@ -12,7 +13,7 @@ export interface ReadCacheCodec<TResult> {
 }
 
 export interface RedisReadCacheKeyEncoder {
-    readonly encode: (key: TenantScopedReadCacheKey) => string;
+    readonly encode: (key: ReadCacheKey) => string;
 }
 
 export interface RedisReadCacheTtlPolicy {
@@ -38,7 +39,9 @@ export class RedisReadCacheReader<TResult> implements CacheReader<TResult> {
 
     public async read(key: TenantScopedReadCacheKey): Promise<CacheReadResult<TResult>> {
         try {
-            const raw = await this.options.client.get(this.keyEncoder.encode(key));
+            const raw = await this.options.client.get(
+                encodeTenantScopedRedisReadCacheKey(key, this.keyEncoder),
+            );
             if (raw === null) {
                 return { status: 'miss' };
             }
@@ -67,7 +70,11 @@ export class RedisReadCacheWriter<TResult> implements CacheWriter<TResult> {
         }
 
         const serialized = this.options.codec.serialize(value);
-        await this.options.client.set(this.keyEncoder.encode(key), serialized, { PX: ttlMs });
+        await this.options.client.set(
+            encodeTenantScopedRedisReadCacheKey(key, this.keyEncoder),
+            serialized,
+            { PX: ttlMs },
+        );
     }
 }
 
@@ -111,6 +118,13 @@ export function createJsonReadCacheCodec<TResult>(): ReadCacheCodec<TResult> {
 }
 
 export const defaultRedisReadCacheKeyEncoder: RedisReadCacheKeyEncoder = {
-    encode: ({ tenant, key }) =>
-        `read-cache:${encodeURIComponent(tenant.type)}:${encodeURIComponent(tenant.id)}:${encodeURIComponent(key.namespace)}:${encodeURIComponent(key.version)}:${encodeURIComponent(key.partition)}:${encodeURIComponent(key.value)}`,
+    encode: (key) =>
+        `read-cache:${encodeURIComponent(key.namespace)}:${encodeURIComponent(key.version)}:${encodeURIComponent(key.partition)}:${encodeURIComponent(key.value)}`,
 };
+
+function encodeTenantScopedRedisReadCacheKey(
+    { tenant, key }: TenantScopedReadCacheKey,
+    keyEncoder: RedisReadCacheKeyEncoder,
+): string {
+    return `read-cache:${encodeURIComponent(tenant.type)}:${encodeURIComponent(tenant.id)}:${encodeURIComponent(keyEncoder.encode(key))}`;
+}
