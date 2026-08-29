@@ -444,6 +444,9 @@ importers:
       '@event-driven-platform/actor':
         specifier: workspace:*
         version: link:../actor
+      '@event-driven-platform/tenant-reference':
+        specifier: workspace:*
+        version: link:../tenant-reference
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
