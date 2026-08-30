@@ -1,7 +1,7 @@
 {
     "name": "@event-driven-platform/execution",
     "version": "0.0.7",
-    "description": "Execution identity, lease, attempt, and failure primitives for the event-driven platform Runner.",
+    "description": "Execution identity, lease, attempt, and canonical failure primitives for event-driven platform execution boundaries.",
     "type": "module",
     "main": "./dist/index.js",
     "module": "./dist/index.js",

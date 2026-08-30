@@ -16,6 +16,8 @@ export class ExecutionRateLimitRejectedError extends Error {
         this.executionFailure = {
             code: 'rate-limit-rejected',
             message,
+            classification: 'policy-rejected',
+            retry: 'never',
             retryable: false,
         };
     }

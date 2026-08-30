@@ -237,6 +237,8 @@ describe('DefaultRunner', () => {
         expect(kit.executionLogStore.failedRequests[0]?.failure).toEqual({
             code: 'unexpected-execution-error',
             message: 'Unexpected persistence failure.',
+            classification: 'internal',
+            retry: 'never',
             retryable: false,
         });
 
@@ -366,6 +368,8 @@ describe('DefaultRunner', () => {
                 failure: {
                     code: 'unexpected-execution-error',
                     message: 'Persistence failed.',
+                    classification: 'internal',
+                    retry: 'never',
                     retryable: false,
                 },
                 finishedAt: '2026-07-18T10:00:00.000Z',

@@ -1,7 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { ExecutionAttemptId } from './execution-attempt-id.js';
-import type { ExecutionFailure } from './execution-failure.js';
 import type { ExecutionId } from './execution-id.js';
 import type { ExecutionLease } from './execution-lease.js';
 import type { ExecutionLeaseOwnerId } from './execution-lease-owner-id.js';
@@ -10,23 +9,6 @@ import type { ExecutionLeaseVersion } from './execution-lease-version.js';
 describe('Execution', () => {
     it('distinguishes ExecutionId from ExecutionAttemptId', () => {
         expectTypeOf<ExecutionId>().not.toEqualTypeOf<ExecutionAttemptId>();
-    });
-
-    it('describes a serializable infrastructure failure', () => {
-        const failure: ExecutionFailure = {
-            code: 'database-unavailable',
-            message: 'The execution database is unavailable.',
-            retryable: true,
-        };
-
-        expect(failure).toEqual({
-            code: 'database-unavailable',
-            message: 'The execution database is unavailable.',
-            retryable: true,
-        });
-
-        expectTypeOf(failure.code).toEqualTypeOf<string>();
-        expectTypeOf(failure.retryable).toEqualTypeOf<boolean>();
     });
 
     it('describes temporary ownership of an Execution', () => {

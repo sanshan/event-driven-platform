@@ -162,6 +162,8 @@ describe('DefaultRunner observability', () => {
             executionFailure: {
                 code: 'transient-test-failure',
                 message: 'transient',
+                classification: 'unavailable',
+                retry: 'current-execution',
                 retryable: true,
             },
         };

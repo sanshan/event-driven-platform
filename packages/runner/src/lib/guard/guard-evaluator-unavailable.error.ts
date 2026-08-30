@@ -12,6 +12,8 @@ export class GuardEvaluatorUnavailableError extends Error {
         this.executionFailure = {
             code: 'guard-evaluator-unavailable',
             message,
+            classification: 'invalid-configuration',
+            retry: 'never',
             retryable: false,
         };
     }

@@ -259,6 +259,8 @@ describe('DefaultRunner guard orchestration', () => {
         expect(kit.executionLogStore.failedRequests[0]?.failure).toEqual({
             code: 'wallet-disabled',
             message: 'Wallet execution is disabled.',
+            classification: 'policy-rejected',
+            retry: 'never',
             retryable: false,
         });
     });

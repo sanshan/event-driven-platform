@@ -12,6 +12,8 @@ export class RateLimiterUnavailableError extends Error {
         this.executionFailure = {
             code: 'rate-limiter-unavailable',
             message,
+            classification: 'invalid-configuration',
+            retry: 'never',
             retryable: false,
         };
     }

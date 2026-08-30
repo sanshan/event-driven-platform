@@ -154,6 +154,8 @@ function retryableError(code = 'provider-unavailable') {
         executionFailure: {
             code,
             message: 'Provider unavailable.',
+            classification: 'unavailable',
+            retry: 'current-execution',
             retryable: true,
         },
     };
@@ -164,6 +166,8 @@ function nonRetryableError() {
         executionFailure: {
             code: 'invalid-provider-response',
             message: 'Provider response is invalid.',
+            classification: 'internal',
+            retry: 'never',
             retryable: false,
         },
     };
