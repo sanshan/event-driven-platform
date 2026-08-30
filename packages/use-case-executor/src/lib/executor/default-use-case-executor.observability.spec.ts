@@ -134,7 +134,13 @@ describe('DefaultUseCaseExecutor observability', () => {
                 input: undefined,
                 context,
             }),
-        ).rejects.toBe(failure);
+        ).rejects.toMatchObject({
+            cause: failure,
+            executionFailure: {
+                code: 'unexpected-execution-error',
+                classification: 'internal',
+            },
+        });
 
         expect(observer.observations).toEqual(
             expect.arrayContaining([
