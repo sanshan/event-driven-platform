@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { SystemClock, type Clock } from '@event-driven-platform/clock';
+import { normalizeExecutionError } from '@event-driven-platform/execution';
 import {
     NoopObserver,
     SafeObserver,
@@ -79,19 +80,21 @@ export class DefaultReader implements Reader {
 
             return result;
         } catch (error: unknown) {
+            const executionError = normalizeExecutionError(error);
+
             this.observer.observe({
                 type: 'read.completed',
                 context,
                 outcome:
-                    error instanceof ReadTimedOutError
+                    executionError instanceof ReadTimedOutError
                         ? 'timed-out'
-                        : error instanceof ReadCancelledError
+                        : executionError instanceof ReadCancelledError
                           ? 'cancelled'
                           : 'error',
                 durationMs: this.durationSince(startedAt),
             });
 
-            throw error;
+            throw executionError;
         }
     }
 

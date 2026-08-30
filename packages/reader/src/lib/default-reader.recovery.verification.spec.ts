@@ -210,7 +210,13 @@ describe('DefaultReader distributed recovery verification', () => {
 
         firstSourceGate.resolve();
 
-        await expect(first).rejects.toThrow('leader source failed');
+        await expect(first).rejects.toMatchObject({
+            cause: { message: 'leader source failed' },
+            executionFailure: {
+                code: 'unexpected-execution-error',
+                classification: 'internal',
+            },
+        });
         await expect(follower).resolves.toEqual({ id: 'leader-failure', balance: 91 });
         expect(sourceExecutions).toBe(2);
         await expect(secondLocal.read(scopedKeyFor('leader-failure'))).resolves.toMatchObject({

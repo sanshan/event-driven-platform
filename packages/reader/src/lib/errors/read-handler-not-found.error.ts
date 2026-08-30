@@ -1,6 +1,13 @@
-export class ReadHandlerNotFoundError extends Error {
+import { ExecutionError } from '@event-driven-platform/execution';
+
+export class ReadHandlerNotFoundError extends ExecutionError {
     constructor() {
-        super('No ReadHandler is available for the requested Read.');
-        this.name = 'ReadHandlerNotFoundError';
+        super({
+            code: 'read-handler-not-found',
+            message: 'No ReadHandler is available for the requested Read.',
+            classification: 'invalid-configuration',
+            retry: 'never',
+            retryable: false,
+        });
     }
 }

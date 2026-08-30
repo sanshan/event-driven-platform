@@ -1,6 +1,13 @@
-export class ReadTimedOutError extends Error {
+import { ExecutionError } from '@event-driven-platform/execution';
+
+export class ReadTimedOutError extends ExecutionError {
     constructor(readonly timeoutMs: number) {
-        super(`Read execution timed out after ${timeoutMs}ms.`);
-        this.name = 'ReadTimedOutError';
+        super({
+            code: 'read-timed-out',
+            message: `Read execution timed out after ${timeoutMs}ms.`,
+            classification: 'timeout',
+            retry: 'caller',
+            retryable: false,
+        });
     }
 }
