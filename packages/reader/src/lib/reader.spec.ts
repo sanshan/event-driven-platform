@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import { ExecutionError } from '@event-driven-platform/execution';
 import type { Query } from '@event-driven-platform/query';
 import type { AnyRead, Read } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
@@ -80,7 +81,16 @@ describe('DefaultReader', () => {
             readHandlerResolver: resolverWith({ status: 'not-found' }),
         });
 
-        await expect(reader.execute(query)).rejects.toBeInstanceOf(ReadHandlerNotFoundError);
+        const error = await reader.execute(query).catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(ReadHandlerNotFoundError);
+        expect((error as ReadHandlerNotFoundError).executionFailure).toEqual({
+            code: 'read-handler-not-found',
+            message: 'No ReadHandler is available for the requested Read.',
+            classification: 'invalid-configuration',
+            retry: 'never',
+            retryable: false,
+        });
     });
 
     it('fails deterministically when handler resolution is ambiguous', async () => {
@@ -113,5 +123,51 @@ describe('DefaultReader', () => {
         };
 
         await expect(reader.execute(timedQuery)).rejects.toEqual(new ReadTimedOutError(25));
+    });
+
+    it('propagates an already canonical handler failure unchanged', async () => {
+        const canonical = new ExecutionError({
+            code: 'read-provider-unavailable',
+            message: 'Read provider is unavailable.',
+            classification: 'unavailable',
+            retry: 'caller',
+            retryable: false,
+        });
+        const handler = {
+            execute: async () => {
+                throw canonical;
+            },
+        };
+        const reader = new DefaultReader({
+            readHandlerResolver: resolverWith({ status: 'resolved', handlers: [handler] }),
+        });
+
+        const error = await reader.execute(query).catch((caught: unknown) => caught);
+
+        expect(error).toBe(canonical);
+    });
+
+    it('normalizes an unknown handler failure and preserves its Error cause', async () => {
+        const cause = new Error('database connection failed');
+        const handler = {
+            execute: async () => {
+                throw cause;
+            },
+        };
+        const reader = new DefaultReader({
+            readHandlerResolver: resolverWith({ status: 'resolved', handlers: [handler] }),
+        });
+
+        const error = await reader.execute(query).catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(ExecutionError);
+        expect((error as ExecutionError).cause).toBe(cause);
+        expect((error as ExecutionError).executionFailure).toEqual({
+            code: 'unexpected-execution-error',
+            message: 'An unexpected execution error occurred.',
+            classification: 'internal',
+            retry: 'never',
+            retryable: false,
+        });
     });
 });
