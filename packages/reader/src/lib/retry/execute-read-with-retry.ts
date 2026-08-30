@@ -12,6 +12,15 @@ type RetryOptions = NonNullable<QueryOptions['retry']>;
  * or distributed-coordination logic with this: those already have
  * their own recovery paths, and wrapping them here would risk
  * double-retrying an already-orphaned attempt.
+ *
+ * When wrapped inside a distributed-flight owner's executeSource
+ * callback, this loop has no visibility into lease-ownership state:
+ * if the lease is lost mid-retry-sequence, ownership loss is only
+ * detected once this whole call resolves, not between attempts. This
+ * widens (vs. a single un-retried call) the window in which a doomed
+ * owner keeps hitting the source before its result is discarded — an
+ * accepted trade-off (still fail-safe: the result is never returned
+ * or published once ownership is lost), not a data-integrity risk.
  */
 export async function executeReadWithRetry<TResult>(
     work: () => Promise<TResult>,
