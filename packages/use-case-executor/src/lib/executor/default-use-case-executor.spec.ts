@@ -10,9 +10,8 @@ import type { UseCase, UseCaseContext } from '@event-driven-platform/use-case';
 import type { UseCaseExecutionStore } from '@event-driven-platform/use-case-execution-store';
 import { describe, expect, it, vi } from 'vitest';
 
-import { UseCaseAlreadyInProgressError } from '../errors/use-case-already-in-progress.error.js';
+import { UseCaseClaimRejectedError } from '../errors/use-case-claim-rejected.error.js';
 import { UseCaseExecutionTransitionError } from '../errors/use-case-execution-transition.error.js';
-import { UseCaseIntentConflictError } from '../errors/use-case-intent-conflict.error.js';
 import { DefaultUseCaseExecutor } from './default-use-case-executor.js';
 
 const executionId = 'execution-1' as ExecutionId;
@@ -27,6 +26,16 @@ const lease = {
 } as ExecutionLease;
 const clock: Clock = { now: () => '2026-08-22T05:00:00.000Z' };
 const executionIdFactory: ExecutionIdFactory = { create: vi.fn(() => executionId) };
+
+async function captureError(work: () => Promise<unknown>): Promise<unknown> {
+    try {
+        await work();
+
+        return null;
+    } catch (error: unknown) {
+        return error;
+    }
+}
 
 function createExecutor(store: UseCaseExecutionStore) {
     return new DefaultUseCaseExecutor({ clock, executionIdFactory, store }, { leaseOwnerId });
@@ -75,7 +84,10 @@ describe('DefaultUseCaseExecutor', () => {
         const store = createStore({ type: 'already-in-progress', lease });
         const useCase: UseCase<string, string> = { execute: vi.fn() };
 
-        await expect(createExecutor(store).execute({ useCase, input: 'input', context })).rejects.toBeInstanceOf(UseCaseAlreadyInProgressError);
+        const error = await captureError(() => createExecutor(store).execute({ useCase, input: 'input', context }));
+
+        expect(error).toBeInstanceOf(UseCaseClaimRejectedError);
+        expect((error as UseCaseClaimRejectedError).reason).toBe('already-in-progress');
         expect(useCase.execute).not.toHaveBeenCalled();
     });
 
@@ -83,7 +95,11 @@ describe('DefaultUseCaseExecutor', () => {
         const store = createStore({ type: 'intent-conflict', existingIntentId: 'other-intent' });
         const useCase: UseCase<string, string> = { execute: vi.fn() };
 
-        await expect(createExecutor(store).execute({ useCase, input: 'input', context })).rejects.toBeInstanceOf(UseCaseIntentConflictError);
+        const error = await captureError(() => createExecutor(store).execute({ useCase, input: 'input', context }));
+
+        expect(error).toBeInstanceOf(UseCaseClaimRejectedError);
+        expect((error as UseCaseClaimRejectedError).reason).toBe('intent-conflict');
+        expect((error as UseCaseClaimRejectedError).existingIntentId).toBe('other-intent');
         expect(useCase.execute).not.toHaveBeenCalled();
     });
 
