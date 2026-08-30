@@ -1,3 +1,4 @@
+import { normalizeExecutionError } from '@event-driven-platform/execution';
 import {
     NoopObserver,
     SafeObserver,
@@ -75,7 +76,7 @@ export class DefaultUseCaseExecutor implements UseCaseExecutor {
 
         try {
             result = await request.useCase.execute(request.input, request.context);
-        } catch (error) {
+        } catch (error: unknown) {
             this.observer.observe({
                 type: 'execution.completed',
                 context,
@@ -106,7 +107,7 @@ export class DefaultUseCaseExecutor implements UseCaseExecutor {
                 // The original UseCase failure remains authoritative.
             }
 
-            throw error;
+            throw normalizeExecutionError(error);
         }
 
         this.observer.observe({
