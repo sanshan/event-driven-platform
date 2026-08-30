@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { FixedClock } from '@event-driven-platform/clock';
+import { ExecutionFailureError } from '@event-driven-platform/execution';
 import type { ReaderObservation, ReaderObserver } from '@event-driven-platform/observability';
 import type { Query, QueryCacheLevel, ReadCacheKey } from '@event-driven-platform/query';
 import type { AnyRead, Read } from '@event-driven-platform/read';
@@ -105,10 +106,19 @@ describe('DefaultReader observability', () => {
         expect(observer.observations).toEqual([
             { type: 'read.requested', context: { read: 'wallet.get', tenant } },
             { type: 'read.started', context: { read: 'wallet.get', tenant } },
+            { type: 'read.attempt.started', context: { read: 'wallet.get', tenant }, attempt: 1 },
             {
                 type: 'source.completed',
                 context: { read: 'wallet.get', tenant },
                 outcome: 'success',
+                durationMs: 0,
+            },
+            {
+                type: 'read.attempt.completed',
+                context: { read: 'wallet.get', tenant },
+                attempt: 1,
+                outcome: 'success',
+                retryable: false,
                 durationMs: 0,
             },
             {
@@ -117,6 +127,56 @@ describe('DefaultReader observability', () => {
                 outcome: 'success',
                 durationMs: 0,
             },
+        ]);
+    });
+
+    it('emits read.attempt.* and read.retry.scheduled facts for a retried read', async () => {
+        const observer = new RecordingReaderObserver();
+        let calls = 0;
+        const reader = new DefaultReader({
+            clock: new FixedClock('2026-08-28T05:00:00.000Z'),
+            observer,
+            readHandlerResolver: resolverWith({
+                status: 'resolved',
+                handlers: [
+                    {
+                        execute: async () => {
+                            calls += 1;
+                            if (calls === 1) {
+                                throw new ExecutionFailureError({
+                                    code: 'transient-failure',
+                                    message: 'transient failure',
+                                    retryable: true,
+                                });
+                            }
+
+                            return { id: 'wallet-1', balance: 15 };
+                        },
+                    },
+                ],
+            }),
+        });
+
+        await reader.execute({
+            ...baseQuery,
+            options: { retry: { maxAttempts: 2, strategy: { type: 'fixed', delayMs: 5 } } },
+        });
+
+        const attemptEvents = observer.observations.filter((event) =>
+            event.type.startsWith('read.attempt.') || event.type === 'read.retry.scheduled',
+        );
+
+        expect(attemptEvents).toEqual([
+            { type: 'read.attempt.started', context: { read: 'wallet.get', tenant }, attempt: 1 },
+            expect.objectContaining({
+                type: 'read.attempt.completed',
+                attempt: 1,
+                outcome: 'error',
+                retryable: true,
+            }),
+            { type: 'read.retry.scheduled', context: { read: 'wallet.get', tenant }, attempt: 1, delayMs: 5 },
+            { type: 'read.attempt.started', context: { read: 'wallet.get', tenant }, attempt: 2 },
+            expect.objectContaining({ type: 'read.attempt.completed', attempt: 2, outcome: 'success' }),
         ]);
     });
 
