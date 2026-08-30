@@ -8,6 +8,10 @@ export { DefaultExecutionAttemptIdFactory } from './lib/default-execution-attemp
 
 export type { ExecutionFailure } from './lib/execution-failure.js';
 
+export { ExecutionFailureError } from './lib/execution-failure-error.js';
+
+export { normalizeExecutionFailure } from './lib/normalize-execution-failure.js';
+
 export type { ExecutionId, ExecutionIdFactory } from './lib/execution-id.js';
 
 export { DefaultExecutionIdFactory } from './lib/default-execution-id-factory.js';

@@ -3,11 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import type { CompletedExecutionLogEntry } from '@event-driven-platform/execution-log';
 import type { ExecutionLeaseReference } from '@event-driven-platform/execution-log-store';
 
-import {
-    ExecutionAlreadyInProgressError,
-    ExecutionIntentConflictError,
-    ExecutionTransitionRejectedError,
-} from '../index.js';
+import { ExecutionClaimRejectedError, ExecutionTransitionRejectedError } from '../index.js';
 import {
     claimedEntry,
     command,
@@ -111,7 +107,8 @@ describe('DefaultRunner', () => {
 
         const error = await captureError(() => kit.runner.execute(command));
 
-        expect(error).toBeInstanceOf(ExecutionAlreadyInProgressError);
+        expect(error).toBeInstanceOf(ExecutionClaimRejectedError);
+        expect((error as ExecutionClaimRejectedError).reason).toBe('already-in-progress');
 
         expect(kit.handler.invocationCount).toBe(0);
 
@@ -130,7 +127,8 @@ describe('DefaultRunner', () => {
 
         const error = await captureError(() => kit.runner.execute(command));
 
-        expect(error).toBeInstanceOf(ExecutionIntentConflictError);
+        expect(error).toBeInstanceOf(ExecutionClaimRejectedError);
+        expect((error as ExecutionClaimRejectedError).reason).toBe('intent-conflict');
 
         expect(kit.handler.invocationCount).toBe(0);
 

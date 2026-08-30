@@ -17,11 +17,7 @@ import type { Query, ReadCacheKey, TenantScopedReadCacheKey } from '@event-drive
 import type { AnyRead, Read } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
-import {
-    DefaultReader,
-    ReadExecutionCoordinatorUnavailableError,
-    ReadExecutionOwnershipLostError,
-} from '../index.js';
+import { DefaultReader, ReadExecutionCoordinatorFailedError } from '../index.js';
 
 interface WalletView {
     readonly id: string;
@@ -244,7 +240,7 @@ describe('DefaultReader distributed recovery verification', () => {
 
         await expect(
             reader.execute(queryFor('coordinator-down', localCache, sharedReader, sharedWriter)),
-        ).rejects.toEqual(new ReadExecutionCoordinatorUnavailableError('coordinator unavailable'));
+        ).rejects.toEqual(new ReadExecutionCoordinatorFailedError('unavailable', 'coordinator unavailable'));
         expect(sourceExecutions).toBe(0);
     });
 
@@ -287,7 +283,7 @@ describe('DefaultReader distributed recovery verification', () => {
         await renewalAttempted.promise;
         sourceGate.resolve();
 
-        await expect(execution).rejects.toEqual(new ReadExecutionOwnershipLostError());
+        await expect(execution).rejects.toEqual(new ReadExecutionCoordinatorFailedError('ownership-lost'));
         await expect(localCache.read(scopedKeyFor('ownership-loss'))).resolves.toEqual({ status: 'miss' });
     });
 

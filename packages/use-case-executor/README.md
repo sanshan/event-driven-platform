@@ -53,7 +53,7 @@ The Executor does not checkpoint orchestration steps and does not infer whole-Us
 
 Retry-safe write effects depend on deterministic child Operation Intents and Runner idempotency/conflict handling.
 
-An active duplicate is rejected with `UseCaseAlreadyInProgressError`; followers are not waited, polled, or coalesced by this package.
+An active duplicate is rejected with `UseCaseClaimRejectedError` (`reason: 'already-in-progress'`); followers are not waited, polled, or coalesced by this package.
 
 If a UseCase throws, the Executor attempts a fenced release and rethrows the original UseCase error. Retry cadence remains the responsibility of the invoking transport/application boundary; there is no internal UseCase retry policy.
 
@@ -71,6 +71,11 @@ The package-root API intentionally exposes:
 - `UseCaseExecutionRequest`;
 - `UseCaseExecutorDependencies` and `UseCaseExecutorRuntime` for composition;
 - typed errors for active duplicates, Intent conflicts, and rejected durable completion.
+
+Every typed error extends `ExecutionFailureError` (from `@event-driven-platform/execution`), so callers can catch all of them with one `instanceof ExecutionFailureError` check and branch on `executionFailure.code`:
+
+- `UseCaseClaimRejectedError` — claiming the invocation was rejected because another attempt already owns it, or because the execution conflicts with a different Intent (`reason: 'already-in-progress' | 'intent-conflict'`; the latter also carries `existingIntentId`);
+- `UseCaseExecutionTransitionError` — the durable store rejected the `complete` transition (execution not found, not in progress, or a lease conflict).
 
 There is no timer, heartbeat, lease-renewal, or ownership-health API.
 

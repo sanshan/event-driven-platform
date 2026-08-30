@@ -4,6 +4,6 @@ export type { UseCaseExecutionRequest } from './lib/executor/use-case-execution-
 export type { UseCaseExecutor } from './lib/executor/use-case-executor.js';
 export type { UseCaseExecutorDependencies } from './lib/executor/use-case-executor-dependencies.js';
 export type { UseCaseExecutorRuntime } from './lib/executor/use-case-executor-runtime.js';
-export { UseCaseAlreadyInProgressError } from './lib/errors/use-case-already-in-progress.error.js';
+export { UseCaseClaimRejectedError } from './lib/errors/use-case-claim-rejected.error.js';
+export type { UseCaseClaimRejectionReason } from './lib/errors/use-case-claim-rejected.error.js';
 export { UseCaseExecutionTransitionError } from './lib/errors/use-case-execution-transition.error.js';
-export { UseCaseIntentConflictError } from './lib/errors/use-case-intent-conflict.error.js';

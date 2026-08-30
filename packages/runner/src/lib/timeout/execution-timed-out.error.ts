@@ -1,18 +1,11 @@
-import type { ExecutionFailure } from '@event-driven-platform/execution';
+import { ExecutionFailureError } from '@event-driven-platform/execution';
 
-export class ExecutionTimedOutError extends Error {
-    readonly executionFailure: ExecutionFailure;
-
+export class ExecutionTimedOutError extends ExecutionFailureError {
     constructor(readonly timeoutMs: number) {
-        const message = `Execution attempt timed out after ${timeoutMs} ms.`;
-
-        super(message);
-
-        this.name = 'ExecutionTimedOutError';
-        this.executionFailure = {
+        super({
             code: 'execution-timed-out',
-            message,
+            message: `Execution attempt timed out after ${timeoutMs} ms.`,
             retryable: true,
-        };
+        });
     }
 }

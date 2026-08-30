@@ -7,9 +7,8 @@ import {
 } from '@event-driven-platform/observability';
 import type { UseCaseContext } from '@event-driven-platform/use-case';
 
-import { UseCaseAlreadyInProgressError } from '../errors/use-case-already-in-progress.error.js';
+import { UseCaseClaimRejectedError } from '../errors/use-case-claim-rejected.error.js';
 import { UseCaseExecutionTransitionError } from '../errors/use-case-execution-transition.error.js';
-import { UseCaseIntentConflictError } from '../errors/use-case-intent-conflict.error.js';
 import type { UseCaseExecutionRequest } from './use-case-execution-request.js';
 import type { UseCaseExecutor } from './use-case-executor.js';
 import type { UseCaseExecutorDependencies } from './use-case-executor-dependencies.js';
@@ -61,9 +60,9 @@ export class DefaultUseCaseExecutor implements UseCaseExecutor {
             case 'completed':
                 return claim.result;
             case 'already-in-progress':
-                throw new UseCaseAlreadyInProgressError(executionId);
+                throw new UseCaseClaimRejectedError(executionId, 'already-in-progress');
             case 'intent-conflict':
-                throw new UseCaseIntentConflictError(executionId, claim.existingIntentId);
+                throw new UseCaseClaimRejectedError(executionId, 'intent-conflict', claim.existingIntentId);
             case 'claimed':
                 break;
         }
