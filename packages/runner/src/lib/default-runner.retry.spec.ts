@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ExecutionAttemptId, ExecutionLeaseVersion } from '@event-driven-platform/execution';
+import { ExecutionFailureError } from '@event-driven-platform/execution';
 import type { InProgressExecutionLogEntry } from '@event-driven-platform/execution-log';
 import type {
     ClaimExecutionRequest,
@@ -150,23 +151,19 @@ class RecordingRetryDelay implements RetryDelay {
 }
 
 function retryableError(code = 'provider-unavailable') {
-    return {
-        executionFailure: {
-            code,
-            message: 'Provider unavailable.',
-            retryable: true,
-        },
-    };
+    return new ExecutionFailureError({
+        code,
+        message: 'Provider unavailable.',
+        retryable: true,
+    });
 }
 
 function nonRetryableError() {
-    return {
-        executionFailure: {
-            code: 'invalid-provider-response',
-            message: 'Provider response is invalid.',
-            retryable: false,
-        },
-    };
+    return new ExecutionFailureError({
+        code: 'invalid-provider-response',
+        message: 'Provider response is invalid.',
+        retryable: false,
+    });
 }
 
 interface RetryTestKit {

@@ -31,7 +31,14 @@ Operations and handlers must not reproduce or bypass these responsibilities.
 
 Runner exposes orchestration-specific ports for `GuardEvaluator`, `RateLimiter`, `ExecutionTimeout`, and `RetryDelay`. `DefaultExecutionTimeout` and `DefaultRetryDelay` are provided when the defaults are suitable.
 
-The exported typed errors allow callers to distinguish execution conflicts, policy rejection, timeout, unavailable policy infrastructure, and rejected state transitions without parsing error messages.
+Every typed error Runner throws extends `ExecutionFailureError` (from `@event-driven-platform/execution`), so callers can catch all of them with one `instanceof ExecutionFailureError` check and branch on `executionFailure.code` instead of parsing `message`:
+
+- `ExecutionGuardRejectedError` — a configured guard rejected execution;
+- `ExecutionRateLimitRejectedError` — a configured rate limit rejected execution;
+- `ExecutionTimedOutError` — a handler attempt exceeded its configured timeout (the only Runner failure that is `retryable: true` by default);
+- `ExecutionPolicyUnavailableError` — a guard or rate limit is configured but its evaluator/limiter dependency was not supplied (`policy: 'guard' | 'rate-limit'`);
+- `ExecutionClaimRejectedError` — claiming the execution was rejected because another attempt already owns it, or because the execution conflicts with a different Intent (`reason: 'already-in-progress' | 'intent-conflict'`);
+- `ExecutionTransitionRejectedError` — the execution log store rejected a `complete`/`fail` transition (execution not found, not in progress, or a lease conflict).
 
 ## Composition
 

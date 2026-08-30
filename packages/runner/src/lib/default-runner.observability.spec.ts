@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { ExecutionFailureError } from '@event-driven-platform/execution';
 import { DefaultEventIdFactory } from '@event-driven-platform/event';
 import { DefaultOperationEventEnvelopeFactory } from '@event-driven-platform/operation-event-envelope-factory';
 import type { RunnerObservation, RunnerObserver } from '@event-driven-platform/observability';
@@ -158,13 +159,11 @@ describe('DefaultRunner observability', () => {
 
         const created = createObservedRunner(observer, { retryDelay });
         state.kit = created.kit;
-        created.kit.handler.error = {
-            executionFailure: {
-                code: 'transient-test-failure',
-                message: 'transient',
-                retryable: true,
-            },
-        };
+        created.kit.handler.error = new ExecutionFailureError({
+            code: 'transient-test-failure',
+            message: 'transient',
+            retryable: true,
+        });
 
         await created.runner.execute({
             ...command,
