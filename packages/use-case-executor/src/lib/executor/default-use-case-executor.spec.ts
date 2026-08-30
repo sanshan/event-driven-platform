@@ -1,9 +1,10 @@
 import type { Clock } from '@event-driven-platform/clock';
-import type {
-    ExecutionId,
-    ExecutionIdFactory,
-    ExecutionLease,
-    ExecutionLeaseOwnerId,
+import {
+    ExecutionError,
+    type ExecutionId,
+    type ExecutionIdFactory,
+    type ExecutionLease,
+    type ExecutionLeaseOwnerId,
 } from '@event-driven-platform/execution';
 import type { Intent } from '@event-driven-platform/intent';
 import type { UseCase, UseCaseContext } from '@event-driven-platform/use-case';
@@ -71,19 +72,41 @@ describe('DefaultUseCaseExecutor', () => {
         expect(store.complete).not.toHaveBeenCalled();
     });
 
-    it('rejects an active duplicate without executing the UseCase', async () => {
+    it('rejects an active duplicate with a caller-owned canonical conflict', async () => {
         const store = createStore({ type: 'already-in-progress', lease });
         const useCase: UseCase<string, string> = { execute: vi.fn() };
 
-        await expect(createExecutor(store).execute({ useCase, input: 'input', context })).rejects.toBeInstanceOf(UseCaseAlreadyInProgressError);
+        const error = await createExecutor(store)
+            .execute({ useCase, input: 'input', context })
+            .catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(UseCaseAlreadyInProgressError);
+        expect((error as UseCaseAlreadyInProgressError).executionFailure).toEqual({
+            code: 'use-case-already-in-progress',
+            message: `UseCase execution ${executionId} is already in progress.`,
+            classification: 'conflict',
+            retry: 'caller',
+            retryable: false,
+        });
         expect(useCase.execute).not.toHaveBeenCalled();
     });
 
-    it('rejects an Intent conflict without executing the UseCase', async () => {
+    it('rejects an Intent conflict with a non-retryable canonical conflict', async () => {
         const store = createStore({ type: 'intent-conflict', existingIntentId: 'other-intent' });
         const useCase: UseCase<string, string> = { execute: vi.fn() };
 
-        await expect(createExecutor(store).execute({ useCase, input: 'input', context })).rejects.toBeInstanceOf(UseCaseIntentConflictError);
+        const error = await createExecutor(store)
+            .execute({ useCase, input: 'input', context })
+            .catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(UseCaseIntentConflictError);
+        expect((error as UseCaseIntentConflictError).executionFailure).toEqual({
+            code: 'use-case-intent-conflict',
+            message: `UseCase execution ${executionId} is associated with another Intent.`,
+            classification: 'conflict',
+            retry: 'never',
+            retryable: false,
+        });
         expect(useCase.execute).not.toHaveBeenCalled();
     });
 
@@ -111,19 +134,64 @@ describe('DefaultUseCaseExecutor', () => {
         const store = createStore({ type: 'claimed', lease });
         store.complete = vi.fn(async () => ({ type: 'lease-conflict' })) as UseCaseExecutionStore['complete'];
 
-        await expect(createExecutor(store).execute({ useCase: { execute: async () => 'result' }, input: undefined, context })).rejects.toBeInstanceOf(UseCaseExecutionTransitionError);
+        const error = await createExecutor(store)
+            .execute({ useCase: { execute: async () => 'result' }, input: undefined, context })
+            .catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(UseCaseExecutionTransitionError);
+        expect((error as UseCaseExecutionTransitionError).executionFailure).toEqual({
+            code: 'use-case-execution-transition-rejected',
+            message: `UseCase execution ${executionId} complete transition was rejected: lease-conflict.`,
+            classification: 'conflict',
+            retry: 'never',
+            retryable: false,
+        });
     });
 
-    it('attempts fenced release on UseCase failure and preserves the original error', async () => {
+    it('attempts fenced release and normalizes an unknown UseCase failure with its cause', async () => {
         const store = createStore({ type: 'claimed', lease });
         store.release = vi.fn(async () => { throw new Error('release failed'); }) as UseCaseExecutionStore['release'];
         const originalError = new Error('use-case failed');
 
-        await expect(createExecutor(store).execute({
-            useCase: { execute: async () => { throw originalError; } },
-            input: undefined,
-            context,
-        })).rejects.toBe(originalError);
+        const error = await createExecutor(store)
+            .execute({
+                useCase: { execute: async () => { throw originalError; } },
+                input: undefined,
+                context,
+            })
+            .catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(ExecutionError);
+        expect((error as ExecutionError).cause).toBe(originalError);
+        expect((error as ExecutionError).executionFailure).toEqual({
+            code: 'unexpected-execution-error',
+            message: 'An unexpected execution error occurred.',
+            classification: 'internal',
+            retry: 'never',
+            retryable: false,
+        });
+        expect(store.release).toHaveBeenCalledWith({ executionId, lease, releasedAt: clock.now() });
+    });
+
+    it('attempts fenced release and propagates a canonical UseCase failure unchanged', async () => {
+        const store = createStore({ type: 'claimed', lease });
+        const canonicalError = new ExecutionError({
+            code: 'child-operation-failed',
+            message: 'Child operation failed.',
+            classification: 'unavailable',
+            retry: 'caller',
+            retryable: false,
+        });
+
+        const error = await createExecutor(store)
+            .execute({
+                useCase: { execute: async () => { throw canonicalError; } },
+                input: undefined,
+                context,
+            })
+            .catch((caught: unknown) => caught);
+
+        expect(error).toBe(canonicalError);
         expect(store.release).toHaveBeenCalledWith({ executionId, lease, releasedAt: clock.now() });
     });
 });
