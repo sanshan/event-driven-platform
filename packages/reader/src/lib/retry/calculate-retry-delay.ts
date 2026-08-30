@@ -1,6 +1,6 @@
-import type { CommandOptions } from '@event-driven-platform/command';
+import type { QueryOptions } from '@event-driven-platform/query';
 
-type RetryStrategy = NonNullable<NonNullable<CommandOptions['retry']>['strategy']>;
+type RetryStrategy = NonNullable<NonNullable<QueryOptions['retry']>['strategy']>;
 
 export function calculateRetryDelay(strategy: RetryStrategy | undefined, retryNumber: number): number {
     if (strategy === undefined) {
@@ -16,10 +16,6 @@ export function calculateRetryDelay(strategy: RetryStrategy | undefined, retryNu
     return Math.random() * clampDelay(delay);
 }
 
-function clampDelay(delay: number): number {
-    return Number.isNaN(delay) ? 0 : Math.max(0, delay);
-}
-
 function computeDelay(strategy: RetryStrategy, retryNumber: number): number {
     switch (strategy.type) {
         case 'fixed':
@@ -31,4 +27,8 @@ function computeDelay(strategy: RetryStrategy, retryNumber: number): number {
             return strategy.maxDelayMs === undefined ? delay : Math.min(delay, strategy.maxDelayMs);
         }
     }
+}
+
+function clampDelay(delay: number): number {
+    return Number.isNaN(delay) ? 0 : Math.max(0, delay);
 }

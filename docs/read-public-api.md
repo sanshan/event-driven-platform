@@ -128,6 +128,7 @@ The supported extension points are explicit contracts rather than deep implement
 - `CacheReader` and `CacheWriter` for cache technologies;
 - `ReadExecutionCoordinator` for distributed ownership/waiting;
 - `ReadTimeout` for caller timeout integration;
+- `RetryDelay` for the delay abstraction behind an opt-in `Query.options.retry`;
 - codec, key encoder, TTL policy, clock, and random-source contracts exposed by the relevant cache adapter packages where customization is supported.
 
 `DefaultReader` internal services such as source execution, cache traversal, local in-flight management, and distributed-flight orchestration remain implementation details.

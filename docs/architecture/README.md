@@ -431,6 +431,16 @@ Query timeout bounds the caller's complete Reader wait, including cache traversa
 
 Cancellation allows one caller to stop waiting without cancelling shared local or distributed work that may still serve other callers. Shared work continues until its underlying execution settles and performs its normal cleanup/ownership-safe release path.
 
+### Retry
+
+A Query may declare an opt-in `retry` policy (`RetryOptions`, the same contract `Command.options.retry` uses from `packages/retry`). Retry applies only to the source-executor invocation — never to cache traversal, process-local in-flight coalescing, or distributed coordination, which keep their own recovery paths described above.
+
+Under process-local in-flight coalescing or distributed ownership, only the leader/owner retries; followers/waiters share the leader's or owner's final result rather than retrying independently. A `ReadExecutionCoordinatorFailedError` (coordinator unavailable, or ownership lost) is never retried by this mechanism — retry wraps only the source call, not the surrounding coordination machinery, so it structurally cannot see or double-retry a coordination failure.
+
+Retryability follows the same `ExecutionFailure`/`ExecutionFailureError` classification Runner already uses: an error is retried only when it normalizes to `retryable: true`; an unclassified thrown value defaults to non-retryable. Read-handler authors opt a specific failure into retry the same way Runner handlers do — by throwing it as an `ExecutionFailureError` with `retryable: true` (transient failures: connection reset, upstream 5xx, timeout; not validation/business-logic failures).
+
+Query's single overall `timeoutMs` continues to bound the whole call, including every retry attempt — there is no separate per-attempt timeout budget. A superseded in-flight source call from a prior attempt is not actively cancelled (no `AbortSignal` in the read-handler contract); this is an accepted, `maxAttempts`-bounded compromise, tracked for future work in issue #187. Inside a distributed-flight owner, lease-ownership loss is only detected once the whole (possibly multi-attempt) retry sequence resolves, not between individual attempts, which widens — versus a single un-retried call — the window in which a doomed owner keeps hitting the source before its result is discarded; still fail-safe (the result is never returned or published once ownership is lost), tracked for future work in issue #188.
+
 ## Read-side architectural invariants
 
 The following are current architecture constraints:
@@ -454,6 +464,10 @@ The following are current architecture constraints:
 - distributed coalescing requires shared cache rendezvous; the coordinator itself does not transport results.
 - distributed coordinator unavailability is fail-closed for a distributed cache plan.
 - caller timeout or cancellation does not cancel shared in-flight work for other callers.
+- retry is opt-in via `Query.options.retry` and applies only to the source-executor invocation, never to cache traversal, local in-flight coalescing, or distributed coordination.
+- under local in-flight coalescing or distributed ownership, only the leader/owner retries; followers/waiters share its final result.
+- a distributed-coordination failure (`ReadExecutionCoordinatorFailedError`) is never retried by the retry mechanism — it keeps its own existing recovery path.
+- retry's single overall `timeoutMs` bounds every attempt together; there is no per-attempt timeout budget.
 - consumers do not bypass Reader to recreate read execution semantics independently.
 
 ## Architecture vs public API and release state

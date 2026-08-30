@@ -18,7 +18,8 @@ The following behavior is implemented and must be preserved:
 - cache readers and ReadHandlers never write caches;
 - local in-flight coalescing collapses same-key downstream work within one Reader process;
 - optional distributed coordination collapses same-key source work across instances through shared-cache rendezvous;
-- timeout and cancellation bound an individual caller without cancelling otherwise healthy shared work.
+- timeout and cancellation bound an individual caller without cancelling otherwise healthy shared work;
+- an opt-in `retry` policy retries only the source-executor invocation, sharing one result across a local/distributed leader's followers and never retrying a coordination failure.
 
 ## Cache semantics
 
@@ -82,6 +83,14 @@ If ownership is lost before publication, the stale owner must not intentionally 
 `QueryOptions.signal` allows that caller to stop waiting.
 
 These controls do not mean arbitrary JavaScript or external IO can be forcibly terminated. More importantly, one caller timing out or cancelling must not cancel a shared local/distributed flight that may still serve other callers.
+
+## Retry semantics
+
+An opt-in `Query.options.retry` policy (the same `RetryOptions` contract `Command.options.retry` uses) retries only the source-executor invocation — never cache traversal, local in-flight coalescing, or distributed coordination, which keep the recovery paths described above.
+
+Under local in-flight coalescing or distributed ownership, only the leader/owner retries; followers/waiters share its final result rather than retrying independently. A distributed-coordination failure (`ReadExecutionCoordinatorFailedError`) is never retried by this mechanism.
+
+An error retries only when it normalizes to `retryable: true` via the same `ExecutionFailure`/`ExecutionFailureError` classification Runner uses; an unclassified thrown error is non-retryable by default. `QueryOptions.timeoutMs` bounds the whole call across every retry attempt, with no separate per-attempt budget.
 
 ## Adapter guarantees
 

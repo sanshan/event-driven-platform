@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { calculateRetryDelay } from './retry/calculate-retry-delay.js';
+import { calculateRetryDelay } from './calculate-retry-delay.js';
 
 describe('calculateRetryDelay', () => {
     it('returns zero when no strategy is configured', () => {

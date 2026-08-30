@@ -4,6 +4,7 @@ import type { ReadExecutionCoordinator } from '@event-driven-platform/read-execu
 import type { ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
 import type { ReadTimeout } from '../control/read-timeout.js';
+import type { RetryDelay } from '../retry/retry-delay.js';
 
 export interface DefaultReaderDependencies {
     readonly readHandlerResolver: ReadHandlerResolver;
@@ -12,4 +13,5 @@ export interface DefaultReaderDependencies {
     readonly readTimeout?: ReadTimeout;
     readonly readExecutionCoordinator?: ReadExecutionCoordinator;
     readonly readExecutionOwnerIdFactory?: () => string;
+    readonly retryDelay?: RetryDelay;
 }
