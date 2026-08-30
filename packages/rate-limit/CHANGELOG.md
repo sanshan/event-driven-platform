@@ -1,3 +1,7 @@
+## 0.0.8 (2026-08-30)
+
+This was a version bump only for @event-driven-platform/rate-limit to align it with other projects, there were no code changes.
+
 ## 0.0.7 (2026-08-29)
 
 This was a version bump only for @event-driven-platform/rate-limit to align it with other projects, there were no code changes.

@@ -1,3 +1,34 @@
+## 0.0.8 (2026-08-30)
+
+### 🚀 Features
+
+- **reader,observability:** add read.attempt.* and read.retry.scheduled events ([#180](https://github.com/sanshan/event-driven-platform/issues/180), [#178](https://github.com/sanshan/event-driven-platform/issues/178), [#181](https://github.com/sanshan/event-driven-platform/issues/181))
+- **reader:** add opt-in retry scoped to the source-executor invocation ([#178](https://github.com/sanshan/event-driven-platform/issues/178), [#180](https://github.com/sanshan/event-driven-platform/issues/180))
+- **reader:** adopt ExecutionFailureError ([#170](https://github.com/sanshan/event-driven-platform/issues/170), [#171](https://github.com/sanshan/event-driven-platform/issues/171), [#172](https://github.com/sanshan/event-driven-platform/issues/172))
+
+### 🩹 Fixes
+
+- **reader:** export RetryDelay from the public index ([#186](https://github.com/sanshan/event-driven-platform/issues/186))
+- **reader:** enforce required detail/reason via constructor overloads ([#175](https://github.com/sanshan/event-driven-platform/issues/175))
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/read-execution-coordinator-redis to 0.0.7
+- Updated @event-driven-platform/read-execution-coordinator to 0.0.7
+- Updated @event-driven-platform/read-handler-resolver to 0.0.7
+- Updated @event-driven-platform/read-cache-in-memory to 0.0.7
+- Updated @event-driven-platform/read-cache-redis to 0.0.7
+- Updated @event-driven-platform/observability to 0.0.5
+- Updated @event-driven-platform/execution to 0.0.8
+- Updated @event-driven-platform/clock to 0.0.9
+- Updated @event-driven-platform/query to 0.0.8
+- Updated @event-driven-platform/read to 0.0.8
+
+### ❤️ Thank You
+
+- Claude Sonnet 5
+- sasha @aleksandr-cell
+
 ## 0.0.7 (2026-08-29)
 
 ### 🧱 Updated Dependencies

@@ -1,3 +1,18 @@
+## 0.0.5 (2026-08-30)
+
+### 🚀 Features
+
+- **reader,observability:** add read.attempt.* and read.retry.scheduled events ([#180](https://github.com/sanshan/event-driven-platform/issues/180), [#178](https://github.com/sanshan/event-driven-platform/issues/178), [#181](https://github.com/sanshan/event-driven-platform/issues/181))
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/tenant-reference to 0.1.7
+
+### ❤️ Thank You
+
+- Claude Sonnet 5
+- sasha @aleksandr-cell
+
 ## 0.0.4 (2026-08-29)
 
 ### 🧱 Updated Dependencies

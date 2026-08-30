@@ -1,3 +1,21 @@
+## 0.0.8 (2026-08-30)
+
+### 🚀 Features
+
+- **reader,observability:** add read.attempt.* and read.retry.scheduled events ([#180](https://github.com/sanshan/event-driven-platform/issues/180), [#178](https://github.com/sanshan/event-driven-platform/issues/178), [#181](https://github.com/sanshan/event-driven-platform/issues/181))
+- **reader:** add opt-in retry scoped to the source-executor invocation ([#178](https://github.com/sanshan/event-driven-platform/issues/178), [#180](https://github.com/sanshan/event-driven-platform/issues/180))
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/actor to 0.1.7
+- Updated @event-driven-platform/types to 0.1.7
+- Updated @event-driven-platform/read to 0.0.8
+
+### ❤️ Thank You
+
+- Claude Sonnet 5
+- sasha @aleksandr-cell
+
 ## 0.0.7 (2026-08-29)
 
 ### 🧱 Updated Dependencies

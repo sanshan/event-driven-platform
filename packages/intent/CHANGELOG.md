@@ -1,3 +1,10 @@
+## 0.2.4 (2026-08-30)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/tenant-reference to 0.1.7
+- Updated @event-driven-platform/types to 0.1.7
+
 ## 0.2.3 (2026-08-29)
 
 ### 🧱 Updated Dependencies

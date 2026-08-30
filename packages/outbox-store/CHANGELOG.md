@@ -1,3 +1,11 @@
+## 0.0.9 (2026-08-30)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/outbox to 0.0.9
+- Updated @event-driven-platform/event to 0.1.7
+- Updated @event-driven-platform/types to 0.1.7
+
 ## 0.0.8 (2026-08-29)
 
 ### 🧱 Updated Dependencies

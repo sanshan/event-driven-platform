@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/subject",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "description": "Subject contracts and factory for the event-driven platform.",
     "type": "module",
     "main": "./dist/index.js",

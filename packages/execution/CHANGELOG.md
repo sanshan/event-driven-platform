@@ -1,3 +1,20 @@
+## 0.0.8 (2026-08-30)
+
+### 🚀 Features
+
+- **use-case-executor:** adopt ExecutionFailureError ([#170](https://github.com/sanshan/event-driven-platform/issues/170), [#171](https://github.com/sanshan/event-driven-platform/issues/171), [#172](https://github.com/sanshan/event-driven-platform/issues/172), [#175](https://github.com/sanshan/event-driven-platform/issues/175), [#173](https://github.com/sanshan/event-driven-platform/issues/173))
+- **reader:** adopt ExecutionFailureError ([#170](https://github.com/sanshan/event-driven-platform/issues/170), [#171](https://github.com/sanshan/event-driven-platform/issues/171), [#172](https://github.com/sanshan/event-driven-platform/issues/172))
+- **execution:** define canonical ExecutionFailureError contract ([#170](https://github.com/sanshan/event-driven-platform/issues/170), [#171](https://github.com/sanshan/event-driven-platform/issues/171))
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/types to 0.1.7
+
+### ❤️ Thank You
+
+- Claude Sonnet 5
+- sasha @aleksandr-cell
+
 ## 0.0.7 (2026-08-29)
 
 ### 🧱 Updated Dependencies

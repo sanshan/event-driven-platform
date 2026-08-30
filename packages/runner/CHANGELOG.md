@@ -1,3 +1,41 @@
+## 0.0.11 (2026-08-30)
+
+### 🚀 Features
+
+- **retry:** add optional jitter to RetryStrategy ([#180](https://github.com/sanshan/event-driven-platform/issues/180), [#178](https://github.com/sanshan/event-driven-platform/issues/178), [#179](https://github.com/sanshan/event-driven-platform/issues/179))
+- **execution:** define canonical ExecutionFailureError contract ([#170](https://github.com/sanshan/event-driven-platform/issues/170), [#171](https://github.com/sanshan/event-driven-platform/issues/171))
+
+### 🩹 Fixes
+
+- **retry:** clamp NaN delays to zero, align jitter key omission across strategies ([6961093](https://github.com/sanshan/event-driven-platform/commit/6961093))
+- **retry:** guard jitter against NaN/negative delays, stabilize strategy shape ([#183](https://github.com/sanshan/event-driven-platform/issues/183))
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/operation-event-envelope-factory to 0.0.10
+- Updated @event-driven-platform/operation-handler-resolver to 0.0.9
+- Updated @event-driven-platform/execution-transaction to 0.0.8
+- Updated @event-driven-platform/aggregate-reference to 0.1.7
+- Updated @event-driven-platform/execution-log-store to 0.0.9
+- Updated @event-driven-platform/operation-handler to 0.0.9
+- Updated @event-driven-platform/operation-result to 0.1.7
+- Updated @event-driven-platform/tenant-reference to 0.1.7
+- Updated @event-driven-platform/execution-log to 0.0.9
+- Updated @event-driven-platform/observability to 0.0.5
+- Updated @event-driven-platform/outbox-store to 0.0.9
+- Updated @event-driven-platform/execution to 0.0.8
+- Updated @event-driven-platform/operation to 0.1.8
+- Updated @event-driven-platform/command to 0.0.9
+- Updated @event-driven-platform/outbox to 0.0.9
+- Updated @event-driven-platform/clock to 0.0.9
+- Updated @event-driven-platform/event to 0.1.7
+- Updated @event-driven-platform/types to 0.1.7
+
+### ❤️ Thank You
+
+- Claude Sonnet 5
+- sasha @aleksandr-cell
+
 ## 0.0.10 (2026-08-29)
 
 ### 🧱 Updated Dependencies

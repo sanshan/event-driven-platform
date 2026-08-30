@@ -1,3 +1,28 @@
+## 0.0.8 (2026-08-30)
+
+### 🚀 Features
+
+- **use-case-executor:** adopt ExecutionFailureError ([#170](https://github.com/sanshan/event-driven-platform/issues/170), [#171](https://github.com/sanshan/event-driven-platform/issues/171), [#172](https://github.com/sanshan/event-driven-platform/issues/172), [#175](https://github.com/sanshan/event-driven-platform/issues/175), [#173](https://github.com/sanshan/event-driven-platform/issues/173))
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/operation-event-envelope-factory to 0.0.10
+- Updated @event-driven-platform/use-case-execution-store to 0.0.7
+- Updated @event-driven-platform/observability to 0.0.5
+- Updated @event-driven-platform/execution to 0.0.8
+- Updated @event-driven-platform/operation to 0.1.8
+- Updated @event-driven-platform/use-case to 0.0.7
+- Updated @event-driven-platform/command to 0.0.9
+- Updated @event-driven-platform/intent to 0.2.4
+- Updated @event-driven-platform/clock to 0.0.9
+- Updated @event-driven-platform/event to 0.1.7
+- Updated @event-driven-platform/query to 0.0.8
+
+### ❤️ Thank You
+
+- Claude Sonnet 5
+- sasha @aleksandr-cell
+
 ## 0.0.7 (2026-08-29)
 
 ### 🧱 Updated Dependencies

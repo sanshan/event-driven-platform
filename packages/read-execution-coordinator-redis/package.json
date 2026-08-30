@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/read-execution-coordinator-redis",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "Redis-backed distributed Read execution coordinator adapter.",
     "type": "module",
     "main": "./dist/index.js",
