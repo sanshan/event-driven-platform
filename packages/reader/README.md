@@ -79,7 +79,7 @@ Cached Queries use deterministic `ReadCacheKey` identity for process-local singl
 
 ## Handler resolution
 
-`DefaultReader` resolves the Read through `ReadHandlerResolver`. `not-found` and `ambiguous` outcomes become typed Reader errors. The current source contract executes the first handler in a resolved deterministic handler set; `ReadHandler` has no fallback `miss` outcome.
+`DefaultReader` resolves the Read through `ReadHandlerResolver`. `not-found` and `ambiguous` outcomes become one typed `ReadHandlerResolutionFailedError` (`status: 'not-found' | 'ambiguous'`). The current source contract executes the first handler in a resolved deterministic handler set; `ReadHandler` has no fallback `miss` outcome.
 
 ## Timeout and cancellation
 
@@ -87,7 +87,13 @@ Cached Queries use deterministic `ReadCacheKey` identity for process-local singl
 
 ## Public API
 
-The package exports `Reader`, `DefaultReader`, `DefaultReaderDependencies`, `ReadTimeout`, and typed errors for handler resolution, timeout/cancellation, missing/unavailable coordination, and ownership loss.
+The package exports `Reader`, `DefaultReader`, `DefaultReaderDependencies`, `ReadTimeout`, and typed errors for handler resolution, timeout, cancellation, coordination configuration, and coordinator failure. Every typed error extends `ExecutionFailureError` (from `@event-driven-platform/execution`), so callers can catch all of them with one `instanceof ExecutionFailureError` check and branch on `executionFailure.code`:
+
+- `ReadTimedOutError` — a Read exceeded its configured timeout (`retryable: true`);
+- `ReadCancelledError` — the caller's Query signal cancelled the Read (`retryable: false`);
+- `ReadHandlerResolutionFailedError` — no `ReadHandler` was resolved, or resolution was ambiguous (`status: 'not-found' | 'ambiguous'`, `retryable: false`);
+- `ReadExecutionCoordinationNotConfiguredError` — distributed coordination is requested by the cache plan but not correctly configured (`retryable: false`);
+- `ReadExecutionCoordinatorFailedError` — the configured `ReadExecutionCoordinator` reported it is unavailable, or a distributed owner lost its lease before publishing (`outcome: 'unavailable' | 'ownership-lost'`, `retryable: true`).
 
 Internal services implementing source execution, cache traversal, local in-flight behavior, distributed-flight orchestration, and the default timeout are deliberately not exported. Consumers should import only from the package root.
 

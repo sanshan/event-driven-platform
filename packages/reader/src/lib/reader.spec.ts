@@ -6,8 +6,7 @@ import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-p
 
 import {
     DefaultReader,
-    ReadHandlerAmbiguousError,
-    ReadHandlerNotFoundError,
+    ReadHandlerResolutionFailedError,
     ReadTimedOutError,
     type ReadTimeout,
     type Reader,
@@ -80,7 +79,9 @@ describe('DefaultReader', () => {
             readHandlerResolver: resolverWith({ status: 'not-found' }),
         });
 
-        await expect(reader.execute(query)).rejects.toBeInstanceOf(ReadHandlerNotFoundError);
+        await expect(reader.execute(query)).rejects.toEqual(
+            new ReadHandlerResolutionFailedError('not-found'),
+        );
     });
 
     it('fails deterministically when handler resolution is ambiguous', async () => {
@@ -92,7 +93,7 @@ describe('DefaultReader', () => {
         });
 
         await expect(reader.execute(query)).rejects.toEqual(
-            new ReadHandlerAmbiguousError('multiple incompatible handler sets'),
+            new ReadHandlerResolutionFailedError('ambiguous', 'multiple incompatible handler sets'),
         );
     });
 

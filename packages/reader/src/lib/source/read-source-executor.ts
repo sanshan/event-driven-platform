@@ -3,8 +3,7 @@ import type { ReaderObservationContext, ReaderObserver } from '@event-driven-pla
 import type { AnyRead, ReadResultOf } from '@event-driven-platform/read';
 import type { ReadHandlerResolution, ReadHandlerResolver } from '@event-driven-platform/read-handler-resolver';
 
-import { ReadHandlerAmbiguousError } from '../errors/read-handler-ambiguous.error.js';
-import { ReadHandlerNotFoundError } from '../errors/read-handler-not-found.error.js';
+import { ReadHandlerResolutionFailedError } from '../errors/read-handler-resolution-failed.error.js';
 
 export interface ReadSourceExecutorDependencies {
     readonly readHandlerResolver: ReadHandlerResolver;
@@ -51,9 +50,9 @@ export class ReadSourceExecutor {
             case 'resolved':
                 return resolution.handlers[0];
             case 'not-found':
-                throw new ReadHandlerNotFoundError();
+                throw new ReadHandlerResolutionFailedError('not-found');
             case 'ambiguous':
-                throw new ReadHandlerAmbiguousError(resolution.reason);
+                throw new ReadHandlerResolutionFailedError('ambiguous', resolution.reason);
         }
     }
 
