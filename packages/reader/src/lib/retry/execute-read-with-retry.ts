@@ -21,6 +21,8 @@ type RetryOptions = NonNullable<QueryOptions['retry']>;
  * owner keeps hitting the source before its result is discarded — an
  * accepted trade-off (still fail-safe: the result is never returned
  * or published once ownership is lost), not a data-integrity risk.
+ * Tracked as future work in issue #188; also see #187, which tracks
+ * threading cancellation into the read-handler contract more broadly.
  */
 export async function executeReadWithRetry<TResult>(
     work: () => Promise<TResult>,
