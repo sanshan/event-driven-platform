@@ -181,8 +181,19 @@ describe('DefaultReader process-local inflight', () => {
         const first = reader.execute(query);
         const follower = reader.execute(query);
 
-        await expect(first).rejects.toBe(sourceError);
-        await expect(follower).rejects.toBe(sourceError);
+        const [firstError, followerError] = await Promise.all([
+            first.catch((error: unknown) => error),
+            follower.catch((error: unknown) => error),
+        ]);
+
+        expect(firstError).toMatchObject({
+            cause: sourceError,
+            executionFailure: {
+                code: 'unexpected-execution-error',
+                classification: 'internal',
+            },
+        });
+        expect(followerError).toBe(firstError);
         expect(sourceExecutions).toBe(1);
 
         await expect(reader.execute(query)).resolves.toEqual({ id: 'wallet-1', balance: 30 });
