@@ -29,4 +29,10 @@ describe('DefaultFixedRetryStrategyFactory', () => {
             jitter: true,
         });
     });
+
+    it('omits the jitter key entirely when not provided', () => {
+        const strategy = factory.create(1_000);
+
+        expect('jitter' in strategy).toBe(false);
+    });
 });

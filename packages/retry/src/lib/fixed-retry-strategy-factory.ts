@@ -5,7 +5,7 @@ export class DefaultFixedRetryStrategyFactory implements FixedRetryStrategyFacto
         return Object.freeze({
             type: 'fixed',
             delayMs,
-            jitter,
+            ...(jitter !== undefined && { jitter }),
         });
     }
 }

@@ -82,5 +82,43 @@ describe('calculateRetryDelay', () => {
 
             expect(calculateRetryDelay(strategy, 1)).toBe(1_000);
         });
+
+        it('does not produce NaN when an exponential delay overflows to Infinity', () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0);
+
+            const strategy = {
+                type: 'exponential' as const,
+                initialDelayMs: 100,
+                multiplier: 2,
+                jitter: true,
+            };
+
+            expect(calculateRetryDelay(strategy, 2_000)).toBe(Infinity);
+        });
+
+        it('clamps a negative computed delay to zero even with jitter enabled', () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+            const strategy = {
+                type: 'exponential' as const,
+                initialDelayMs: 100,
+                multiplier: 2,
+                maxDelayMs: -1,
+                jitter: true,
+            };
+
+            expect(calculateRetryDelay(strategy, 1)).toBe(0);
+        });
+    });
+
+    it('clamps a negative computed delay to zero without jitter', () => {
+        const strategy = {
+            type: 'exponential' as const,
+            initialDelayMs: 100,
+            multiplier: 2,
+            maxDelayMs: -1,
+        };
+
+        expect(calculateRetryDelay(strategy, 1)).toBe(0);
     });
 });

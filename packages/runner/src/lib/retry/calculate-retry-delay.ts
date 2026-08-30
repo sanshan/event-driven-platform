@@ -9,7 +9,11 @@ export function calculateRetryDelay(strategy: RetryStrategy | undefined, retryNu
 
     const delay = computeDelay(strategy, retryNumber);
 
-    return strategy.jitter === true ? Math.random() * delay : delay;
+    if (strategy.jitter !== true || !Number.isFinite(delay)) {
+        return Math.max(0, delay);
+    }
+
+    return Math.random() * Math.max(0, delay);
 }
 
 function computeDelay(strategy: RetryStrategy, retryNumber: number): number {
