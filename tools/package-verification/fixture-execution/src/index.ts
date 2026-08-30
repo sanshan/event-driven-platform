@@ -4,6 +4,7 @@ import { SystemClock } from '@event-driven-platform/clock';
 import type { Command } from '@event-driven-platform/command';
 import {
     DefaultExecutionIdFactory,
+    ExecutionFailureError,
     type ExecutionLeaseOwnerId,
 } from '@event-driven-platform/execution';
 import type {
@@ -92,12 +93,14 @@ const operation: VerificationOperation = {
     },
 };
 
-class RetryableFixtureError extends Error {
-    readonly executionFailure = {
-        code: 'fixture-retry',
-        message: 'The fixture intentionally fails its first handler attempt.',
-        retryable: true,
-    } as const;
+class RetryableFixtureError extends ExecutionFailureError {
+    constructor() {
+        super({
+            code: 'fixture-retry',
+            message: 'The fixture intentionally fails its first handler attempt.',
+            retryable: true,
+        });
+    }
 }
 
 let claimCount = 0;
