@@ -1,6 +1,11 @@
-export class ReadCancelledError extends Error {
+import { ExecutionFailureError } from '@event-driven-platform/execution';
+
+export class ReadCancelledError extends ExecutionFailureError {
     constructor() {
-        super('Read execution was cancelled.');
-        this.name = 'ReadCancelledError';
+        super({
+            code: 'read-cancelled',
+            message: 'Read execution was cancelled.',
+            retryable: false,
+        });
     }
 }

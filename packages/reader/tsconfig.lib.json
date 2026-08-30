@@ -12,6 +12,9 @@
     "include": ["src/**/*.ts"],
     "references": [
         {
+            "path": "../execution/tsconfig.lib.json"
+        },
+        {
             "path": "../read-handler-resolver/tsconfig.lib.json"
         },
         {

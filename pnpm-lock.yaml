@@ -526,6 +526,9 @@ importers:
       '@event-driven-platform/clock':
         specifier: workspace:*
         version: link:../clock
+      '@event-driven-platform/execution':
+        specifier: workspace:*
+        version: link:../execution
       '@event-driven-platform/observability':
         specifier: workspace:*
         version: link:../observability

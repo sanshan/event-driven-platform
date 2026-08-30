@@ -12,7 +12,7 @@ import type {
 import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
 import type { AnyRead } from '@event-driven-platform/read';
 
-import { ReadExecutionCoordinatorUnavailableError } from './errors/read-execution-coordinator-unavailable.error.js';
+import { ReadExecutionCoordinatorFailedError } from './errors/read-execution-coordinator-failed.error.js';
 import { DistributedReadFlight } from './inflight/distributed-read-flight.js';
 
 const tenant = {
@@ -201,7 +201,7 @@ describe('DistributedReadFlight', () => {
                 },
                 publishSourceResult: async () => undefined,
             }),
-        ).rejects.toEqual(new ReadExecutionCoordinatorUnavailableError('redis unavailable'));
+        ).rejects.toEqual(new ReadExecutionCoordinatorFailedError('unavailable', 'redis unavailable'));
 
         expect(sourceExecutions).toBe(0);
         expect(observer.observations).toContainEqual(

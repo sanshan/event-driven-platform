@@ -6,8 +6,7 @@ import type {
 } from '@event-driven-platform/read-execution-coordinator';
 import type { TenantScopedReadCacheKey } from '@event-driven-platform/query';
 
-import { ReadExecutionCoordinatorUnavailableError } from '../errors/read-execution-coordinator-unavailable.error.js';
-import { ReadExecutionOwnershipLostError } from '../errors/read-execution-ownership-lost.error.js';
+import { ReadExecutionCoordinatorFailedError } from '../errors/read-execution-coordinator-failed.error.js';
 
 type SharedReadResult<TResult> =
     | { readonly status: 'hit'; readonly value: TResult }
@@ -43,7 +42,7 @@ export class DistributedReadFlight {
 
             if (claim.status === 'unavailable') {
                 this.observeCoordination('unavailable', startedAt);
-                throw new ReadExecutionCoordinatorUnavailableError(claim.reason);
+                throw new ReadExecutionCoordinatorFailedError('unavailable', claim.reason);
             }
 
             if (claim.status === 'already-in-progress') {
@@ -71,7 +70,7 @@ export class DistributedReadFlight {
 
         if (wait.status === 'unavailable') {
             this.observeCoordination('unavailable', startedAt);
-            throw new ReadExecutionCoordinatorUnavailableError(wait.reason);
+            throw new ReadExecutionCoordinatorFailedError('unavailable', wait.reason);
         }
 
         this.observeCoordination('waiter', startedAt);
@@ -177,11 +176,12 @@ export class DistributedReadFlight {
         unavailableReason: string | undefined,
     ): void {
         if (leaseState === 'lost') {
-            throw new ReadExecutionOwnershipLostError();
+            throw new ReadExecutionCoordinatorFailedError('ownership-lost');
         }
 
         if (leaseState === 'unavailable') {
-            throw new ReadExecutionCoordinatorUnavailableError(
+            throw new ReadExecutionCoordinatorFailedError(
+                'unavailable',
                 unavailableReason ?? 'lease renewal failed',
             );
         }

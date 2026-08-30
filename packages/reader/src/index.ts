@@ -1,10 +1,10 @@
 export type { ReadTimeout } from './lib/control/read-timeout.js';
 export { ReadCancelledError } from './lib/errors/read-cancelled.error.js';
 export { ReadExecutionCoordinationNotConfiguredError } from './lib/errors/read-execution-coordination-not-configured.error.js';
-export { ReadExecutionCoordinatorUnavailableError } from './lib/errors/read-execution-coordinator-unavailable.error.js';
-export { ReadExecutionOwnershipLostError } from './lib/errors/read-execution-ownership-lost.error.js';
-export { ReadHandlerAmbiguousError } from './lib/errors/read-handler-ambiguous.error.js';
-export { ReadHandlerNotFoundError } from './lib/errors/read-handler-not-found.error.js';
+export { ReadExecutionCoordinatorFailedError } from './lib/errors/read-execution-coordinator-failed.error.js';
+export type { ReadExecutionCoordinatorFailureOutcome } from './lib/errors/read-execution-coordinator-failed.error.js';
+export { ReadHandlerResolutionFailedError } from './lib/errors/read-handler-resolution-failed.error.js';
+export type { ReadHandlerResolutionFailureStatus } from './lib/errors/read-handler-resolution-failed.error.js';
 export { ReadTimedOutError } from './lib/errors/read-timed-out.error.js';
 export { DefaultReader } from './lib/reader/default-reader.js';
 export type { DefaultReaderDependencies } from './lib/reader/default-reader.js';
