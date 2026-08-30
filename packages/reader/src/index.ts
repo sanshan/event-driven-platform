@@ -1,4 +1,5 @@
 export type { ReadTimeout } from './lib/control/read-timeout.js';
+export type { RetryDelay } from './lib/retry/retry-delay.js';
 export { ReadCancelledError } from './lib/errors/read-cancelled.error.js';
 export { ReadExecutionCoordinationNotConfiguredError } from './lib/errors/read-execution-coordination-not-configured.error.js';
 export { ReadExecutionCoordinatorFailedError } from './lib/errors/read-execution-coordinator-failed.error.js';
