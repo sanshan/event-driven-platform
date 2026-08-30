@@ -121,4 +121,15 @@ describe('calculateRetryDelay', () => {
 
         expect(calculateRetryDelay(strategy, 1)).toBe(0);
     });
+
+    it('clamps a NaN computed delay to zero (e.g. a misconfigured NaN maxDelayMs)', () => {
+        const strategy = {
+            type: 'exponential' as const,
+            initialDelayMs: 100,
+            multiplier: 2,
+            maxDelayMs: Number.NaN,
+        };
+
+        expect(calculateRetryDelay(strategy, 1)).toBe(0);
+    });
 });

@@ -10,10 +10,14 @@ export function calculateRetryDelay(strategy: RetryStrategy | undefined, retryNu
     const delay = computeDelay(strategy, retryNumber);
 
     if (strategy.jitter !== true || !Number.isFinite(delay)) {
-        return Math.max(0, delay);
+        return clampDelay(delay);
     }
 
-    return Math.random() * Math.max(0, delay);
+    return Math.random() * clampDelay(delay);
+}
+
+function clampDelay(delay: number): number {
+    return Number.isNaN(delay) ? 0 : Math.max(0, delay);
 }
 
 function computeDelay(strategy: RetryStrategy, retryNumber: number): number {

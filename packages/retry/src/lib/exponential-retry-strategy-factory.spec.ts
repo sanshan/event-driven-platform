@@ -57,4 +57,12 @@ describe('DefaultExponentialRetryStrategyFactory', () => {
 
         expect(strategy.jitter).toBeUndefined();
     });
+
+    it('omits the jitter key entirely when not provided', () => {
+        const strategy = factory.create({
+            initialDelayMs: 500,
+        });
+
+        expect('jitter' in strategy).toBe(false);
+    });
 });
