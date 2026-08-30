@@ -60,9 +60,10 @@ Intentional package-root exports:
 - `UseCaseExecutionRequest`;
 - `UseCaseExecutorDependencies`;
 - `UseCaseExecutorRuntime`;
-- `UseCaseAlreadyInProgressError`;
-- `UseCaseIntentConflictError`;
+- `UseCaseClaimRejectedError` and `UseCaseClaimRejectionReason` (`'already-in-progress' | 'intent-conflict'`);
 - `UseCaseExecutionTransitionError`.
+
+Every typed error extends `ExecutionFailureError` (from `@event-driven-platform/execution`).
 
 No timer, heartbeat, renewal lifecycle, ownership-health API, or renewal configuration is public or implemented.
 
