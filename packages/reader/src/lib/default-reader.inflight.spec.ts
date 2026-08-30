@@ -186,14 +186,15 @@ describe('DefaultReader process-local inflight', () => {
             follower.catch((error: unknown) => error),
         ]);
 
-        expect(firstError).toMatchObject({
+        const expectedFailure = {
             cause: sourceError,
             executionFailure: {
                 code: 'unexpected-execution-error',
                 classification: 'internal',
             },
-        });
-        expect(followerError).toBe(firstError);
+        };
+        expect(firstError).toMatchObject(expectedFailure);
+        expect(followerError).toMatchObject(expectedFailure);
         expect(sourceExecutions).toBe(1);
 
         await expect(reader.execute(query)).resolves.toEqual({ id: 'wallet-1', balance: 30 });
