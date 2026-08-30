@@ -11,6 +11,8 @@ import type { AnyRead, ReadResultOf } from '@event-driven-platform/read';
 import { ReadExecutionCoordinationNotConfiguredError } from '../errors/read-execution-coordination-not-configured.error.js';
 import { DistributedReadFlight } from '../inflight/distributed-read-flight.js';
 import { LocalReadInFlight } from '../inflight/local-read-in-flight.js';
+import { executeReadWithRetry } from '../retry/execute-read-with-retry.js';
+import type { RetryDelay } from '../retry/retry-delay.js';
 import type { ReadSourceExecutor } from '../source/read-source-executor.js';
 import { ReadCacheTraversal } from './read-cache-traversal.js';
 
@@ -20,6 +22,7 @@ export interface CachedReadExecutorDependencies {
     readonly ownerIdFactory: () => string;
     readonly clock: Clock;
     readonly observer: ReaderObserver;
+    readonly retryDelay: RetryDelay;
 }
 
 type SharedCacheResult<TResult> =
@@ -137,7 +140,15 @@ export class CachedReadExecutor {
             ownerId: this.dependencies.ownerIdFactory(),
             leaseDurationMs: cachePlan.coordination.leaseDurationMs,
             readShared: () => this.findSharedCacheResult(cachePlan, scopedKey, localEndIndex, context),
-            executeSource: () => this.dependencies.sourceExecutor.execute(query.read, context),
+            // Retry wraps only this source call, not the surrounding distributed-flight
+            // machinery (claim/wait/lease-renewal) — those failures (e.g. ownership-lost)
+            // already have their own recovery path and must not be double-retried here.
+            executeSource: () =>
+                executeReadWithRetry(
+                    () => this.dependencies.sourceExecutor.execute(query.read, context),
+                    query.options?.retry,
+                    this.dependencies.retryDelay,
+                ),
             publishSourceResult: (result) =>
                 this.cacheTraversal.populate(cachePlan.levels, scopedKey, result, context),
         });
@@ -176,7 +187,11 @@ export class CachedReadExecutor {
         scopedKey: TenantScopedReadCacheKey,
         context: ReaderObservationContext,
     ): Promise<ReadResultOf<TRead>> {
-        const sourceResult = await this.dependencies.sourceExecutor.execute(query.read, context);
+        const sourceResult = await executeReadWithRetry(
+            () => this.dependencies.sourceExecutor.execute(query.read, context),
+            query.options?.retry,
+            this.dependencies.retryDelay,
+        );
         await this.cacheTraversal.populate(cachePlan.levels, scopedKey, sourceResult, context);
         return sourceResult;
     }

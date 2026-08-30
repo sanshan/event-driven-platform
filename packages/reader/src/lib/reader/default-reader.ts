@@ -16,6 +16,9 @@ import { DefaultReadTimeout } from '../control/default-read-timeout.js';
 import { ReadExecutionControl } from '../control/read-execution-control.js';
 import { ReadCancelledError } from '../errors/read-cancelled.error.js';
 import { ReadTimedOutError } from '../errors/read-timed-out.error.js';
+import { DefaultRetryDelay } from '../retry/default-retry-delay.js';
+import { executeReadWithRetry } from '../retry/execute-read-with-retry.js';
+import type { RetryDelay } from '../retry/retry-delay.js';
 import { ReadSourceExecutor } from '../source/read-source-executor.js';
 import type { DefaultReaderDependencies } from './default-reader-dependencies.js';
 import type { Reader } from './reader.js';
@@ -28,12 +31,14 @@ export class DefaultReader implements Reader {
     private readonly sourceExecutor: ReadSourceExecutor;
     private readonly cachedExecutor: CachedReadExecutor;
     private readonly executionControl: ReadExecutionControl;
+    private readonly retryDelay: RetryDelay;
 
     public constructor(dependencies: DefaultReaderDependencies) {
         this.clock = dependencies.clock ?? new SystemClock();
         this.observer = new SafeObserver(
             dependencies.observer ?? new NoopObserver<ReaderObservation>(),
         );
+        this.retryDelay = dependencies.retryDelay ?? new DefaultRetryDelay();
         this.sourceExecutor = new ReadSourceExecutor({
             readHandlerResolver: dependencies.readHandlerResolver,
             clock: this.clock,
@@ -45,6 +50,7 @@ export class DefaultReader implements Reader {
             ownerIdFactory: dependencies.readExecutionOwnerIdFactory ?? randomUUID,
             clock: this.clock,
             observer: this.observer,
+            retryDelay: this.retryDelay,
         });
         this.executionControl = new ReadExecutionControl(
             dependencies.readTimeout ?? new DefaultReadTimeout(),
@@ -64,7 +70,12 @@ export class DefaultReader implements Reader {
         const cachePlan = query.options?.cache;
         const work =
             cachePlan === undefined
-                ? () => this.sourceExecutor.execute(query.read, context)
+                ? () =>
+                      executeReadWithRetry(
+                          () => this.sourceExecutor.execute(query.read, context),
+                          query.options?.retry,
+                          this.retryDelay,
+                      )
                 : () => this.cachedExecutor.execute(query, cachePlan, context);
 
         try {

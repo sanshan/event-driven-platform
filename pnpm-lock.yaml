@@ -422,6 +422,9 @@ importers:
       '@event-driven-platform/read':
         specifier: workspace:*
         version: link:../read
+      '@event-driven-platform/retry':
+        specifier: workspace:*
+        version: link:../retry
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
