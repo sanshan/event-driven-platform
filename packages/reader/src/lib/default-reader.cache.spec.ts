@@ -243,7 +243,7 @@ describe('DefaultReader cache execution', () => {
         });
     });
 
-    it('propagates source-handler failure after all cache levels miss', async () => {
+    it('normalizes source-handler failure after all cache levels miss', async () => {
         const miss = cacheLevel({ read: async () => ({ status: 'miss' }) });
         const sourceError = new Error('source failed');
         const handler = {
@@ -255,6 +255,12 @@ describe('DefaultReader cache execution', () => {
             readHandlerResolver: resolverWith({ status: 'resolved', handlers: [handler] }),
         });
 
-        await expect(reader.execute(cachedQuery([miss]))).rejects.toBe(sourceError);
+        await expect(reader.execute(cachedQuery([miss]))).rejects.toMatchObject({
+            cause: sourceError,
+            executionFailure: {
+                code: 'unexpected-execution-error',
+                classification: 'internal',
+            },
+        });
     });
 });
