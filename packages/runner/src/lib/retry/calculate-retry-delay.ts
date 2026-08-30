@@ -7,6 +7,20 @@ export function calculateRetryDelay(strategy: RetryStrategy | undefined, retryNu
         return 0;
     }
 
+    const delay = computeDelay(strategy, retryNumber);
+
+    if (strategy.jitter !== true || !Number.isFinite(delay)) {
+        return clampDelay(delay);
+    }
+
+    return Math.random() * clampDelay(delay);
+}
+
+function clampDelay(delay: number): number {
+    return Number.isNaN(delay) ? 0 : Math.max(0, delay);
+}
+
+function computeDelay(strategy: RetryStrategy, retryNumber: number): number {
     switch (strategy.type) {
         case 'fixed':
             return strategy.delayMs;

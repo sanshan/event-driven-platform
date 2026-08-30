@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { calculateRetryDelay } from './retry/calculate-retry-delay.js';
 
@@ -40,5 +40,96 @@ describe('calculateRetryDelay', () => {
         expect(calculateRetryDelay(strategy, 1)).toBe(100);
         expect(calculateRetryDelay(strategy, 2)).toBe(300);
         expect(calculateRetryDelay(strategy, 3)).toBe(500);
+    });
+
+    describe('jitter', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('applies full jitter to a fixed delay', () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+            const strategy = {
+                type: 'fixed' as const,
+                delayMs: 1_000,
+                jitter: true,
+            };
+
+            expect(calculateRetryDelay(strategy, 1)).toBe(500);
+        });
+
+        it('applies full jitter to an exponential delay', () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0.25);
+
+            const strategy = {
+                type: 'exponential' as const,
+                initialDelayMs: 100,
+                multiplier: 2,
+                jitter: true,
+            };
+
+            expect(calculateRetryDelay(strategy, 2)).toBe(50);
+        });
+
+        it('does not apply jitter when disabled', () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+            const strategy = {
+                type: 'fixed' as const,
+                delayMs: 1_000,
+            };
+
+            expect(calculateRetryDelay(strategy, 1)).toBe(1_000);
+        });
+
+        it('does not produce NaN when an exponential delay overflows to Infinity', () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0);
+
+            const strategy = {
+                type: 'exponential' as const,
+                initialDelayMs: 100,
+                multiplier: 2,
+                jitter: true,
+            };
+
+            expect(calculateRetryDelay(strategy, 2_000)).toBe(Infinity);
+        });
+
+        it('clamps a negative computed delay to zero even with jitter enabled', () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+            const strategy = {
+                type: 'exponential' as const,
+                initialDelayMs: 100,
+                multiplier: 2,
+                maxDelayMs: -1,
+                jitter: true,
+            };
+
+            expect(calculateRetryDelay(strategy, 1)).toBe(0);
+        });
+    });
+
+    it('clamps a negative computed delay to zero without jitter', () => {
+        const strategy = {
+            type: 'exponential' as const,
+            initialDelayMs: 100,
+            multiplier: 2,
+            maxDelayMs: -1,
+        };
+
+        expect(calculateRetryDelay(strategy, 1)).toBe(0);
+    });
+
+    it('clamps a NaN computed delay to zero (e.g. a misconfigured NaN maxDelayMs)', () => {
+        const strategy = {
+            type: 'exponential' as const,
+            initialDelayMs: 100,
+            multiplier: 2,
+            maxDelayMs: Number.NaN,
+        };
+
+        expect(calculateRetryDelay(strategy, 1)).toBe(0);
     });
 });

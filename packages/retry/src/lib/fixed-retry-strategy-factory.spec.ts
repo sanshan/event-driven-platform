@@ -19,4 +19,20 @@ describe('DefaultFixedRetryStrategyFactory', () => {
 
         expect(Object.isFrozen(strategy)).toBe(true);
     });
+
+    it('creates a fixed retry strategy with jitter enabled', () => {
+        const strategy = factory.create(1_000, true);
+
+        expect(strategy).toEqual({
+            type: 'fixed',
+            delayMs: 1_000,
+            jitter: true,
+        });
+    });
+
+    it('omits the jitter key entirely when not provided', () => {
+        const strategy = factory.create(1_000);
+
+        expect('jitter' in strategy).toBe(false);
+    });
 });
