@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { calculateRetryDelay } from './retry/calculate-retry-delay.js';
 
@@ -40,5 +40,47 @@ describe('calculateRetryDelay', () => {
         expect(calculateRetryDelay(strategy, 1)).toBe(100);
         expect(calculateRetryDelay(strategy, 2)).toBe(300);
         expect(calculateRetryDelay(strategy, 3)).toBe(500);
+    });
+
+    describe('jitter', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('applies full jitter to a fixed delay', () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+            const strategy = {
+                type: 'fixed' as const,
+                delayMs: 1_000,
+                jitter: true,
+            };
+
+            expect(calculateRetryDelay(strategy, 1)).toBe(500);
+        });
+
+        it('applies full jitter to an exponential delay', () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0.25);
+
+            const strategy = {
+                type: 'exponential' as const,
+                initialDelayMs: 100,
+                multiplier: 2,
+                jitter: true,
+            };
+
+            expect(calculateRetryDelay(strategy, 2)).toBe(50);
+        });
+
+        it('does not apply jitter when disabled', () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+            const strategy = {
+                type: 'fixed' as const,
+                delayMs: 1_000,
+            };
+
+            expect(calculateRetryDelay(strategy, 1)).toBe(1_000);
+        });
     });
 });

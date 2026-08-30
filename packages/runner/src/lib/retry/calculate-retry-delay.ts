@@ -7,6 +7,12 @@ export function calculateRetryDelay(strategy: RetryStrategy | undefined, retryNu
         return 0;
     }
 
+    const delay = computeDelay(strategy, retryNumber);
+
+    return strategy.jitter === true ? Math.random() * delay : delay;
+}
+
+function computeDelay(strategy: RetryStrategy, retryNumber: number): number {
     switch (strategy.type) {
         case 'fixed':
             return strategy.delayMs;

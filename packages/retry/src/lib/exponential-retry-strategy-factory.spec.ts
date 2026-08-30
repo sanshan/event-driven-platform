@@ -35,4 +35,26 @@ describe('DefaultExponentialRetryStrategyFactory', () => {
 
         expect(Object.isFrozen(strategy)).toBe(true);
     });
+
+    it('creates an exponential retry strategy with jitter enabled', () => {
+        const strategy = factory.create({
+            initialDelayMs: 500,
+            jitter: true,
+        });
+
+        expect(strategy).toEqual({
+            type: 'exponential',
+            initialDelayMs: 500,
+            multiplier: 2,
+            jitter: true,
+        });
+    });
+
+    it('defaults jitter to undefined when omitted', () => {
+        const strategy = factory.create({
+            initialDelayMs: 500,
+        });
+
+        expect(strategy.jitter).toBeUndefined();
+    });
 });

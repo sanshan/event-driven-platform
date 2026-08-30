@@ -12,7 +12,7 @@ pnpm add @event-driven-platform/retry
 
 - `RetryOptions` — Command retry configuration.
 - `RetryStrategy` — retry strategy contract.
-- `FixedRetryStrategy` and `ExponentialRetryStrategy` — supported strategy shapes.
+- `FixedRetryStrategy` and `ExponentialRetryStrategy` — supported strategy shapes. Both accept an optional `jitter` flag; when enabled, the consuming package's delay calculator randomizes the actual delay between 0 and the computed delay ("full jitter") to avoid synchronized retries across concurrent callers.
 - `DefaultFixedRetryStrategyFactory` and `DefaultExponentialRetryStrategyFactory` — default factories.
 
 ## Role

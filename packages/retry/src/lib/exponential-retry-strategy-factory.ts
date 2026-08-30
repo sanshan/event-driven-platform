@@ -13,6 +13,7 @@ export class DefaultExponentialRetryStrategyFactory implements ExponentialRetryS
             initialDelayMs: descriptor.initialDelayMs,
             multiplier: descriptor.multiplier ?? DEFAULT_MULTIPLIER,
             maxDelayMs: descriptor.maxDelayMs,
+            jitter: descriptor.jitter,
         });
     }
 }
