@@ -26,7 +26,7 @@ import type { OutboxStore } from '@event-driven-platform/outbox-store';
 import {
     createRunner,
     ExecutionGuardRejectedError,
-    GuardEvaluatorUnavailableError,
+    ExecutionPolicyUnavailableError,
     type GuardEvaluationRequest,
     type GuardEvaluator,
 } from '../index.js';
@@ -268,7 +268,8 @@ describe('DefaultRunner guard orchestration', () => {
 
         const error = await captureError(() => kit.runner.execute(guardedCommand([firstGuard])));
 
-        expect(error).toBeInstanceOf(GuardEvaluatorUnavailableError);
+        expect(error).toBeInstanceOf(ExecutionPolicyUnavailableError);
+        expect((error as ExecutionPolicyUnavailableError).policy).toBe('guard');
         expect(kit.resolverInvocations.count).toBe(0);
         expect(kit.handlerInvocations.count).toBe(0);
         expect(kit.executionLogStore.failedRequests).toHaveLength(1);

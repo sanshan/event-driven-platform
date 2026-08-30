@@ -1,4 +1,5 @@
 import type { Command } from '@event-driven-platform/command';
+import { normalizeExecutionFailure } from '@event-driven-platform/execution';
 import type { InProgressExecutionLogEntry } from '@event-driven-platform/execution-log';
 import type {
     CompleteExecutionResult,
@@ -20,20 +21,17 @@ import {
 
 import type { HandlerAttemptOutcome } from '../attempt/handler-attempt-outcome.js';
 import type { ResolvedOperationHandler } from '../attempt/resolved-operation-handler.js';
-import { normalizeExecutionFailure } from '../failure/normalize-execution-failure.js';
 import { ExecutionGuardRejectedError } from '../guard/execution-guard-rejected.error.js';
-import { GuardEvaluatorUnavailableError } from '../guard/guard-evaluator-unavailable.error.js';
+import { ExecutionPolicyUnavailableError } from '../policy/execution-policy-unavailable.error.js';
 import { buildRateLimitBucketKey } from '../rate-limit/build-rate-limit-bucket-key.js';
 import { ExecutionRateLimitRejectedError } from '../rate-limit/execution-rate-limit-rejected.error.js';
-import { RateLimiterUnavailableError } from '../rate-limit/rate-limiter-unavailable.error.js';
 import { calculateRetryDelay } from '../retry/calculate-retry-delay.js';
 import { DefaultRetryDelay } from '../retry/default-retry-delay.js';
 import type { RetryDelay } from '../retry/retry-delay.js';
 import { DefaultExecutionTimeout } from '../timeout/default-execution-timeout.js';
 import { ExecutionTimedOutError } from '../timeout/execution-timed-out.error.js';
 import type { ExecutionTimeout } from '../timeout/execution-timeout.js';
-import { ExecutionAlreadyInProgressError } from '../transition/execution-already-in-progress.error.js';
-import { ExecutionIntentConflictError } from '../transition/execution-intent-conflict.error.js';
+import { ExecutionClaimRejectedError } from '../transition/execution-claim-rejected.error.js';
 import { ExecutionTransitionRejectedError } from '../transition/execution-transition-rejected.error.js';
 import type { RunnerDependencies } from './runner-dependencies.js';
 import type { RunnerExecution } from './runner-execution.js';
@@ -95,7 +93,7 @@ export class DefaultRunner implements Runner {
                     context,
                     reason: 'already-in-progress',
                 });
-                throw new ExecutionAlreadyInProgressError(claim.entry.executionId);
+                throw new ExecutionClaimRejectedError(claim.entry.executionId, 'already-in-progress');
 
             case 'intent-conflict':
                 this.observer.observe({
@@ -103,7 +101,7 @@ export class DefaultRunner implements Runner {
                     context,
                     reason: 'intent-conflict',
                 });
-                throw new ExecutionIntentConflictError(claim.entry.executionId);
+                throw new ExecutionClaimRejectedError(claim.entry.executionId, 'intent-conflict');
 
             case 'claimed':
                 return this.executeObservedClaimed(command, claim.entry, context);
@@ -278,7 +276,7 @@ export class DefaultRunner implements Runner {
                         context,
                         reason: 'already-in-progress',
                     });
-                    throw new ExecutionAlreadyInProgressError(claim.entry.executionId);
+                    throw new ExecutionClaimRejectedError(claim.entry.executionId, 'already-in-progress');
 
                 case 'intent-conflict':
                     this.observer.observe({
@@ -286,7 +284,7 @@ export class DefaultRunner implements Runner {
                         context,
                         reason: 'intent-conflict',
                     });
-                    throw new ExecutionIntentConflictError(claim.entry.executionId);
+                    throw new ExecutionClaimRejectedError(claim.entry.executionId, 'intent-conflict');
 
                 case 'claimed':
                     entry = claim.entry;
@@ -406,7 +404,7 @@ export class DefaultRunner implements Runner {
         const evaluator = this.dependencies.guardEvaluator;
 
         if (evaluator === undefined) {
-            throw new GuardEvaluatorUnavailableError();
+            throw new ExecutionPolicyUnavailableError('guard');
         }
 
         for (const guard of guards) {
@@ -433,7 +431,7 @@ export class DefaultRunner implements Runner {
         const limiter = this.dependencies.rateLimiter;
 
         if (limiter === undefined) {
-            throw new RateLimiterUnavailableError();
+            throw new ExecutionPolicyUnavailableError('rate-limit');
         }
 
         const decision = await limiter.consume({

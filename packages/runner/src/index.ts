@@ -40,19 +40,19 @@ export { DefaultExecutionTimeout } from './lib/timeout/default-execution-timeout
 
 export { DefaultRetryDelay } from './lib/retry/default-retry-delay.js';
 
-export { ExecutionAlreadyInProgressError } from './lib/transition/execution-already-in-progress.error.js';
+export { ExecutionClaimRejectedError } from './lib/transition/execution-claim-rejected.error.js';
+
+export type { ExecutionClaimRejectionReason } from './lib/transition/execution-claim-rejected.error.js';
 
 export { ExecutionGuardRejectedError } from './lib/guard/execution-guard-rejected.error.js';
 
-export { ExecutionIntentConflictError } from './lib/transition/execution-intent-conflict.error.js';
+export { ExecutionPolicyUnavailableError } from './lib/policy/execution-policy-unavailable.error.js';
+
+export type { ExecutionPolicy } from './lib/policy/execution-policy-unavailable.error.js';
 
 export { ExecutionRateLimitRejectedError } from './lib/rate-limit/execution-rate-limit-rejected.error.js';
 
 export { ExecutionTimedOutError } from './lib/timeout/execution-timed-out.error.js';
-
-export { GuardEvaluatorUnavailableError } from './lib/guard/guard-evaluator-unavailable.error.js';
-
-export { RateLimiterUnavailableError } from './lib/rate-limit/rate-limiter-unavailable.error.js';
 
 export { createRunner } from './lib/runner/create-runner.js';
 

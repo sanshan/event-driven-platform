@@ -26,12 +26,12 @@ import type { OutboxStore } from '@event-driven-platform/outbox-store';
 import {
     createRunner,
     ExecutionGuardRejectedError,
+    ExecutionPolicyUnavailableError,
     ExecutionRateLimitRejectedError,
     type GuardEvaluator,
     type RateLimitConsumeRequest,
     type RateLimitDecision,
     type RateLimiter,
-    RateLimiterUnavailableError,
 } from '../index.js';
 import {
     claimedEntry,
@@ -282,7 +282,8 @@ describe('DefaultRunner rate-limit orchestration', () => {
 
         const error = await captureError(() => kit.runner.execute(rateLimitedCommand()));
 
-        expect(error).toBeInstanceOf(RateLimiterUnavailableError);
+        expect(error).toBeInstanceOf(ExecutionPolicyUnavailableError);
+        expect((error as ExecutionPolicyUnavailableError).policy).toBe('rate-limit');
         expect(kit.handlerInvocations.count).toBe(0);
         expect(kit.executionLogStore.failedRequests).toHaveLength(1);
     });
