@@ -36,7 +36,7 @@ const result = await reader.execute({
 });
 ```
 
-`DefaultReader` requires a `ReadHandlerResolver`. `readTimeout`, `readExecutionCoordinator`, and `readExecutionOwnerIdFactory` are optional composition dependencies.
+`DefaultReader` requires a `ReadHandlerResolver`. `readTimeout`, `readExecutionCoordinator`, `readExecutionOwnerIdFactory`, and `retryDelay` are optional composition dependencies.
 
 ## Cached composition
 
@@ -85,9 +85,32 @@ Cached Queries use deterministic `ReadCacheKey` identity for process-local singl
 
 `QueryOptions.timeoutMs` bounds one caller's complete Reader wait. `QueryOptions.signal` lets that caller stop waiting. A timed-out or cancelled follower does not cancel healthy shared work serving other callers.
 
+## Retry
+
+An opt-in `retry` policy retries only the source-executor invocation:
+
+```ts
+const result = await reader.execute({
+    read,
+    context: { correlationId },
+    options: {
+        retry: {
+            maxAttempts: 3,
+            strategy: { type: 'exponential', initialDelayMs: 100, multiplier: 2, jitter: true },
+        },
+    },
+});
+```
+
+`retry` never wraps cache traversal, local in-flight coalescing, or distributed coordination — those keep the recovery paths described above. Under local in-flight coalescing or a distributed lease, only the leader/owner retries; followers/waiters transparently share its final result. A `ReadExecutionCoordinatorFailedError` (coordinator unavailable, or ownership lost) is never retried by this mechanism.
+
+An error is retried only when it normalizes (via the same `ExecutionFailure`/`ExecutionFailureError` classification Runner uses) to `retryable: true`; an unclassified thrown error defaults to non-retryable. When writing a `ReadHandler`, throw transient failures (connection reset, upstream 5xx, timeout) as `new ExecutionFailureError({ code, message, retryable: true })` — validation and business-logic failures should stay `retryable: false` or use a domain-specific typed error.
+
+`QueryOptions.timeoutMs` continues to bound the whole call across every retry attempt; there is no separate per-attempt timeout. A superseded in-flight source call from a prior attempt is not actively cancelled (accepted, `maxAttempts`-bounded compromise; tracked in [#187](https://github.com/sanshan/event-driven-platform/issues/187)). Inside a distributed-flight owner, lease-ownership loss is only detected once the whole retry sequence resolves, not between attempts — still fail-safe, but see [#188](https://github.com/sanshan/event-driven-platform/issues/188) for the tracked follow-up.
+
 ## Public API
 
-The package exports `Reader`, `DefaultReader`, `DefaultReaderDependencies`, `ReadTimeout`, and typed errors for handler resolution, timeout, cancellation, coordination configuration, and coordinator failure. Every typed error extends `ExecutionFailureError` (from `@event-driven-platform/execution`), so callers can catch all of them with one `instanceof ExecutionFailureError` check and branch on `executionFailure.code`:
+The package exports `Reader`, `DefaultReader`, `DefaultReaderDependencies`, `ReadTimeout`, `RetryDelay`, and typed errors for handler resolution, timeout, cancellation, coordination configuration, and coordinator failure. Every typed error extends `ExecutionFailureError` (from `@event-driven-platform/execution`), so callers can catch all of them with one `instanceof ExecutionFailureError` check and branch on `executionFailure.code`:
 
 - `ReadTimedOutError` — a Read exceeded its configured timeout (`retryable: true`);
 - `ReadCancelledError` — the caller's Query signal cancelled the Read (`retryable: false`);

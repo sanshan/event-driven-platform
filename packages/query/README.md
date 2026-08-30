@@ -50,6 +50,25 @@ Level order is execution order. `local` and `shared` describe cache visibility; 
 
 `ReadCacheKey` keeps namespace, version, partition/security scope, and value explicit. Consumers must choose deterministic identities that cannot cross security or tenant boundaries incorrectly.
 
+## Retry policy
+
+A Query may declare an opt-in `retry` policy using the same `RetryOptions` contract `Command.options.retry` uses (from `@event-driven-platform/retry`):
+
+```ts
+const query: Query<GetUserRead> = {
+    read,
+    context: { correlationId: 'request-123' },
+    options: {
+        retry: {
+            maxAttempts: 3,
+            strategy: { type: 'exponential', initialDelayMs: 100, multiplier: 2 },
+        },
+    },
+};
+```
+
+Query only carries this configuration; Reader interprets it and retries only the source-executor invocation, never cache traversal or coordination. See [`packages/reader/README.md`](../reader/README.md#retry) for the full retry semantics.
+
 ## Public API
 
 The package exports `Query`, `QueryContext`, `QueryOptions`, result helpers, cache reader/writer contracts, cache outcomes, cache scopes/levels/plans, `ReadCacheKey`, and `QueryReadCoordinationOptions`.
