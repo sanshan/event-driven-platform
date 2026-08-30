@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ExecutionIdFactory } from '@event-driven-platform/execution';
+import { ExecutionError, type ExecutionIdFactory } from '@event-driven-platform/execution';
 import type { AnyExecutionLogEntry } from '@event-driven-platform/execution-log';
 import type {
     ClaimExecutionRequest,
@@ -274,8 +274,9 @@ describe('DefaultRunner timeout orchestration', () => {
 
         const error = await captureError(() => kit.runner.execute(timedCommand()));
 
-        expect(error).toBe(handlerError);
+        expect(error).toBeInstanceOf(ExecutionError);
+        expect((error as ExecutionError).cause).toBe(handlerError);
         expect(kit.executionLogStore.failAttempts[0]?.status).toBe('failed');
-        expect(kit.executionLogStore.failAttempts[0]?.failure.retryable).toBe(false);
+        expect(kit.executionLogStore.failAttempts[0]?.failure.retry).toBe('never');
     });
 });

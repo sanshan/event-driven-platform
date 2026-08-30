@@ -1,11 +1,13 @@
-import type { ExecutionId } from '@event-driven-platform/execution';
+import { ExecutionError, type ExecutionId } from '@event-driven-platform/execution';
 
-export class ExecutionAlreadyInProgressError extends Error {
-    override readonly name = 'ExecutionAlreadyInProgressError';
-
+export class ExecutionAlreadyInProgressError extends ExecutionError {
     constructor(readonly executionId: ExecutionId) {
-        super(`Execution "${executionId}" is already in progress.`);
-
-        Object.setPrototypeOf(this, new.target.prototype);
+        super({
+            code: 'execution-already-in-progress',
+            message: `Execution "${executionId}" is already in progress.`,
+            classification: 'conflict',
+            retry: 'caller',
+            retryable: false,
+        });
     }
 }

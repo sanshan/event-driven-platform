@@ -399,6 +399,8 @@ export class TestExecutionLogStore implements ExecutionLogStore {
      */
     readonly failedRequests: FailExecutionRequest[] = [];
 
+    claimError: unknown = null;
+
     completeError: unknown = null;
 
     failError: unknown = null;
@@ -409,6 +411,10 @@ export class TestExecutionLogStore implements ExecutionLogStore {
         request: ClaimExecutionRequest<TOperation>,
     ): Promise<ClaimExecutionResult<TOperation>> {
         this.claimRequests.push(request as ClaimExecutionRequest<CreateWalletOperation>);
+
+        if (this.claimError !== null) {
+            throw this.claimError;
+        }
 
         return this.claimResult as ClaimExecutionResult<TOperation>;
     }

@@ -1,3 +1,4 @@
+import type { ExecutionError } from '@event-driven-platform/execution';
 import type { InProgressExecutionLogEntry } from '@event-driven-platform/execution-log';
 import type { AnyOperation } from '@event-driven-platform/operation';
 
@@ -6,7 +7,7 @@ import type { RunnerExecution } from '../runner/runner-execution.js';
 export interface FailedHandlerAttempt<TOperation extends AnyOperation> {
     readonly type: 'failed';
     readonly entry: InProgressExecutionLogEntry<TOperation>;
-    readonly error: unknown;
+    readonly error: ExecutionError;
     readonly failureRecorded: boolean;
 }
 
@@ -16,5 +17,4 @@ export interface CompletedHandlerAttempt<TOperation extends AnyOperation> {
 }
 
 export type HandlerAttemptOutcome<TOperation extends AnyOperation> =
-    | FailedHandlerAttempt<TOperation>
-    | CompletedHandlerAttempt<TOperation>;
+    FailedHandlerAttempt<TOperation> | CompletedHandlerAttempt<TOperation>;

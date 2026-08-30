@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ExecutionAttemptId, ExecutionLeaseVersion } from '@event-driven-platform/execution';
+import {
+    ExecutionError,
+    type ExecutionAttemptId,
+    type ExecutionLeaseVersion,
+} from '@event-driven-platform/execution';
 import type { InProgressExecutionLogEntry } from '@event-driven-platform/execution-log';
 import type {
     ClaimExecutionRequest,
@@ -150,27 +154,33 @@ class RecordingRetryDelay implements RetryDelay {
 }
 
 function retryableError(code = 'provider-unavailable') {
-    return {
-        executionFailure: {
-            code,
-            message: 'Provider unavailable.',
-            classification: 'unavailable',
-            retry: 'current-execution',
-            retryable: true,
-        },
-    };
+    return new ExecutionError({
+        code,
+        message: 'Provider unavailable.',
+        classification: 'unavailable',
+        retry: 'current-execution',
+        retryable: true,
+    });
 }
 
 function nonRetryableError() {
-    return {
-        executionFailure: {
-            code: 'invalid-provider-response',
-            message: 'Provider response is invalid.',
-            classification: 'internal',
-            retry: 'never',
-            retryable: false,
-        },
-    };
+    return new ExecutionError({
+        code: 'invalid-provider-response',
+        message: 'Provider response is invalid.',
+        classification: 'internal',
+        retry: 'never',
+        retryable: false,
+    });
+}
+
+function callerRetryError() {
+    return new ExecutionError({
+        code: 'provider-busy',
+        message: 'The caller may try again later.',
+        classification: 'unavailable',
+        retry: 'caller',
+        retryable: false,
+    });
 }
 
 interface RetryTestKit {
@@ -220,23 +230,19 @@ function createRetryTestKit(options?: {
         },
     };
 
-    const guardEvaluator: GuardEvaluator =
-        options?.guardEvaluator ??
-        {
-            async evaluate(): Promise<boolean> {
-                guardCalls.count += 1;
-                return true;
-            },
-        };
+    const guardEvaluator: GuardEvaluator = options?.guardEvaluator ?? {
+        async evaluate(): Promise<boolean> {
+            guardCalls.count += 1;
+            return true;
+        },
+    };
 
-    const rateLimiter: RateLimiter =
-        options?.rateLimiter ??
-        {
-            async consume() {
-                rateLimitCalls.count += 1;
-                return { type: 'allowed' as const };
-            },
-        };
+    const rateLimiter: RateLimiter = options?.rateLimiter ?? {
+        async consume() {
+            rateLimitCalls.count += 1;
+            return { type: 'allowed' as const };
+        },
+    };
 
     const runner = createRunner({
         dependencies: {
@@ -314,6 +320,7 @@ describe('DefaultRunner retry orchestration', () => {
         expect(kit.store.claimRequests[1]?.executionId).toBe(executionId);
         expect(kit.store.failRequests).toHaveLength(1);
         expect(kit.store.failRequests[0]?.attemptId).toBe('attempt-1');
+        expect(kit.store.failRequests[0]?.failure).toBe(firstError.executionFailure);
         expect(kit.store.completeRequests[0]?.attemptId).toBe('attempt-2');
     });
 
@@ -339,7 +346,7 @@ describe('DefaultRunner retry orchestration', () => {
         expect(kit.store.failRequests).toHaveLength(2);
     });
 
-    it('does not retry non-retryable failures', async () => {
+    it('does not retry failures whose canonical retry owner is never', async () => {
         const kit = createRetryTestKit();
         const errorValue = nonRetryableError();
 
@@ -347,6 +354,34 @@ describe('DefaultRunner retry orchestration', () => {
         kit.handler.outcomes = [{ type: 'error', error: errorValue }];
 
         const error = await captureError(() => kit.runner.execute(retryCommand(3)));
+
+        expect(error).toBe(errorValue);
+        expect(kit.handler.invocationCount).toBe(1);
+        expect(kit.store.claimRequests).toHaveLength(1);
+    });
+
+    it('does not consume a Command retry budget owned by the caller', async () => {
+        const kit = createRetryTestKit();
+        const errorValue = callerRetryError();
+
+        kit.store.claimResults = [{ type: 'claimed', entry: claimedAttempt(1) }];
+        kit.handler.outcomes = [{ type: 'error', error: errorValue }];
+
+        const error = await captureError(() => kit.runner.execute(retryCommand(3)));
+
+        expect(error).toBe(errorValue);
+        expect(kit.handler.invocationCount).toBe(1);
+        expect(kit.store.claimRequests).toHaveLength(1);
+    });
+
+    it('does not retry a current-execution failure without Command retry policy', async () => {
+        const kit = createRetryTestKit();
+        const errorValue = retryableError();
+
+        kit.store.claimResults = [{ type: 'claimed', entry: claimedAttempt(1) }];
+        kit.handler.outcomes = [{ type: 'error', error: errorValue }];
+
+        const error = await captureError(() => kit.runner.execute(command));
 
         expect(error).toBe(errorValue);
         expect(kit.handler.invocationCount).toBe(1);
@@ -460,7 +495,7 @@ describe('DefaultRunner retry orchestration', () => {
 
         expect(result).toBe(successResult);
         expect(kit.store.failRequests[0]?.status).toBe('timed-out');
-        expect(kit.store.failRequests[0]?.failure.retryable).toBe(true);
+        expect(kit.store.failRequests[0]?.failure.retry).toBe('current-execution');
         expect(kit.store.completeRequests[0]?.attemptId).toBe('attempt-2');
     });
 });

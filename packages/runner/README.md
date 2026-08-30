@@ -31,7 +31,18 @@ Operations and handlers must not reproduce or bypass these responsibilities.
 
 Runner exposes orchestration-specific ports for `GuardEvaluator`, `RateLimiter`, `ExecutionTimeout`, and `RetryDelay`. `DefaultExecutionTimeout` and `DefaultRetryDelay` are provided when the defaults are suitable.
 
-The exported typed errors allow callers to distinguish execution conflicts, policy rejection, timeout, unavailable policy infrastructure, and rejected state transitions without parsing error messages.
+All terminal failures thrown by `Runner.execute()` and `Runner.executeDetailed()` are canonical `ExecutionError` instances from `@event-driven-platform/execution`. Runner's exported typed errors extend that class, so callers can distinguish execution conflicts, policy rejection, timeout, unavailable policy infrastructure, and rejected state transitions while making machine decisions from `error.executionFailure` instead of parsing messages.
+
+Unknown Handler, persistence, policy, and runtime errors are normalized to an internal canonical failure. When the original value is an `Error`, it remains available as `cause`; only the bounded serializable failure descriptor is written to the execution log, never its cause or stack.
+
+Runner schedules another attempt only when all of the following hold:
+
+- the canonical descriptor has `retry: 'current-execution'`;
+- the Command configures `options.retry`;
+- the failed attempt was durably recorded;
+- `maxAttempts` has not been exhausted.
+
+`retry: 'caller'` never consumes Runner's same-execution retry loop. Successful and business-rejected `OperationResult` values remain results and are not converted into errors.
 
 ## Composition
 
