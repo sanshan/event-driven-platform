@@ -339,7 +339,13 @@ describe('DefaultReader load and recovery verification', () => {
         const query = queryFor('recovery', localCache, redisReader, redisWriter);
 
         const failedBurst = Array.from({ length: 25 }, () => reader.execute(query));
-        await expect(Promise.all(failedBurst)).rejects.toThrow('source unavailable');
+        await expect(Promise.all(failedBurst)).rejects.toMatchObject({
+            cause: { message: 'source unavailable' },
+            executionFailure: {
+                code: 'unexpected-execution-error',
+                classification: 'internal',
+            },
+        });
 
         fail = false;
         await expect(reader.execute(query)).resolves.toEqual({ id: 'recovery', balance: 7 });
