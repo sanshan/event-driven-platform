@@ -33,12 +33,14 @@ Runner exposes orchestration-specific ports for `GuardEvaluator`, `RateLimiter`,
 
 Every typed error Runner throws extends `ExecutionFailureError` (from `@event-driven-platform/execution`), so callers can catch all of them with one `instanceof ExecutionFailureError` check and branch on `executionFailure.code` instead of parsing `message`:
 
-- `ExecutionGuardRejectedError` — a configured guard rejected execution;
-- `ExecutionRateLimitRejectedError` — a configured rate limit rejected execution;
-- `ExecutionTimedOutError` — a handler attempt exceeded its configured timeout (the only Runner failure that is `retryable: true` by default);
-- `ExecutionPolicyUnavailableError` — a guard or rate limit is configured but its evaluator/limiter dependency was not supplied (`policy: 'guard' | 'rate-limit'`);
-- `ExecutionClaimRejectedError` — claiming the execution was rejected because another attempt already owns it, or because the execution conflicts with a different Intent (`reason: 'already-in-progress' | 'intent-conflict'`);
-- `ExecutionTransitionRejectedError` — the execution log store rejected a `complete`/`fail` transition (execution not found, not in progress, or a lease conflict).
+- `ExecutionGuardRejectedError` — a configured guard rejected execution (`retryable: false`);
+- `ExecutionRateLimitRejectedError` — a configured rate limit rejected execution (`retryable: false`);
+- `ExecutionTimedOutError` — a handler attempt exceeded its configured timeout (`retryable: true`);
+- `ExecutionPolicyUnavailableError` — a guard or rate limit is configured but its evaluator/limiter dependency was not supplied (`policy: 'guard' | 'rate-limit'`, `retryable: false`);
+- `ExecutionClaimRejectedError` — claiming the execution was rejected because another attempt already owns it (`reason: 'already-in-progress'`, `retryable: true` — the owning attempt is expected to finish or its lease to expire) or because the execution conflicts with a different Intent (`reason: 'intent-conflict'`, `retryable: false` — a structural mismatch that retrying cannot resolve);
+- `ExecutionTransitionRejectedError` — the execution log store rejected a `complete`/`fail` transition (execution not found, not in progress, or a lease conflict; `retryable: false`).
+
+`retryable` here only classifies the failure; whether Runner actually retries an attempt still additionally requires `Command.options.retry` to be configured.
 
 ## Composition
 
