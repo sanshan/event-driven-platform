@@ -258,6 +258,8 @@ describe('DefaultRunner timeout orchestration', () => {
             status: 'timed-out',
             failure: {
                 code: 'execution-timed-out',
+                classification: 'timeout',
+                retry: 'current-execution',
                 retryable: true,
             },
         });

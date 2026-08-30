@@ -12,6 +12,8 @@ export class ExecutionTimedOutError extends Error {
         this.executionFailure = {
             code: 'execution-timed-out',
             message,
+            classification: 'timeout',
+            retry: 'current-execution',
             retryable: true,
         };
     }

@@ -15,6 +15,8 @@ export class ExecutionGuardRejectedError extends Error {
         this.executionFailure = {
             code: guard.rejectWith?.code ?? 'guard-rejected',
             message,
+            classification: 'policy-rejected',
+            retry: 'never',
             retryable: false,
         };
     }

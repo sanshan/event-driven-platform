@@ -186,6 +186,8 @@ describe('ExecutionLogStore', () => {
             failure: {
                 code: 'database-unavailable',
                 message: 'Database is unavailable.',
+                classification: 'unavailable',
+                retry: 'current-execution',
                 retryable: true,
             },
             finishedAt: '2026-07-17T10:00:01.000Z',

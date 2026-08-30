@@ -211,6 +211,8 @@ describe('ExecutionLogEntry', () => {
             failure: {
                 code: 'database-unavailable',
                 message: 'Database is unavailable.',
+                classification: 'unavailable',
+                retry: 'current-execution',
                 retryable: true,
             },
             finishedAt: '2026-07-17T10:00:01.000Z',
@@ -235,6 +237,8 @@ describe('ExecutionLogEntry', () => {
         expect(entry.latestAttempt.failure).toEqual({
             code: 'database-unavailable',
             message: 'Database is unavailable.',
+            classification: 'unavailable',
+            retry: 'current-execution',
             retryable: true,
         });
 
@@ -254,6 +258,8 @@ describe('ExecutionLogEntry', () => {
             failure: {
                 code: 'execution-timeout',
                 message: 'Execution timed out.',
+                classification: 'timeout',
+                retry: 'current-execution',
                 retryable: true,
             },
             finishedAt: '2026-07-17T10:00:30.000Z',
@@ -360,6 +366,8 @@ describe('ExecutionAttempt', () => {
             failure: {
                 code: 'database-unavailable',
                 message: 'Database is unavailable.',
+                classification: 'unavailable',
+                retry: 'current-execution',
                 retryable: true,
             },
             finishedAt: '2026-07-17T10:00:01.000Z',
@@ -381,6 +389,8 @@ describe('ExecutionAttempt', () => {
             failure: {
                 code: 'execution-timeout',
                 message: 'Execution timed out.',
+                classification: 'timeout',
+                retry: 'current-execution',
                 retryable: true,
             },
             finishedAt: '2026-07-17T10:00:30.000Z',
