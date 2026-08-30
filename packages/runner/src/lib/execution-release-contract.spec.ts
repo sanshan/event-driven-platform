@@ -2,7 +2,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { Clock } from '@event-driven-platform/clock';
 import type { CommandOptions } from '@event-driven-platform/command';
-import type { ExecutionIdFactory } from '@event-driven-platform/execution';
+import { ExecutionError, type ExecutionIdFactory } from '@event-driven-platform/execution';
 import type { ExecutionLogStore } from '@event-driven-platform/execution-log-store';
 import type { ExecutionTransaction } from '@event-driven-platform/execution-transaction';
 import type { OperationEventEnvelopeFactory } from '@event-driven-platform/operation-event-envelope-factory';
@@ -13,6 +13,14 @@ import type { OutboxStore } from '@event-driven-platform/outbox-store';
 import {
     DefaultExecutionTimeout,
     DefaultRetryDelay,
+    ExecutionAlreadyInProgressError,
+    ExecutionGuardRejectedError,
+    ExecutionIntentConflictError,
+    ExecutionRateLimitRejectedError,
+    ExecutionTimedOutError,
+    ExecutionTransitionRejectedError,
+    GuardEvaluatorUnavailableError,
+    RateLimiterUnavailableError,
     type ExecutionTimeout,
     type GuardEvaluator,
     type RateLimiter,
@@ -27,12 +35,22 @@ type RetryOption = NonNullable<CommandOptions['retry']>;
 describe('Execution release contract', () => {
     it('keeps Runner composition dependencies available through package-root contracts', () => {
         expectTypeOf<RunnerDependencies['clock']>().toEqualTypeOf<Clock>();
-        expectTypeOf<RunnerDependencies['executionIdFactory']>().toEqualTypeOf<ExecutionIdFactory>();
+        expectTypeOf<
+            RunnerDependencies['executionIdFactory']
+        >().toEqualTypeOf<ExecutionIdFactory>();
         expectTypeOf<RunnerDependencies['executionLogStore']>().toEqualTypeOf<ExecutionLogStore>();
-        expectTypeOf<RunnerDependencies['executionTransaction']>().toEqualTypeOf<ExecutionTransaction>();
-        expectTypeOf<RunnerDependencies['operationHandlerResolver']>().toEqualTypeOf<OperationHandlerResolver>();
-        expectTypeOf<RunnerDependencies['operationEventEnvelopeFactory']>().toEqualTypeOf<OperationEventEnvelopeFactory>();
-        expectTypeOf<RunnerDependencies['outboxRecordFactory']>().toEqualTypeOf<OutboxRecordFactory>();
+        expectTypeOf<
+            RunnerDependencies['executionTransaction']
+        >().toEqualTypeOf<ExecutionTransaction>();
+        expectTypeOf<
+            RunnerDependencies['operationHandlerResolver']
+        >().toEqualTypeOf<OperationHandlerResolver>();
+        expectTypeOf<
+            RunnerDependencies['operationEventEnvelopeFactory']
+        >().toEqualTypeOf<OperationEventEnvelopeFactory>();
+        expectTypeOf<
+            RunnerDependencies['outboxRecordFactory']
+        >().toEqualTypeOf<OutboxRecordFactory>();
         expectTypeOf<RunnerDependencies['outboxStore']>().toEqualTypeOf<OutboxStore>();
     });
 
@@ -40,9 +58,7 @@ describe('Execution release contract', () => {
         expectTypeOf<RunnerDependencies['guardEvaluator']>().toEqualTypeOf<
             GuardEvaluator | undefined
         >();
-        expectTypeOf<RunnerDependencies['rateLimiter']>().toEqualTypeOf<
-            RateLimiter | undefined
-        >();
+        expectTypeOf<RunnerDependencies['rateLimiter']>().toEqualTypeOf<RateLimiter | undefined>();
         expectTypeOf<RunnerDependencies['executionTimeout']>().toEqualTypeOf<
             ExecutionTimeout | undefined
         >();
@@ -99,5 +115,22 @@ describe('Execution release contract', () => {
             rateLimit,
             retry,
         });
+    });
+
+    it('keeps every public Runner error on the canonical ExecutionError boundary', () => {
+        const publicRunnerErrors = [
+            ExecutionAlreadyInProgressError,
+            ExecutionGuardRejectedError,
+            ExecutionIntentConflictError,
+            ExecutionRateLimitRejectedError,
+            ExecutionTimedOutError,
+            ExecutionTransitionRejectedError,
+            GuardEvaluatorUnavailableError,
+            RateLimiterUnavailableError,
+        ];
+
+        for (const RunnerError of publicRunnerErrors) {
+            expect(RunnerError.prototype).toBeInstanceOf(ExecutionError);
+        }
     });
 });

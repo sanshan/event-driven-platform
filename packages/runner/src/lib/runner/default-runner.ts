@@ -1,4 +1,5 @@
 import type { Command } from '@event-driven-platform/command';
+import { normalizeExecutionError, type ExecutionError } from '@event-driven-platform/execution';
 import type { InProgressExecutionLogEntry } from '@event-driven-platform/execution-log';
 import type {
     CompleteExecutionResult,
@@ -20,7 +21,6 @@ import {
 
 import type { HandlerAttemptOutcome } from '../attempt/handler-attempt-outcome.js';
 import type { ResolvedOperationHandler } from '../attempt/resolved-operation-handler.js';
-import { normalizeExecutionFailure } from '../failure/normalize-execution-failure.js';
 import { ExecutionGuardRejectedError } from '../guard/execution-guard-rejected.error.js';
 import { GuardEvaluatorUnavailableError } from '../guard/guard-evaluator-unavailable.error.js';
 import { buildRateLimitBucketKey } from '../rate-limit/build-rate-limit-bucket-key.js';
@@ -69,44 +69,48 @@ export class DefaultRunner implements Runner {
     async executeDetailed<TOperation extends AnyOperation>(
         command: Command<TOperation>,
     ): Promise<RunnerExecution<TOperation>> {
-        const context = this.createObservationContext(command);
+        try {
+            const context = this.createObservationContext(command);
 
-        this.observer.observe({ type: 'execution.requested', context });
+            this.observer.observe({ type: 'execution.requested', context });
 
-        const executionId = this.dependencies.executionIdFactory.create(
-            command.operation.intent.id,
-        );
+            const executionId = this.dependencies.executionIdFactory.create(
+                command.operation.intent.id,
+            );
 
-        const claim = await this.claimExecution(command, executionId);
+            const claim = await this.claimExecution(command, executionId);
 
-        switch (claim.type) {
-            case 'completed':
-                this.observer.observe({ type: 'idempotency.hit', context });
+            switch (claim.type) {
+                case 'completed':
+                    this.observer.observe({ type: 'idempotency.hit', context });
 
-                return {
-                    executionId: claim.entry.executionId,
-                    resultSource: 'stored',
-                    result: claim.entry.result,
-                };
+                    return {
+                        executionId: claim.entry.executionId,
+                        resultSource: 'stored',
+                        result: claim.entry.result,
+                    };
 
-            case 'already-in-progress':
-                this.observer.observe({
-                    type: 'claim.rejected',
-                    context,
-                    reason: 'already-in-progress',
-                });
-                throw new ExecutionAlreadyInProgressError(claim.entry.executionId);
+                case 'already-in-progress':
+                    this.observer.observe({
+                        type: 'claim.rejected',
+                        context,
+                        reason: 'already-in-progress',
+                    });
+                    throw new ExecutionAlreadyInProgressError(claim.entry.executionId);
 
-            case 'intent-conflict':
-                this.observer.observe({
-                    type: 'claim.rejected',
-                    context,
-                    reason: 'intent-conflict',
-                });
-                throw new ExecutionIntentConflictError(claim.entry.executionId);
+                case 'intent-conflict':
+                    this.observer.observe({
+                        type: 'claim.rejected',
+                        context,
+                        reason: 'intent-conflict',
+                    });
+                    throw new ExecutionIntentConflictError(claim.entry.executionId);
 
-            case 'claimed':
-                return this.executeObservedClaimed(command, claim.entry, context);
+                case 'claimed':
+                    return this.executeObservedClaimed(command, claim.entry, context);
+            }
+        } catch (error: unknown) {
+            throw normalizeExecutionError(error);
         }
     }
 
@@ -131,14 +135,16 @@ export class DefaultRunner implements Runner {
 
             return execution;
         } catch (error: unknown) {
+            const executionError = normalizeExecutionError(error);
+
             this.observer.observe({
                 type: 'execution.completed',
                 context,
-                outcome: error instanceof ExecutionTimedOutError ? 'timed-out' : 'error',
+                outcome: executionError instanceof ExecutionTimedOutError ? 'timed-out' : 'error',
                 durationMs: this.durationSince(startedAt),
             });
 
-            throw error;
+            throw executionError;
         }
     }
 
@@ -167,6 +173,8 @@ export class DefaultRunner implements Runner {
             await this.evaluateGuards(command);
             await this.enforceRateLimit(command);
         } catch (error: unknown) {
+            const executionError = normalizeExecutionError(error);
+
             if (error instanceof ExecutionGuardRejectedError) {
                 this.observer.observe({ type: 'guard.rejected', context });
             }
@@ -175,9 +183,9 @@ export class DefaultRunner implements Runner {
                 this.observer.observe({ type: 'rate-limit.rejected', context });
             }
 
-            await this.recordExecutionFailure(entry, leaseReference, error, 'failed');
+            await this.recordExecutionFailure(entry, leaseReference, executionError, 'failed');
 
-            throw error;
+            throw executionError;
         }
 
         let handler: ResolvedOperationHandler<TOperation>;
@@ -185,9 +193,11 @@ export class DefaultRunner implements Runner {
         try {
             handler = this.dependencies.operationHandlerResolver.resolve(command.operation);
         } catch (error: unknown) {
-            await this.recordExecutionFailure(entry, leaseReference, error, 'failed');
+            const executionError = normalizeExecutionError(error);
 
-            throw error;
+            await this.recordExecutionFailure(entry, leaseReference, executionError, 'failed');
+
+            throw executionError;
         }
 
         return this.executeHandlerAttempts(command, handler, entry, context);
@@ -218,7 +228,9 @@ export class DefaultRunner implements Runner {
                     type: 'attempt.completed',
                     context,
                     attempt: handlerAttemptNumber,
-                    outcome: isOperationRejection(outcome.execution.result) ? 'rejected' : 'success',
+                    outcome: isOperationRejection(outcome.execution.result)
+                        ? 'rejected'
+                        : 'success',
                     retryable: false,
                     durationMs: this.durationSince(attemptStartedAt),
                 });
@@ -227,11 +239,12 @@ export class DefaultRunner implements Runner {
             }
 
             const retry = command.options?.retry;
-            const failure = normalizeExecutionFailure(outcome.error);
+            const failure = outcome.error.executionFailure;
+            const retryable = failure.retry === 'current-execution';
             const canRetry =
                 outcome.failureRecorded &&
                 retry !== undefined &&
-                failure.retryable &&
+                retryable &&
                 handlerAttemptNumber < retry.maxAttempts;
 
             this.observer.observe({
@@ -239,7 +252,7 @@ export class DefaultRunner implements Runner {
                 context,
                 attempt: handlerAttemptNumber,
                 outcome: outcome.error instanceof ExecutionTimedOutError ? 'timed-out' : 'error',
-                retryable: failure.retryable,
+                retryable,
                 durationMs: this.durationSince(attemptStartedAt),
             });
 
@@ -347,17 +360,18 @@ export class DefaultRunner implements Runner {
                 },
             };
         } catch (error: unknown) {
+            const executionError = normalizeExecutionError(error);
             const failureRecorded = await this.recordExecutionFailure(
                 entry,
                 leaseReference,
-                error,
-                error instanceof ExecutionTimedOutError ? 'timed-out' : 'failed',
+                executionError,
+                executionError instanceof ExecutionTimedOutError ? 'timed-out' : 'failed',
             );
 
             return {
                 type: 'failed',
                 entry,
-                error,
+                error: executionError,
                 failureRecorded,
             };
         }
@@ -471,7 +485,7 @@ export class DefaultRunner implements Runner {
     private async recordExecutionFailure<TOperation extends AnyOperation>(
         entry: InProgressExecutionLogEntry<TOperation>,
         lease: ExecutionLeaseReference,
-        error: unknown,
+        error: ExecutionError,
         status: 'failed' | 'timed-out',
     ): Promise<boolean> {
         try {
@@ -481,7 +495,7 @@ export class DefaultRunner implements Runner {
                     attemptId: entry.latestAttempt.attemptId,
                     lease,
                     status,
-                    failure: normalizeExecutionFailure(error),
+                    failure: error.executionFailure,
                     finishedAt: this.dependencies.clock.now(),
                 });
 

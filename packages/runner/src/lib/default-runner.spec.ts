@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import { ExecutionError } from '@event-driven-platform/execution';
 import type { CompletedExecutionLogEntry } from '@event-driven-platform/execution-log';
 import type { ExecutionLeaseReference } from '@event-driven-platform/execution-log-store';
 
@@ -29,6 +30,26 @@ async function captureError(work: () => Promise<unknown>): Promise<unknown> {
     } catch (error: unknown) {
         return error;
     }
+}
+
+function expectUnexpectedExecutionError(
+    error: unknown,
+    cause: Error,
+): asserts error is ExecutionError {
+    expect(error).toBeInstanceOf(ExecutionError);
+
+    if (!(error instanceof ExecutionError)) {
+        throw new Error('Expected ExecutionError.');
+    }
+
+    expect(error.cause).toBe(cause);
+    expect(error.executionFailure).toEqual({
+        code: 'unexpected-execution-error',
+        message: 'An unexpected execution error occurred.',
+        classification: 'internal',
+        retry: 'never',
+        retryable: false,
+    });
 }
 
 function createCompletedEntry(): CompletedExecutionLogEntry<CreateWalletOperation> {
@@ -64,6 +85,13 @@ function expectTransitionRejectedError(
     expect(error.transition).toBe(expectedTransition);
 
     expect(error.rejection.type).toBe(expectedRejectionType);
+    expect(error.executionFailure).toEqual({
+        code: 'execution-transition-rejected',
+        message: `Execution "${executionId}" ${expectedTransition} transition was rejected with "${expectedRejectionType}".`,
+        classification: 'conflict',
+        retry: 'never',
+        retryable: false,
+    });
 }
 
 describe('DefaultRunner', () => {
@@ -112,6 +140,14 @@ describe('DefaultRunner', () => {
         const error = await captureError(() => kit.runner.execute(command));
 
         expect(error).toBeInstanceOf(ExecutionAlreadyInProgressError);
+        expect(error).toMatchObject({
+            executionFailure: {
+                code: 'execution-already-in-progress',
+                classification: 'conflict',
+                retry: 'caller',
+                retryable: false,
+            },
+        });
 
         expect(kit.handler.invocationCount).toBe(0);
 
@@ -131,6 +167,14 @@ describe('DefaultRunner', () => {
         const error = await captureError(() => kit.runner.execute(command));
 
         expect(error).toBeInstanceOf(ExecutionIntentConflictError);
+        expect(error).toMatchObject({
+            executionFailure: {
+                code: 'execution-intent-conflict',
+                classification: 'conflict',
+                retry: 'never',
+                retryable: false,
+            },
+        });
 
         expect(kit.handler.invocationCount).toBe(0);
 
@@ -225,7 +269,7 @@ describe('DefaultRunner', () => {
 
         const error = await captureError(() => kit.runner.execute(command));
 
-        expect(error).toBe(handlerError);
+        expectUnexpectedExecutionError(error, handlerError);
 
         expect(kit.committedWallets).toEqual([]);
         expect(kit.outboxStore.records).toEqual([]);
@@ -236,11 +280,13 @@ describe('DefaultRunner', () => {
 
         expect(kit.executionLogStore.failedRequests[0]?.failure).toEqual({
             code: 'unexpected-execution-error',
-            message: 'Unexpected persistence failure.',
+            message: 'An unexpected execution error occurred.',
             classification: 'internal',
             retry: 'never',
             retryable: false,
         });
+        expect(kit.executionLogStore.failedRequests[0]?.failure).not.toHaveProperty('cause');
+        expect(kit.executionLogStore.failedRequests[0]?.failure).not.toHaveProperty('stack');
 
         expect(kit.executionTransaction.outcomes).toEqual(['throw', 'commit']);
     });
@@ -254,7 +300,7 @@ describe('DefaultRunner', () => {
 
         const error = await captureError(() => kit.runner.execute(command));
 
-        expect(error).toBe(outboxError);
+        expectUnexpectedExecutionError(error, outboxError);
 
         expect(kit.committedWallets).toEqual([]);
 
@@ -269,7 +315,7 @@ describe('DefaultRunner', () => {
         expect(kit.executionTransaction.outcomes).toEqual(['throw', 'commit']);
     });
 
-    it('does not replace the original Handler error when failure persistence throws', async () => {
+    it('preserves the normalized Handler failure when failure persistence throws', async () => {
         const kit = createRunnerTestKit();
 
         const handlerError = new Error('Handler failed.');
@@ -282,7 +328,7 @@ describe('DefaultRunner', () => {
 
         const error = await captureError(() => kit.runner.execute(command));
 
-        expect(error).toBe(handlerError);
+        expectUnexpectedExecutionError(error, handlerError);
 
         expect(kit.executionLogStore.failAttempts).toHaveLength(1);
 
@@ -354,7 +400,7 @@ describe('DefaultRunner', () => {
 
         const error = await captureError(() => kit.runner.execute(command));
 
-        expect(error).toBe(handlerError);
+        expectUnexpectedExecutionError(error, handlerError);
 
         expect(kit.executionLogStore.failAttempts).toEqual([
             {
@@ -367,7 +413,7 @@ describe('DefaultRunner', () => {
                 status: 'failed',
                 failure: {
                     code: 'unexpected-execution-error',
-                    message: 'Persistence failed.',
+                    message: 'An unexpected execution error occurred.',
                     classification: 'internal',
                     retry: 'never',
                     retryable: false,
@@ -505,7 +551,7 @@ describe('DefaultRunner', () => {
         expect(kit.executionTransaction.outcomes).toEqual(['rollback', 'throw', 'throw']);
     });
 
-    it('preserves the original Handler error when failure transition loses the lease', async () => {
+    it('preserves the normalized Handler failure when failure transition loses the lease', async () => {
         const kit = createRunnerTestKit();
 
         const handlerError = new Error('Handler persistence failed.');
@@ -519,12 +565,25 @@ describe('DefaultRunner', () => {
 
         const error = await captureError(() => kit.runner.execute(command));
 
-        expect(error).toBe(handlerError);
+        expectUnexpectedExecutionError(error, handlerError);
 
         expect(kit.executionLogStore.failAttempts).toHaveLength(1);
 
         expect(kit.executionLogStore.failedRequests).toEqual([]);
 
         expect(kit.executionTransaction.outcomes).toEqual(['throw', 'throw']);
+    });
+
+    it('normalizes an unknown initial claim failure at the Runner boundary', async () => {
+        const kit = createRunnerTestKit();
+        const claimError = new Error('Execution store unavailable.');
+
+        kit.executionLogStore.claimError = claimError;
+
+        const error = await captureError(() => kit.runner.execute(command));
+
+        expectUnexpectedExecutionError(error, claimError);
+        expect(kit.handlerResolver.invocationCount).toBe(0);
+        expect(kit.executionLogStore.failAttempts).toEqual([]);
     });
 });

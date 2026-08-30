@@ -1,20 +1,15 @@
-import type { ExecutionFailure } from '@event-driven-platform/execution';
+import { ExecutionError } from '@event-driven-platform/execution';
 
-export class RateLimiterUnavailableError extends Error {
-    readonly executionFailure: ExecutionFailure;
-
+export class RateLimiterUnavailableError extends ExecutionError {
     constructor() {
         const message = 'Rate limiting is configured but no RateLimiter is available.';
 
-        super(message);
-
-        this.name = 'RateLimiterUnavailableError';
-        this.executionFailure = {
+        super({
             code: 'rate-limiter-unavailable',
             message,
             classification: 'invalid-configuration',
             retry: 'never',
             retryable: false,
-        };
+        });
     }
 }

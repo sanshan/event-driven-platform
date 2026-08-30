@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CommandOptions } from '@event-driven-platform/command';
-import type { ExecutionIdFactory } from '@event-driven-platform/execution';
+import { ExecutionError, type ExecutionIdFactory } from '@event-driven-platform/execution';
 import type { AnyExecutionLogEntry } from '@event-driven-platform/execution-log';
 import type {
     ClaimExecutionRequest,
@@ -59,10 +59,16 @@ class RecordingGuardEvaluator implements GuardEvaluator {
 
     results: boolean[] = [];
 
+    error: unknown = null;
+
     async evaluate<TOperation extends AnyOperation>(
         request: GuardEvaluationRequest<TOperation>,
     ): Promise<boolean> {
         this.requests.push(request as GuardEvaluationRequest<CreateWalletOperation>);
+
+        if (this.error !== null) {
+            throw this.error;
+        }
 
         return this.results.shift() ?? true;
     }
@@ -274,5 +280,26 @@ describe('DefaultRunner guard orchestration', () => {
         expect(kit.resolverInvocations.count).toBe(0);
         expect(kit.handlerInvocations.count).toBe(0);
         expect(kit.executionLogStore.failedRequests).toHaveLength(1);
+    });
+
+    it('normalizes and records an unknown GuardEvaluator failure', async () => {
+        const kit = createGuardRunnerTestKit();
+        const evaluatorError = new Error('Feature provider unavailable.');
+
+        kit.evaluator.error = evaluatorError;
+
+        const error = await captureError(() => kit.runner.execute(guardedCommand([firstGuard])));
+
+        expect(error).toBeInstanceOf(ExecutionError);
+        expect((error as ExecutionError).cause).toBe(evaluatorError);
+        expect(kit.executionLogStore.failedRequests[0]?.failure).toEqual({
+            code: 'unexpected-execution-error',
+            message: 'An unexpected execution error occurred.',
+            classification: 'internal',
+            retry: 'never',
+            retryable: false,
+        });
+        expect(kit.resolverInvocations.count).toBe(0);
+        expect(kit.handlerInvocations.count).toBe(0);
     });
 });
