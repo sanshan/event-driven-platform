@@ -143,12 +143,7 @@ export class CachedReadExecutor {
             // Retry wraps only this source call, not the surrounding distributed-flight
             // machinery (claim/wait/lease-renewal) — those failures (e.g. ownership-lost)
             // already have their own recovery path and must not be double-retried here.
-            executeSource: () =>
-                executeReadWithRetry(
-                    () => this.dependencies.sourceExecutor.execute(query.read, context),
-                    query.options?.retry,
-                    this.dependencies.retryDelay,
-                ),
+            executeSource: () => this.executeSourceWithRetry(query, context),
             publishSourceResult: (result) =>
                 this.cacheTraversal.populate(cachePlan.levels, scopedKey, result, context),
         });
@@ -187,12 +182,24 @@ export class CachedReadExecutor {
         scopedKey: TenantScopedReadCacheKey,
         context: ReaderObservationContext,
     ): Promise<ReadResultOf<TRead>> {
-        const sourceResult = await executeReadWithRetry(
-            () => this.dependencies.sourceExecutor.execute(query.read, context),
-            query.options?.retry,
-            this.dependencies.retryDelay,
-        );
+        const sourceResult = await this.executeSourceWithRetry(query, context);
         await this.cacheTraversal.populate(cachePlan.levels, scopedKey, sourceResult, context);
         return sourceResult;
+    }
+
+    private executeSourceWithRetry<TRead extends AnyRead>(
+        query: Query<TRead>,
+        context: ReaderObservationContext,
+    ): Promise<ReadResultOf<TRead>> {
+        return executeReadWithRetry(
+            () => this.dependencies.sourceExecutor.execute(query.read, context),
+            query.options?.retry,
+            context,
+            {
+                retryDelay: this.dependencies.retryDelay,
+                observer: this.dependencies.observer,
+                clock: this.dependencies.clock,
+            },
+        );
     }
 }

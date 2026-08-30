@@ -74,7 +74,8 @@ export class DefaultReader implements Reader {
                       executeReadWithRetry(
                           () => this.sourceExecutor.execute(query.read, context),
                           query.options?.retry,
-                          this.retryDelay,
+                          context,
+                          { retryDelay: this.retryDelay, observer: this.observer, clock: this.clock },
                       )
                 : () => this.cachedExecutor.execute(query, cachePlan, context);
 

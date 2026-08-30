@@ -1,10 +1,18 @@
+import type { Clock } from '@event-driven-platform/clock';
 import { normalizeExecutionFailure } from '@event-driven-platform/execution';
+import type { ReaderObservationContext, ReaderObserver } from '@event-driven-platform/observability';
 import type { QueryOptions } from '@event-driven-platform/query';
 
 import { calculateRetryDelay } from './calculate-retry-delay.js';
 import type { RetryDelay } from './retry-delay.js';
 
 type RetryOptions = NonNullable<QueryOptions['retry']>;
+
+export interface ExecuteReadWithRetryDependencies {
+    readonly retryDelay: RetryDelay;
+    readonly observer: ReaderObserver;
+    readonly clock: Clock;
+}
 
 /**
  * Retries only the wrapped work — the source-executor invocation.
@@ -27,15 +35,41 @@ type RetryOptions = NonNullable<QueryOptions['retry']>;
 export async function executeReadWithRetry<TResult>(
     work: () => Promise<TResult>,
     retry: RetryOptions | undefined,
-    retryDelay: RetryDelay,
+    context: ReaderObservationContext,
+    dependencies: ExecuteReadWithRetryDependencies,
 ): Promise<TResult> {
     let attempt = 1;
 
     for (;;) {
+        const attemptStartedAt = dependencies.clock.now();
+
+        dependencies.observer.observe({ type: 'read.attempt.started', context, attempt });
+
         try {
-            return await work();
+            const result = await work();
+
+            dependencies.observer.observe({
+                type: 'read.attempt.completed',
+                context,
+                attempt,
+                outcome: 'success',
+                retryable: false,
+                durationMs: durationSince(dependencies.clock, attemptStartedAt),
+            });
+
+            return result;
         } catch (error: unknown) {
             const failure = normalizeExecutionFailure(error);
+
+            dependencies.observer.observe({
+                type: 'read.attempt.completed',
+                context,
+                attempt,
+                outcome: 'error',
+                retryable: failure.retryable,
+                durationMs: durationSince(dependencies.clock, attemptStartedAt),
+            });
+
             const canRetry = retry !== undefined && failure.retryable && attempt < retry.maxAttempts;
 
             if (!canRetry) {
@@ -44,11 +78,22 @@ export async function executeReadWithRetry<TResult>(
 
             const delayMs = calculateRetryDelay(retry.strategy, attempt);
 
+            dependencies.observer.observe({
+                type: 'read.retry.scheduled',
+                context,
+                attempt,
+                delayMs,
+            });
+
             if (delayMs > 0) {
-                await retryDelay.wait(delayMs);
+                await dependencies.retryDelay.wait(delayMs);
             }
 
             attempt += 1;
         }
     }
+}
+
+function durationSince(clock: Clock, startedAt: string): number {
+    return Math.max(0, Date.parse(clock.now()) - Date.parse(startedAt));
 }

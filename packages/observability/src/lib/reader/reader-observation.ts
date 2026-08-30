@@ -45,4 +45,23 @@ export type ReaderObservation =
           readonly context: ReaderObservationContext;
           readonly outcome: 'owner' | 'waiter' | 'unavailable' | 'ownership-lost';
           readonly durationMs: number;
+      }
+    | {
+          readonly type: 'read.attempt.started';
+          readonly context: ReaderObservationContext;
+          readonly attempt: number;
+      }
+    | {
+          readonly type: 'read.attempt.completed';
+          readonly context: ReaderObservationContext;
+          readonly attempt: number;
+          readonly outcome: 'success' | 'error';
+          readonly retryable: boolean;
+          readonly durationMs: number;
+      }
+    | {
+          readonly type: 'read.retry.scheduled';
+          readonly context: ReaderObservationContext;
+          readonly attempt: number;
+          readonly delayMs: number;
       };
