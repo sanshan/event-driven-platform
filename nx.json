@@ -51,7 +51,7 @@
             "automaticFromRef": true
         },
         "git": {
-            "commitMessage": "chore(release): publish"
+            "commitMessage": "chore(release): prepare packages"
         }
     }
 }

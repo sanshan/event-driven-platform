@@ -1,29 +1,33 @@
-name: Publish
+name: Finalize Release
 
 on:
-  workflow_dispatch:
+  pull_request:
+    types:
+      - closed
 
 permissions:
-  contents: read
-  id-token: write
+  contents: write
+
+concurrency:
+  group: finalize-release
+  cancel-in-progress: false
 
 jobs:
-  publish:
-    name: Publish packages
+  finalize:
+    name: Create package tags
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'release/next'
     runs-on: ubuntu-latest
-    environment: npm-production
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
 
-      - name: Require main branch
-        shell: bash
-        run: |
-          test "$GITHUB_REF" = "refs/heads/main"
-
-      - name: Validate prepared release state
+      - name: Validate merged release state
         shell: bash
         run: |
           test -f .github/release-state.json
@@ -53,50 +57,47 @@ jobs:
           NODE
 
           prepared_from="$(node -p "require('./.github/release-state.json').preparedFrom")"
-          release_commit="$(git rev-parse HEAD)"
           release_parent="$(git rev-parse HEAD^1)"
 
           if [[ "$release_parent" != "$prepared_from" ]]; then
-            echo "main no longer matches the prepared release state." >&2
-            echo "Prepare and merge a new release before publishing." >&2
+            echo "main changed after this release was prepared." >&2
+            echo "Revert the stale release merge and prepare a new release." >&2
             exit 1
           fi
 
+      - name: Create package tags
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          release_commit="$(git rev-parse HEAD)"
           mapfile -t release_tags < <(
             node -e "for (const tag of require('./.github/release-state.json').tags) console.log(tag)"
           )
+          tag_refs=()
 
           for tag in "${release_tags[@]}"; do
             git check-ref-format "refs/tags/$tag"
-            tag_commit="$(
+            existing_commit="$(
               git rev-parse --quiet --verify "refs/tags/$tag^{commit}" 2>/dev/null || true
             )"
 
-            if [[ "$tag_commit" != "$release_commit" ]]; then
-              echo "Tag $tag does not point to prepared release commit $release_commit." >&2
-              echo "Rerun Finalize Release before publishing." >&2
+            if [[ -n "$existing_commit" && "$existing_commit" != "$release_commit" ]]; then
+              echo "Tag $tag already points to $existing_commit." >&2
               exit 1
             fi
+
+            if [[ -z "$existing_commit" ]]; then
+              git tag --annotate "$tag" --message "$tag" "$release_commit"
+            fi
+
+            tag_refs+=("refs/tags/$tag")
           done
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.4
+          git push --atomic origin "${tag_refs[@]}"
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.23.2
-          registry-url: https://registry.npmjs.org/
-
-      - name: Install npm with trusted-publishing support
-        run: npm install --global npm@11.19.0
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Build packages
-        run: pnpm nx run-many -t build --projects='packages/*'
-
-      - name: Publish packages
-        run: pnpm nx release publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          {
+            echo "Created package tags on $release_commit:"
+            printf -- '- `%s`\n' "${release_tags[@]}"
+          } >> "$GITHUB_STEP_SUMMARY"
