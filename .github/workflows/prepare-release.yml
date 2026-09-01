@@ -1,0 +1,169 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
+
+env:
+  RELEASE_BRANCH: release/next
+
+jobs:
+  prepare:
+    name: Prepare release PR
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require main branch
+        shell: bash
+        run: test "$GITHUB_REF" = "refs/heads/main"
+
+      - name: Require no active release PR
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          active_release_prs="$(
+            gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --head "$RELEASE_BRANCH" \
+              --json number \
+              --jq 'length'
+          )"
+
+          if [[ "$active_release_prs" != "0" ]]; then
+            echo "An active release PR already exists for $RELEASE_BRANCH." >&2
+            echo "Merge or close it before preparing another release." >&2
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create release branch
+        id: release-base
+        shell: bash
+        run: |
+          prepared_from="$(git rev-parse HEAD)"
+          echo "sha=$prepared_from" >> "$GITHUB_OUTPUT"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --force-create "$RELEASE_BRANCH" "$prepared_from"
+
+      - name: Preview release
+        run: pnpm nx release --dry-run --skip-publish
+
+      - name: Prepare release with Nx
+        run: pnpm nx release --skip-publish
+
+      - name: Capture Nx release state
+        id: release-state
+        shell: bash
+        env:
+          PREPARED_FROM: ${{ steps.release-base.outputs.sha }}
+        run: |
+          release_commit="$(git rev-parse HEAD)"
+
+          if [[ "$release_commit" = "$PREPARED_FROM" ]]; then
+            if [[ -n "$(git status --porcelain)" ]]; then
+              echo "Nx left uncommitted changes without creating a release commit." >&2
+              exit 1
+            fi
+
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
+            echo "Nx found no releasable changes; no release PR was created." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          mapfile -t release_tags < <(git tag --points-at "$release_commit" --sort=refname)
+
+          if [[ "${#release_tags[@]}" -eq 0 ]]; then
+            echo "Nx created a release commit without package tags." >&2
+            exit 1
+          fi
+
+          RELEASE_TAGS="$(printf '%s\n' "${release_tags[@]}")" node <<'NODE'
+          const { writeFileSync } = require('node:fs');
+
+          const tags = process.env.RELEASE_TAGS.split('\n').filter(Boolean);
+          const state = {
+            schemaVersion: 1,
+            preparedFrom: process.env.PREPARED_FROM,
+            tags,
+          };
+
+          writeFileSync(
+            '.github/release-state.json',
+            `${JSON.stringify(state, null, 2)}\n`,
+          );
+          NODE
+
+          git tag --delete "${release_tags[@]}"
+          git add .github/release-state.json
+          git commit --amend --no-edit
+
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "The prepared release branch is not clean." >&2
+            exit 1
+          fi
+
+          echo "has_release=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "Prepared release tags:"
+            printf -- '- `%s`\n' "${release_tags[@]}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Push release branch
+        if: steps.release-state.outputs.has_release == 'true'
+        shell: bash
+        run: |
+          remote_release_sha="$(
+            git ls-remote --heads origin "refs/heads/$RELEASE_BRANCH" | awk '{print $1}'
+          )"
+
+          if [[ -n "$remote_release_sha" ]]; then
+            git push \
+              --force-with-lease="refs/heads/$RELEASE_BRANCH:$remote_release_sha" \
+              origin \
+              "HEAD:refs/heads/$RELEASE_BRANCH"
+          else
+            git push origin "HEAD:refs/heads/$RELEASE_BRANCH"
+          fi
+
+      - name: Open release PR
+        if: steps.release-state.outputs.has_release == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREPARED_FROM: ${{ steps.release-base.outputs.sha }}
+        run: |
+          body="$(printf \
+            'Nx Release prepared package versions, dependency updates and changelogs from `%s`. Package tags will be created only after this PR is merged.' \
+            "$PREPARED_FROM")"
+
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head "$RELEASE_BRANCH" \
+            --title "chore(release): prepare packages" \
+            --body "$body"
