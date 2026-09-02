@@ -1,3 +1,9 @@
+## 0.0.9 (2026-09-02)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/observability to 0.1.0
+
 ## 0.0.8 (2026-08-30)
 
 ### 🚀 Features
