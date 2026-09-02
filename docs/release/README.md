@@ -102,9 +102,12 @@ The workflow:
 4. runs `pnpm nx release --skip-publish` to apply version plans;
 5. records the prepared base SHA and expected package tags in `.github/release-state.json`;
 6. removes the local tags so no release tag exists before review;
-7. pushes `release/next` and opens the release PR automatically.
+7. pushes `release/next` and opens the release PR automatically;
+8. dispatches CI explicitly against the release commit.
 
 When Nx finds no pending version plans, the workflow records a no-op and does not create a PR.
+
+GitHub requires manual approval for ordinary `pull_request` workflow runs created by `GITHUB_TOKEN`. `Prepare Release` therefore uses GitHub's supported `workflow_dispatch` exception to start the same CI workflow against `release/next` without a personal token, custom GitHub App or manual approval. User-created pull requests continue to use the normal `pull_request` trigger.
 
 ## 3. Review and merge the release PR
 
