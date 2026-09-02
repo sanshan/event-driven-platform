@@ -32,6 +32,7 @@ export class DefaultUseCaseExecutor implements UseCaseExecutor {
         request: UseCaseExecutionRequest<TInput, TResult, TContext>,
     ): Promise<TResult> {
         const context: UseCaseExecutorObservationContext = {
+            useCase: request.useCase.name,
             intentId: request.context.intent.id,
             correlationId: request.context.correlationId,
         };
@@ -62,7 +63,11 @@ export class DefaultUseCaseExecutor implements UseCaseExecutor {
             case 'already-in-progress':
                 throw new UseCaseClaimRejectedError(executionId, 'already-in-progress');
             case 'intent-conflict':
-                throw new UseCaseClaimRejectedError(executionId, 'intent-conflict', claim.existingIntentId);
+                throw new UseCaseClaimRejectedError(
+                    executionId,
+                    'intent-conflict',
+                    claim.existingIntentId,
+                );
             case 'claimed':
                 break;
         }

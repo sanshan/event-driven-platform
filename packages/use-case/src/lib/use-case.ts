@@ -1,9 +1,7 @@
 import type { UseCaseContext } from './use-case-context.js';
 
-export interface UseCase<
-    TInput,
-    TResult,
-    TContext extends UseCaseContext = UseCaseContext,
-> {
+export interface UseCase<TInput, TResult, TContext extends UseCaseContext = UseCaseContext> {
+    readonly name: string;
+
     execute(input: TInput, context: TContext): Promise<TResult>;
 }

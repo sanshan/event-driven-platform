@@ -16,6 +16,7 @@ import { DefaultUseCaseExecutor } from './default-use-case-executor.js';
 
 const executionId = 'execution-1' as ExecutionId;
 const leaseOwnerId = 'owner-1' as ExecutionLeaseOwnerId;
+const useCaseName = 'TestUseCase';
 const intent = { id: 'intent-1' } as Intent;
 const context: UseCaseContext = { intent, correlationId: 'c-1' };
 const lease = {
@@ -46,8 +47,14 @@ function createStore(
 ): UseCaseExecutionStore {
     return {
         claim: vi.fn(async () => claimResult) as UseCaseExecutionStore['claim'],
-        complete: vi.fn(async () => ({ type: 'completed', completedAt: clock.now() })) as UseCaseExecutionStore['complete'],
-        release: vi.fn(async () => ({ type: 'released', releasedAt: clock.now() })) as UseCaseExecutionStore['release'],
+        complete: vi.fn(async () => ({
+            type: 'completed',
+            completedAt: clock.now(),
+        })) as UseCaseExecutionStore['complete'],
+        release: vi.fn(async () => ({
+            type: 'released',
+            releasedAt: clock.now(),
+        })) as UseCaseExecutionStore['release'],
     };
 }
 
@@ -55,7 +62,7 @@ describe('DefaultUseCaseExecutor', () => {
     it('claims a new invocation with its Intent, correlation and fixed lease', async () => {
         const store = createStore({ type: 'claimed', lease });
         await createExecutor(store).execute({
-            useCase: { execute: async () => 'result' },
+            useCase: { name: useCaseName, execute: async () => 'result' },
             input: undefined,
             context,
         });
@@ -72,19 +79,27 @@ describe('DefaultUseCaseExecutor', () => {
     });
 
     it('replays a completed result without executing the UseCase', async () => {
-        const store = createStore({ type: 'completed', result: 'stored-result', completedAt: clock.now() });
-        const useCase: UseCase<string, string> = { execute: vi.fn() };
+        const store = createStore({
+            type: 'completed',
+            result: 'stored-result',
+            completedAt: clock.now(),
+        });
+        const useCase: UseCase<string, string> = { name: useCaseName, execute: vi.fn() };
 
-        await expect(createExecutor(store).execute({ useCase, input: 'input', context })).resolves.toBe('stored-result');
+        await expect(
+            createExecutor(store).execute({ useCase, input: 'input', context }),
+        ).resolves.toBe('stored-result');
         expect(useCase.execute).not.toHaveBeenCalled();
         expect(store.complete).not.toHaveBeenCalled();
     });
 
     it('rejects an active duplicate without executing the UseCase', async () => {
         const store = createStore({ type: 'already-in-progress', lease });
-        const useCase: UseCase<string, string> = { execute: vi.fn() };
+        const useCase: UseCase<string, string> = { name: useCaseName, execute: vi.fn() };
 
-        const error = await captureError(() => createExecutor(store).execute({ useCase, input: 'input', context }));
+        const error = await captureError(() =>
+            createExecutor(store).execute({ useCase, input: 'input', context }),
+        );
 
         expect(error).toBeInstanceOf(UseCaseClaimRejectedError);
         expect((error as UseCaseClaimRejectedError).reason).toBe('already-in-progress');
@@ -93,9 +108,11 @@ describe('DefaultUseCaseExecutor', () => {
 
     it('rejects an Intent conflict without executing the UseCase', async () => {
         const store = createStore({ type: 'intent-conflict', existingIntentId: 'other-intent' });
-        const useCase: UseCase<string, string> = { execute: vi.fn() };
+        const useCase: UseCase<string, string> = { name: useCaseName, execute: vi.fn() };
 
-        const error = await captureError(() => createExecutor(store).execute({ useCase, input: 'input', context }));
+        const error = await captureError(() =>
+            createExecutor(store).execute({ useCase, input: 'input', context }),
+        );
 
         expect(error).toBeInstanceOf(UseCaseClaimRejectedError);
         expect((error as UseCaseClaimRejectedError).reason).toBe('intent-conflict');
@@ -115,31 +132,56 @@ describe('DefaultUseCaseExecutor', () => {
             metadata: { value: 'opaque' },
         };
         const useCase: UseCase<string, string, ConcreteContext> = {
+            name: useCaseName,
             execute: vi.fn(async () => 'result'),
         };
 
-        await expect(createExecutor(store).execute({ useCase, input: 'input', context: concreteContext })).resolves.toBe('result');
+        await expect(
+            createExecutor(store).execute({ useCase, input: 'input', context: concreteContext }),
+        ).resolves.toBe('result');
         expect(useCase.execute).toHaveBeenCalledWith('input', concreteContext);
-        expect(store.complete).toHaveBeenCalledWith({ executionId, lease, result: 'result', completedAt: clock.now() });
+        expect(store.complete).toHaveBeenCalledWith({
+            executionId,
+            lease,
+            result: 'result',
+            completedAt: clock.now(),
+        });
     });
 
     it('does not return success when fenced completion is rejected', async () => {
         const store = createStore({ type: 'claimed', lease });
-        store.complete = vi.fn(async () => ({ type: 'lease-conflict' })) as UseCaseExecutionStore['complete'];
+        store.complete = vi.fn(async () => ({
+            type: 'lease-conflict',
+        })) as UseCaseExecutionStore['complete'];
 
-        await expect(createExecutor(store).execute({ useCase: { execute: async () => 'result' }, input: undefined, context })).rejects.toBeInstanceOf(UseCaseExecutionTransitionError);
+        await expect(
+            createExecutor(store).execute({
+                useCase: { name: useCaseName, execute: async () => 'result' },
+                input: undefined,
+                context,
+            }),
+        ).rejects.toBeInstanceOf(UseCaseExecutionTransitionError);
     });
 
     it('attempts fenced release on UseCase failure and preserves the original error', async () => {
         const store = createStore({ type: 'claimed', lease });
-        store.release = vi.fn(async () => { throw new Error('release failed'); }) as UseCaseExecutionStore['release'];
+        store.release = vi.fn(async () => {
+            throw new Error('release failed');
+        }) as UseCaseExecutionStore['release'];
         const originalError = new Error('use-case failed');
 
-        await expect(createExecutor(store).execute({
-            useCase: { execute: async () => { throw originalError; } },
-            input: undefined,
-            context,
-        })).rejects.toBe(originalError);
+        await expect(
+            createExecutor(store).execute({
+                useCase: {
+                    name: useCaseName,
+                    execute: async () => {
+                        throw originalError;
+                    },
+                },
+                input: undefined,
+                context,
+            }),
+        ).rejects.toBe(originalError);
         expect(store.release).toHaveBeenCalledWith({ executionId, lease, releasedAt: clock.now() });
     });
 });

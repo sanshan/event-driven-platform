@@ -18,6 +18,7 @@ import { DefaultUseCaseExecutor } from './default-use-case-executor.js';
 
 const executionId = 'execution-1' as ExecutionId;
 const leaseOwnerId = 'owner-1' as ExecutionLeaseOwnerId;
+const useCaseName = 'TestUseCase';
 const intent = { id: 'intent-1' } as Intent;
 const context: UseCaseContext = { intent, correlationId: 'correlation-1' };
 const lease = {
@@ -61,7 +62,7 @@ describe('DefaultUseCaseExecutor observability', () => {
         const executor = createExecutor(createStore({ type: 'claimed', lease }), observer);
 
         await executor.execute({
-            useCase: { execute: async () => 'result' },
+            useCase: { name: useCaseName, execute: async () => 'result' },
             input: undefined,
             context,
         });
@@ -69,7 +70,11 @@ describe('DefaultUseCaseExecutor observability', () => {
         expect(observer.observations).toEqual([
             {
                 type: 'execution.requested',
-                context: { intentId: intent.id, correlationId: 'correlation-1' },
+                context: {
+                    useCase: useCaseName,
+                    intentId: intent.id,
+                    correlationId: 'correlation-1',
+                },
             },
             {
                 type: 'claim.completed',
@@ -91,6 +96,11 @@ describe('DefaultUseCaseExecutor observability', () => {
                 durationMs: 0,
             },
         ]);
+        expect(
+            observer.observations.map(
+                ({ context: observationContext }) => observationContext.useCase,
+            ),
+        ).toEqual([useCaseName, useCaseName, useCaseName, useCaseName, useCaseName]);
     });
 
     it('reports completed-result replay without starting UseCase execution', async () => {
@@ -102,7 +112,7 @@ describe('DefaultUseCaseExecutor observability', () => {
 
         await expect(
             executor.execute({
-                useCase: { execute: async () => 'new' },
+                useCase: { name: useCaseName, execute: async () => 'new' },
                 input: undefined,
                 context,
             }),
@@ -127,6 +137,7 @@ describe('DefaultUseCaseExecutor observability', () => {
         await expect(
             executor.execute({
                 useCase: {
+                    name: useCaseName,
                     execute: async () => {
                         throw failure;
                     },
@@ -154,7 +165,7 @@ describe('DefaultUseCaseExecutor observability', () => {
 
         await expect(
             executor.execute({
-                useCase: { execute: async () => 'result' },
+                useCase: { name: useCaseName, execute: async () => 'result' },
                 input: undefined,
                 context,
             }),

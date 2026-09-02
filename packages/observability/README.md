@@ -46,4 +46,4 @@ The example is illustrative only. This package does not depend on or ship OpenTe
 
 Observation payload and metric dimensions are different concerns. Correlation data may be useful for traces or logs without being safe as metric labels.
 
-Use only bounded dimensions defined by the measurement catalog. Operation/read names and bounded outcomes are suitable defaults. Tenant may be enabled by a consumer only when deployment cardinality is acceptable. User/actor IDs, intent IDs, correlation IDs, execution IDs, cache keys, arbitrary entity IDs, error messages, and stacks must not become metric dimensions.
+Use only bounded dimensions defined by the measurement catalog. Operation, Read, and UseCase names plus bounded outcomes are suitable defaults. Tenant may be enabled by a consumer only when deployment cardinality is acceptable. User/actor IDs, intent IDs, correlation IDs, execution IDs, cache keys, arbitrary entity IDs, error messages, and stacks must not become metric dimensions.
