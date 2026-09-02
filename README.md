@@ -154,7 +154,7 @@ Repository-specific agent/contributor rules are defined in [`AGENTS.md`](./AGENT
 
 ## Releases
 
-Public packages are independently versioned with Nx Release using Conventional Commits and the project dependency graph. A change to one package may therefore also release dependent packages when their dependency metadata must advance.
+Public packages are independently versioned with Nx Release using explicit version plans and the project dependency graph. Pull-request CI requires plans for touched package projects, and a change to one package may also release dependent packages when their dependency metadata must advance.
 
 Release preparation and npm publication are separate steps, and production publication uses the repository's GitHub Actions workflow with npm Trusted Publishing/OIDC.
 

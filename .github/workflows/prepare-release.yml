@@ -161,9 +161,13 @@ jobs:
             'Nx Release prepared package versions, dependency updates and changelogs from `%s`. Package tags will be created only after this PR is merged.' \
             "$PREPARED_FROM")"
 
-          gh pr create \
+          if ! gh pr create \
             --repo "$GITHUB_REPOSITORY" \
             --base main \
             --head "$RELEASE_BRANCH" \
             --title "chore(release): prepare packages" \
-            --body "$body"
+            --body "$body"; then
+            echo "GitHub Actions could not create the release PR." >&2
+            echo "Verify Settings > Actions > General > Workflow permissions > Allow GitHub Actions to create and approve pull requests." >&2
+            exit 1
+          fi

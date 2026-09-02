@@ -37,6 +37,10 @@ jobs:
 
       - uses: nrwl/nx-set-shas@v5
 
+      - name: Verify release version plan
+        if: github.event_name == 'pull_request' && github.head_ref != 'release/next'
+        run: pnpm nx release plan:check
+
       - name: Detect Redis integration impact
         id: redis-integration
         shell: bash

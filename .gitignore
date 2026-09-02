@@ -67,7 +67,9 @@ out/
 build/Release/
 
 # Nx
-.nx/
+.nx/*
+!.nx/version-plans/
+!.nx/version-plans/*.md
 .nx/cache/
 .nx/workspace-data/
 .nx/migrate-runs/
