@@ -1,4 +1,5 @@
 export interface UseCaseExecutorObservationContext {
+    readonly useCase: string;
     readonly intentId: string;
     readonly correlationId: string;
 }

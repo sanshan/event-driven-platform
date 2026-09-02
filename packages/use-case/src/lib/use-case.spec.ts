@@ -21,6 +21,7 @@ describe('UseCase', () => {
         expectTypeOf<ExecuteParameters[0]>().toEqualTypeOf<CreateOrderInput>();
         expectTypeOf<ExecuteParameters[1]>().toEqualTypeOf<UseCaseContext>();
         expectTypeOf<ExecuteResult>().toEqualTypeOf<CreateOrderResult>();
+        expectTypeOf<Contract['name']>().toEqualTypeOf<string>();
         expectTypeOf<UseCaseContext['intent']>().toEqualTypeOf<Intent>();
         expectTypeOf<UseCaseContext['correlationId']>().toEqualTypeOf<string>();
     });

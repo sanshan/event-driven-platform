@@ -37,7 +37,7 @@ Service/application entrypoints covered by this architecture invoke business flo
 
 ### UseCase
 
-A `UseCase<TInput, TResult>` is a typed application/business orchestrator. It receives `UseCaseContext`, which contains the authoritative parent `Intent` and the distributed-flow `correlationId`.
+A `UseCase<TInput, TResult>` is a typed application/business orchestrator. It exposes an explicit deployment-stable `name` for bounded observability and receives `UseCaseContext`, which contains the authoritative parent `Intent` and the distributed-flow `correlationId`. The name never participates in invocation identity or idempotency.
 
 Concrete UseCases may:
 

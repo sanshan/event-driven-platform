@@ -7,11 +7,9 @@ A `UseCase` coordinates application/business work. Concrete UseCases may compose
 ## Contract
 
 ```ts
-interface UseCase<
-    TInput,
-    TResult,
-    TContext extends UseCaseContext = UseCaseContext,
-> {
+interface UseCase<TInput, TResult, TContext extends UseCaseContext = UseCaseContext> {
+    readonly name: string;
+
     execute(input: TInput, context: TContext): Promise<TResult>;
 }
 
@@ -20,6 +18,8 @@ interface UseCaseContext {
     readonly correlationId: string;
 }
 ```
+
+`name` is the caller-defined, deployment-stable identifier for the concrete UseCase type. It must come from an explicit bounded application vocabulary rather than a runtime class or constructor name. Observability uses it to distinguish UseCase lifecycles; it does not participate in invocation identity or idempotency.
 
 Concrete UseCases may extend `UseCaseContext` with invocation-specific metadata. The base context remains the default for simple UseCases. EDP owns only the `intent` and `correlationId` semantics; additional fields are consumer-owned and opaque to the execution platform.
 

@@ -83,6 +83,7 @@ const reader = { execute: async () => ({ available: true }) } as unknown as Read
 const rootIntent = IntentFactory.create({ namespace: 'package-verification', action: 'provision-wallet', version: 1, tenant, components: { requestId: 'request-1' } });
 
 const useCase: UseCase<void, string> = {
+    name: 'ProvisionWalletUseCase',
     execute: async (_input, context) => {
         const childIntent = IntentFactory.derive({ parent: { id: context.intent.id }, slot: 'create-wallet' });
         const operation = { name: 'CreateWallet', schemaVersion: 1, intent: childIntent, actor: { type: 'user', id: 'user-1', origin: {} }, tenant, subject: { type: 'user', id: 'user-1' }, aggregate: { type: 'wallet', id: 'wallet-1' }, payload: { currency: 'EUR' } } as AnyOperation;
@@ -111,5 +112,5 @@ const [envelope] = new DefaultOperationEventEnvelopeFactory(clock, new DefaultEv
 if (!envelope) throw new Error('Expected an EventEnvelope.');
 
 const downstreamIntent = IntentFactory.derive({ parent: { id: envelope.intentId }, slot: 'start-wallet-fulfillment', discriminator: envelope.eventId });
-const downstreamResult = await executor.execute({ useCase: { execute: async (_input, context) => { if (context.correlationId !== envelope.correlationId) throw new Error('CorrelationId did not continue across the Event boundary.'); return 'fulfillment-started'; } }, input: undefined, context: { intent: downstreamIntent, correlationId: envelope.correlationId } });
+const downstreamResult = await executor.execute({ useCase: { name: 'StartWalletFulfillmentUseCase', execute: async (_input, context) => { if (context.correlationId !== envelope.correlationId) throw new Error('CorrelationId did not continue across the Event boundary.'); return 'fulfillment-started'; } }, input: undefined, context: { intent: downstreamIntent, correlationId: envelope.correlationId } });
 if (downstreamResult !== 'fulfillment-started') throw new Error('Event-triggered UseCase composition verification failed.');

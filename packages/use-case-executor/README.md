@@ -61,7 +61,11 @@ A rejected durable completion is surfaced as `UseCaseExecutionTransitionError` r
 
 ## Identity and correlation
 
+`request.useCase.name` is the canonical stable identifier of the concrete UseCase type. The Executor copies it unchanged into every `UseCaseExecutorObservation` so telemetry consumers can separate bounded UseCase lifecycles without inspecting runtime class names.
+
 `context.intent` is the authoritative logical invocation identity. `context.correlationId` is used unchanged for distributed-flow grouping and never participates in execution identity or idempotency.
+
+The UseCase name is observability identity only. It does not participate in execution identity, durable claim, idempotency, or conflict semantics.
 
 ## Public API
 
