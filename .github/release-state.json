@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "preparedFrom": "4b3d95c9c4bdbf38a11b3fe4d70a3223b1dc7a05",
+  "tags": [
+    "@event-driven-platform/observability@0.1.0",
+    "@event-driven-platform/reader@0.0.9",
+    "@event-driven-platform/runner@0.0.12",
+    "@event-driven-platform/use-case-executor@0.0.9",
+    "@event-driven-platform/use-case@0.1.0"
+  ]
+}
