@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/observability",
-    "version": "0.0.5",
+    "version": "0.1.0",
     "description": "Technology-neutral observability contracts for EDP execution pipelines.",
     "type": "module",
     "main": "./dist/index.js",
