@@ -1,3 +1,20 @@
+## 0.1.0 (2026-09-02)
+
+### ⚠️  Breaking Changes
+
+- Expose the stable UseCase name in execution and observability contracts. ([#198](https://github.com/sanshan/event-driven-platform/issues/198))
+
+  UseCase implementations must now define a `readonly name`, and executor observations include that identity.
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/observability to 0.1.0
+- Updated @event-driven-platform/use-case to 0.1.0
+
+### ❤️ Thank You
+
+- Aleksandr Lihih @sanshan
+
 ## 0.0.8 (2026-08-30)
 
 ### 🚀 Features
