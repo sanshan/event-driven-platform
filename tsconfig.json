@@ -133,6 +133,9 @@
         },
         {
             "path": "./packages/event-schema-avro"
+        },
+        {
+            "path": "./packages/event-schema-protobuf"
         }
     ]
 }
