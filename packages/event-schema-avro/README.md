@@ -58,3 +58,7 @@ For example, `metadata` below root `DocumentRegistered` becomes `DocumentRegiste
 The returned value is the **payload schema only**. Event `name` and business `schemaVersion` remain owned by `EventContract`; they are not Schema Registry subjects, Registry versions, or schema IDs.
 
 This package does not provide Avro binary serialization/deserialization, Schema Registry integration, broker behavior, compatibility checks, or an `EventEnvelope` wire schema. It also does not depend on the JSON Schema or Protobuf renderer packages.
+
+## Related documentation
+
+See [`Event contracts and portable schema rendering`](../../docs/architecture/event-contract-portability.md) for the verified cross-format support matrix and portable-core example.
