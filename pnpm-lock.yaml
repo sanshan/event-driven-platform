@@ -169,6 +169,12 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
 
+  packages/event-schema-avro:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
   packages/event-schema-json:
     dependencies:
       '@event-driven-platform/event':
