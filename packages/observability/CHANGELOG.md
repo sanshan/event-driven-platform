@@ -1,3 +1,15 @@
+## 0.2.0 (2026-09-11)
+
+### ⚠️  Breaking Changes
+
+- Propagate Query correlation IDs through Reader observability. ([6bf67d5](https://github.com/sanshan/event-driven-platform/commit/6bf67d5))
+
+  Reader observations now carry the Query correlation ID across lifecycle, source, cache, retry, inflight, and distributed coordination events for trace and structured-log correlation without changing Read or handler contracts.
+
+### ❤️ Thank You
+
+- Aleksandr Lihih @sanshan
+
 ## 0.1.0 (2026-09-02)
 
 ### ⚠️  Breaking Changes
