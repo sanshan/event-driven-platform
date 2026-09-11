@@ -57,14 +57,16 @@ Nullable values, finite business string enums, optional arrays, generic integers
 
 ## Naming
 
-Payload field names are preserved exactly and must already be valid Protobuf identifiers. The renderer never renames business fields.
+Payload field names are preserved exactly and must already be valid Protobuf identifiers. Protobuf grammar keywords are contextual and are not globally banned when they occupy an identifier position. The renderer never renames business fields.
+
+Protobuf also derives a default lower-camel JSON name from every field. Two fields in the same message are rejected when their unchanged Protobuf names would derive the same ProtoJSON name, for example `foo_bar` and `fooBar`. The renderer does not invent `json_name` overrides to bypass such collisions.
 
 Nested message names follow one deterministic rule:
 
 - nested object field: `<root>_<payload path joined by _>_message`;
 - object used as an array item: `<root>_<payload path joined by _>_item_message`.
 
-Generated-name collisions fail explicitly rather than being silently changed.
+Generated-name collisions fail explicitly rather than being silently changed. Nested message definitions are emitted in canonical order so object declaration order does not change the resulting schema text.
 
 ## Boundaries
 
