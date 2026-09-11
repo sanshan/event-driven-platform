@@ -73,3 +73,7 @@ Generated-name collisions fail explicitly rather than being silently changed. Ne
 The returned value is `.proto` schema source for the **payload only**. Event `name` and business `schemaVersion` remain owned by `EventContract`; field numbers are Protobuf wire metadata and are unrelated to the business schema version or any future Schema Registry version/schema ID.
 
 This package does not provide Protobuf code generation, runtime descriptors, binary serialization/deserialization, gRPC/services, Schema Registry integration, broker behavior, compatibility tooling, automatic field-number allocation, or an `EventEnvelope` wire schema. It does not depend on the JSON Schema or Avro renderer packages.
+
+## Related documentation
+
+See [`Event contracts and portable schema rendering`](../../docs/architecture/event-contract-portability.md) for the verified cross-format support matrix and portable-core example.
