@@ -3,6 +3,7 @@ import type { AnyTenantReference } from '@event-driven-platform/tenant-reference
 export interface ReaderObservationContext {
     readonly read: string;
     readonly tenant: AnyTenantReference;
+    readonly correlationId: string;
 }
 
 export type ReaderOutcome = 'success' | 'error' | 'timed-out' | 'cancelled';

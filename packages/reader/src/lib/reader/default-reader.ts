@@ -61,6 +61,7 @@ export class DefaultReader implements Reader {
         const context: ReaderObservationContext = {
             read: query.read.name,
             tenant: query.read.tenant,
+            correlationId: query.context.correlationId,
         };
         const startedAt = this.clock.now();
 

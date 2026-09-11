@@ -88,7 +88,7 @@ function createFlight(coordinator: ReadExecutionCoordinator, observer = new Reco
             coordinator,
             clock: new FixedClock('2026-08-28T05:00:00.000Z'),
             observer,
-            context: { read: 'wallet.get', tenant },
+            context: { read: 'wallet.get', tenant, correlationId: 'correlation-1' },
         }),
     };
 }

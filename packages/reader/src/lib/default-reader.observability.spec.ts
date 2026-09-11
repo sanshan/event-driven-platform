@@ -50,6 +50,12 @@ const baseQuery: GetWalletQuery = {
     context: { correlationId: 'correlation-1' },
 };
 
+const observationContext = {
+    read: read.name,
+    tenant,
+    correlationId: baseQuery.context.correlationId,
+};
+
 class RecordingReaderObserver implements ReaderObserver {
     readonly observations: ReaderObservation[] = [];
 
@@ -90,7 +96,7 @@ function cachedQuery(level: QueryCacheLevel<WalletView>): GetWalletQuery {
 }
 
 describe('DefaultReader observability', () => {
-    it('emits the successful read and source lifecycle with stable tenant-scoped read identity', async () => {
+    it('emits the successful read and source lifecycle with stable tenant-scoped read identity and correlation', async () => {
         const observer = new RecordingReaderObserver();
         const reader = new DefaultReader({
             clock: new FixedClock('2026-08-28T05:00:00.000Z'),
@@ -104,18 +110,18 @@ describe('DefaultReader observability', () => {
         await reader.execute(baseQuery);
 
         expect(observer.observations).toEqual([
-            { type: 'read.requested', context: { read: 'wallet.get', tenant } },
-            { type: 'read.started', context: { read: 'wallet.get', tenant } },
-            { type: 'read.attempt.started', context: { read: 'wallet.get', tenant }, attempt: 1 },
+            { type: 'read.requested', context: observationContext },
+            { type: 'read.started', context: observationContext },
+            { type: 'read.attempt.started', context: observationContext, attempt: 1 },
             {
                 type: 'source.completed',
-                context: { read: 'wallet.get', tenant },
+                context: observationContext,
                 outcome: 'success',
                 durationMs: 0,
             },
             {
                 type: 'read.attempt.completed',
-                context: { read: 'wallet.get', tenant },
+                context: observationContext,
                 attempt: 1,
                 outcome: 'success',
                 retryable: false,
@@ -123,7 +129,7 @@ describe('DefaultReader observability', () => {
             },
             {
                 type: 'read.completed',
-                context: { read: 'wallet.get', tenant },
+                context: observationContext,
                 outcome: 'success',
                 durationMs: 0,
             },
@@ -167,15 +173,15 @@ describe('DefaultReader observability', () => {
         );
 
         expect(attemptEvents).toEqual([
-            { type: 'read.attempt.started', context: { read: 'wallet.get', tenant }, attempt: 1 },
+            { type: 'read.attempt.started', context: observationContext, attempt: 1 },
             expect.objectContaining({
                 type: 'read.attempt.completed',
                 attempt: 1,
                 outcome: 'error',
                 retryable: true,
             }),
-            { type: 'read.retry.scheduled', context: { read: 'wallet.get', tenant }, attempt: 1, delayMs: 5 },
-            { type: 'read.attempt.started', context: { read: 'wallet.get', tenant }, attempt: 2 },
+            { type: 'read.retry.scheduled', context: observationContext, attempt: 1, delayMs: 5 },
+            { type: 'read.attempt.started', context: observationContext, attempt: 2 },
             expect.objectContaining({ type: 'read.attempt.completed', attempt: 2, outcome: 'success' }),
         ]);
     });

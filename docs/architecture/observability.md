@@ -78,7 +78,7 @@ Runner observations use the Operation `name` as the stable operation dimension a
 
 ## Reader catalog
 
-Reader observations use `Read.name` as the stable read dimension. Current `Read` does not expose tenant identity, so Reader metrics do not invent a tenant dimension.
+Reader observations use `Read.name` as the stable read dimension. `Read.tenant` and `QueryContext.correlationId` are carried in `ReaderObservationContext`; `DefaultReader` creates that context once per Query and passes it through Reader lifecycle, source, cache, retry, inflight, and distributed-coordination observations. The correlation ID is useful for linking traces and structured logs, but it must not be used as a metric dimension.
 
 | Observation                          | Meaning                                                             | Operational question                                                     | Production signals                                                                         | Metric dimensions                                                                      |
 | ------------------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
