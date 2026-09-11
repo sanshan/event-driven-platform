@@ -74,19 +74,16 @@ describe('renderEventContractJsonSchema', () => {
         });
     });
 
-    it('renders the authoritative Zod output side', () => {
+    it('uses the authoritative Zod output side instead of rendering transform input', () => {
         const contract = defineEventContract({
             name: 'documents.payload-length',
             schemaVersion: 1,
-            payload: z
-                .string()
-                .transform((value) => value.length)
-                .pipe(z.number()),
+            payload: z.string().transform((value) => value.length),
         });
 
-        expect(renderEventContractJsonSchema(contract)).toMatchObject({
-            type: 'number',
-        });
+        expect(() => renderEventContractJsonSchema(contract)).toThrow(
+            /Cannot render JSON Schema for event "documents\.payload-length".*transform/i,
+        );
     });
 
     it('fails closed for an unrepresentable runtime-only payload construct', () => {
