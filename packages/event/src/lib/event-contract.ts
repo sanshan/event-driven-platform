@@ -46,10 +46,10 @@ export function defineEventContract<
     readonly schemaVersion: TSchemaVersion;
     readonly payload: TPayloadSchema;
 }): EventContract<TName, TSchemaVersion, TPayloadSchema> {
-    const eventSchema = z.object({
+    const eventIdentitySchema = z.object({
         name: z.literal(definition.name),
         schemaVersion: z.literal(definition.schemaVersion),
-        payload: definition.payload,
+        payload: z.unknown(),
     });
 
     return {
@@ -62,12 +62,12 @@ export function defineEventContract<
             };
         },
         parse(value) {
-            const parsed = eventSchema.parse(value);
+            const parsed = eventIdentitySchema.parse(value);
 
             return {
                 name: definition.name,
                 schemaVersion: definition.schemaVersion,
-                payload: parsed.payload,
+                payload: definition.payload.parse(parsed.payload),
             };
         },
     };
