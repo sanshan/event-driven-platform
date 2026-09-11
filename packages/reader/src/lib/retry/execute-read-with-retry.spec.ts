@@ -28,6 +28,7 @@ const fixedClock: Clock = { now: () => '2026-08-20T10:00:00.000Z' };
 const context: ReaderObservationContext = {
     read: 'wallet.get',
     tenant: { type: 'merchant', id: 'merchant-1' as AnyRead['tenant']['id'] },
+    correlationId: 'correlation-1',
 };
 
 function dependencies(
