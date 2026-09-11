@@ -7,46 +7,6 @@ const PROTO_RESERVED_FIELD_NUMBER_MIN = 19000;
 const PROTO_RESERVED_FIELD_NUMBER_MAX = 19999;
 const INT32_MIN = -2147483648;
 const INT32_MAX = 2147483647;
-const PROTO_KEYWORDS = new Set([
-    'syntax',
-    'package',
-    'import',
-    'option',
-    'message',
-    'enum',
-    'service',
-    'rpc',
-    'returns',
-    'repeated',
-    'optional',
-    'required',
-    'reserved',
-    'extensions',
-    'to',
-    'max',
-    'oneof',
-    'map',
-    'group',
-    'public',
-    'weak',
-    'true',
-    'false',
-    'double',
-    'float',
-    'int32',
-    'int64',
-    'uint32',
-    'uint64',
-    'sint32',
-    'sint64',
-    'fixed32',
-    'fixed64',
-    'sfixed32',
-    'sfixed64',
-    'bool',
-    'string',
-    'bytes',
-]);
 
 type JsonObject = Record<string, unknown>;
 
@@ -178,11 +138,13 @@ function renderMessage(
     }
 
     const usedFieldNumbers = new Map<number, string>();
+    const usedJsonNames = new Map<string, string>();
     const fields: RenderedField[] = [];
 
     for (const [fieldName, fieldSchema] of Object.entries(properties)) {
         const fieldPath = [...path, fieldName];
         assertFieldName(fieldName, fieldPath, context);
+        assertJsonFieldNameUnique(fieldName, fieldPath, usedJsonNames, context);
 
         const fieldNumber = requireFieldNumber(fieldPath, usedFieldNumbers, context);
         const optional = !requiredSet.has(fieldName);
@@ -411,8 +373,45 @@ function assertFieldName(fieldName: string, path: readonly string[], context: Re
     }
 }
 
+function assertJsonFieldNameUnique(
+    fieldName: string,
+    path: readonly string[],
+    usedJsonNames: Map<string, string>,
+    context: RenderContext,
+): void {
+    const jsonName = toProtobufJsonName(fieldName);
+    const existingField = usedJsonNames.get(jsonName);
+
+    if (existingField !== undefined) {
+        fail(
+            path,
+            context,
+            `Protobuf JSON field name "${jsonName}" collides with field "${existingField}" in the same message`,
+        );
+    }
+
+    usedJsonNames.set(jsonName, fieldName);
+}
+
+function toProtobufJsonName(fieldName: string): string {
+    let result = '';
+    let uppercaseNext = false;
+
+    for (const character of fieldName) {
+        if (character === '_') {
+            uppercaseNext = true;
+            continue;
+        }
+
+        result += uppercaseNext ? character.toUpperCase() : character;
+        uppercaseNext = false;
+    }
+
+    return result;
+}
+
 function isValidProtoIdentifier(value: string): boolean {
-    return PROTO_IDENTIFIER_PATTERN.test(value) && !PROTO_KEYWORDS.has(value);
+    return PROTO_IDENTIFIER_PATTERN.test(value);
 }
 
 function assertOnlyKeys(
