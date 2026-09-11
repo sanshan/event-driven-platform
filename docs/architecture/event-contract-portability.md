@@ -76,7 +76,9 @@ The structural subset intentionally supported by all three renderers is small:
 - boolean;
 - ordinary number;
 - explicit signed 32-bit integer (`z.int32()`);
-- arrays of supported required, non-nullable values.
+- required single-dimensional arrays whose direct item type is supported, non-nullable, and not another array.
+
+Nested arrays are not part of the portable v1 core because Protobuf v1 deliberately rejects repeated-array semantics.
 
 Use this subset when one Event payload must be rendered unchanged into every v1 format.
 
@@ -89,7 +91,8 @@ Use this subset when one Event payload must be rendered unchanged into every v1 
 | boolean | supported | `boolean` | `bool` |
 | ordinary number | supported | `double` | `double` |
 | explicit signed int32 | supported | `int` | `int32` |
-| array | supported | array of supported values | `repeated` for supported required/non-nullable values |
+| array | supported | array of supported values | `repeated` only for supported required/non-nullable, non-array direct item types |
+| nested array | supported | supported | unsupported |
 | finite string enum | supported | enum only when values are already valid unchanged Avro symbols | unsupported |
 | optional field | supported | unsupported | singular scalar/message only where proto3 presence is faithful |
 | nullable value | supported | union containing `null` | unsupported |
@@ -133,7 +136,7 @@ A renderer must reject a shape it cannot represent faithfully inside its documen
 - rename payload fields or business enum values;
 - discard unsupported runtime constraints while claiming equivalent representation.
 
-Representative runtime-only transforms/custom types, arbitrary unions, recursion, maps/records where not implemented, incompatible names/values, generic integer widths, and format-specific unsupported optional/nullable forms remain outside the portable core.
+Representative runtime-only transforms/custom types, arbitrary unions, recursion, maps/records where not implemented, incompatible names/values, generic integer widths, Protobuf nested arrays, and format-specific unsupported optional/nullable forms remain outside the portable core.
 
 JSON Schema relies on Zod's fail-closed first-party conversion for unrepresentable runtime-only constructs. Avro and Protobuf additionally reject normalized shapes or keywords outside their explicit shallow mapping.
 
@@ -234,7 +237,7 @@ The implemented v1 capability satisfies these architectural checks:
 5. Unsupported mappings fail instead of silently widening, renaming, or reinterpreting them.
 6. Avro naming and Protobuf field numbers remain renderer-local metadata.
 7. Protobuf numbers are explicit and stable under property reordering and addition of separately numbered fields.
-8. Optional, nullable, enum, and integer differences are intentionally format-specific and documented in the matrix above.
+8. Optional, nullable, enum, array, and integer differences are intentionally format-specific and documented in the matrix above.
 9. The common example uses only the true three-format portable core.
 10. No EventEnvelope wire, Registry, serializer, or broker policy is implied by renderer output.
 11. No EDP-owned schema AST/IDL, shared cross-format renderer framework, or private Zod dependency is introduced.
