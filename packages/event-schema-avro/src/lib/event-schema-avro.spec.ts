@@ -120,4 +120,34 @@ describe('renderEventContractAvroSchema', () => {
             /payload\.a\.b.*Collision_a_b_record.*collides/i,
         );
     });
+
+    it('rejects invalid root naming metadata', () => {
+        const contract = defineEventContract({
+            name: 'documents.invalid-name',
+            schemaVersion: 1,
+            payload: z.object({ documentId: z.string() }),
+        });
+
+        expect(() =>
+            renderEventContractAvroSchema(contract, { recordName: 'document-registered' }),
+        ).toThrow(/root record name.*not a valid Avro named type/i);
+        expect(() =>
+            renderEventContractAvroSchema(contract, {
+                recordName: 'DocumentRegistered',
+                namespace: 'documents.invalid-namespace',
+            }),
+        ).toThrow(/namespace.*not a valid Avro namespace/i);
+    });
+
+    it('fails closed when Zod cannot represent the runtime payload schema', () => {
+        const contract = defineEventContract({
+            name: 'documents.unsupported-payload',
+            schemaVersion: 1,
+            payload: z.object({ sequence: z.bigint() }),
+        });
+
+        expect(() => renderEventContractAvroSchema(contract, { recordName: 'UnsupportedPayload' })).toThrow(
+            /Cannot render Avro schema.*bigint/i,
+        );
+    });
 });
