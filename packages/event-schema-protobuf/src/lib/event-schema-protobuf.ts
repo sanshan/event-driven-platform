@@ -135,7 +135,7 @@ export function renderEventContractProtobufSchema<
         sections.push(`package ${options.package};`);
     }
 
-    sections.push(rootMessage, ...context.nestedMessages);
+    sections.push(rootMessage, ...context.nestedMessages.sort());
 
     return `${sections.join('\n\n')}\n`;
 }
