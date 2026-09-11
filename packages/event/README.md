@@ -61,6 +61,9 @@ The runtime contract is additive: existing TypeScript-only `Event<name, schemaVe
 
 Operations may produce events as part of their result. Operations do not publish them. Runner persists event envelopes to the Outbox through the execution pipeline.
 
+Runtime Event contracts remain transport-neutral. External payload schemas can be rendered independently as JSON Schema, Avro, or Protocol Buffers without adding renderer dependencies to this package.
+
 ## Related documentation
 
-See [`docs/architecture/README.md`](../../docs/architecture/README.md).
+- [`Event contracts and portable schema rendering`](../../docs/architecture/event-contract-portability.md)
+- [`Architecture`](../../docs/architecture/README.md)
