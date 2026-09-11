@@ -26,3 +26,7 @@ The renderer delegates to Zod 4's public `z.toJSONSchema()` conversion and targe
 The v1 guarantees exercised by this package include root and nested objects, strings, booleans, numbers, explicit `int32`, arrays, finite string enums, optional fields, and nullable values where Zod's first-party conversion represents them faithfully.
 
 The result is the **payload schema only**. Event `name` and business `schemaVersion` remain owned by `EventContract`; they are not Schema Registry subjects, Registry versions, or schema IDs. This package does not define an `EventEnvelope` wire format, serialization, broker behavior, or Registry integration.
+
+## Related documentation
+
+See [`Event contracts and portable schema rendering`](../../docs/architecture/event-contract-portability.md) for the verified cross-format support matrix and portable-core example.
