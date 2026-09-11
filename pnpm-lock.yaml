@@ -171,9 +171,15 @@ importers:
 
   packages/event-schema-avro:
     dependencies:
+      '@event-driven-platform/event':
+        specifier: workspace:*
+        version: link:../event
       tslib:
-        specifier: ^2.3.0
+        specifier: 'catalog:'
         version: 2.8.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
 
   packages/event-schema-json:
     dependencies:
