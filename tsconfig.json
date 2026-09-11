@@ -130,6 +130,9 @@
         },
         {
             "path": "./packages/event-schema-json"
+        },
+        {
+            "path": "./packages/event-schema-avro"
         }
     ]
 }
