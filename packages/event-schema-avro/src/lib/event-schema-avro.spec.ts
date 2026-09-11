@@ -70,6 +70,30 @@ describe('renderEventContractAvroSchema', () => {
         );
     });
 
+    it('rejects generic integers instead of guessing an Avro width', () => {
+        const contract = defineEventContract({
+            name: 'documents.generic-integer',
+            schemaVersion: 1,
+            payload: z.object({ count: z.int() }),
+        });
+
+        expect(() => renderEventContractAvroSchema(contract, { recordName: 'GenericInteger' })).toThrow(
+            /payload\.count.*generic.*integer.*z\.int32/i,
+        );
+    });
+
+    it('rejects constrained primitives that would lose validation semantics', () => {
+        const contract = defineEventContract({
+            name: 'documents.constrained',
+            schemaVersion: 1,
+            payload: z.object({ documentId: z.string().min(1) }),
+        });
+
+        expect(() => renderEventContractAvroSchema(contract, { recordName: 'Constrained' })).toThrow(
+            /payload\.documentId.*minLength/i,
+        );
+    });
+
     it('rejects invalid Avro enum symbols without renaming them', () => {
         const contract = defineEventContract({
             name: 'documents.invalid-enum',
@@ -79,6 +103,21 @@ describe('renderEventContractAvroSchema', () => {
 
         expect(() => renderEventContractAvroSchema(contract, { recordName: 'InvalidEnum' })).toThrow(
             /payload\.state.*not-ready.*valid Avro symbol/i,
+        );
+    });
+
+    it('rejects generated named-type collisions deterministically', () => {
+        const contract = defineEventContract({
+            name: 'documents.name-collision',
+            schemaVersion: 1,
+            payload: z.object({
+                a_b: z.object({ first: z.string() }),
+                a: z.object({ b: z.object({ second: z.string() }) }),
+            }),
+        });
+
+        expect(() => renderEventContractAvroSchema(contract, { recordName: 'Collision' })).toThrow(
+            /payload\.a\.b.*Collision_a_b_record.*collides/i,
         );
     });
 });
