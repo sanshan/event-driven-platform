@@ -1,5 +1,13 @@
 export type { AnyEvent, Event } from './lib/event.js';
 
+export {
+    defineEventContract,
+    type EventContract,
+    type EventEnvelopeOf,
+    type EventOf,
+    type EventPayloadOf,
+} from './lib/event-contract.js';
+
 export type { EventId, EventIdDescriptor, EventIdFactory } from './lib/event-id.js';
 
 export { DefaultEventIdFactory } from './lib/default-event-id-factory.js';

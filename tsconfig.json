@@ -127,6 +127,15 @@
         },
         {
             "path": "./packages/observability"
+        },
+        {
+            "path": "./packages/event-schema-json"
+        },
+        {
+            "path": "./packages/event-schema-avro"
+        },
+        {
+            "path": "./packages/event-schema-protobuf"
         }
     ]
 }
