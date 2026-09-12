@@ -5,8 +5,10 @@ Defines domain event contracts and the event envelope used to carry execution me
 ## Installation
 
 ```bash
-pnpm add @event-driven-platform/event
+pnpm add @event-driven-platform/event zod
 ```
+
+`zod` is a peer dependency because EventContract accepts and exposes Zod schemas at its public TypeScript boundary. Applications should provide one compatible Zod installation for both their own schemas and this package.
 
 ## Runtime Event contracts
 
