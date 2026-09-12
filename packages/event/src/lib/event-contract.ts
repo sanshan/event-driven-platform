@@ -37,6 +37,11 @@ export type EventOf<TContract extends EventContractShape> = Event<
 
 export type EventEnvelopeOf<TContract extends EventContractShape> = EventEnvelope<EventOf<TContract>>;
 
+type PortablePayloadSchema<TSchema extends z.ZodType> = z.ZodType<
+    z.output<TSchema>,
+    z.input<TSchema>
+>;
+
 export function defineEventContract<
     const TName extends string,
     const TSchemaVersion extends number,
@@ -45,7 +50,7 @@ export function defineEventContract<
     readonly name: TName;
     readonly schemaVersion: TSchemaVersion;
     readonly payload: TPayloadSchema;
-}): EventContract<TName, TSchemaVersion, TPayloadSchema> {
+}): EventContract<TName, TSchemaVersion, PortablePayloadSchema<TPayloadSchema>> {
     const eventIdentitySchema = z.object({
         name: z.literal(definition.name),
         schemaVersion: z.literal(definition.schemaVersion),
