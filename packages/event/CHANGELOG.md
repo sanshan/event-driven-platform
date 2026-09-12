@@ -1,3 +1,13 @@
+## 0.2.0 (2026-09-12)
+
+### ⚠️  Breaking Changes
+
+- Stabilize the public EventContract Zod boundary and require a compatible consumer-provided Zod installation. ([#223](https://github.com/sanshan/event-driven-platform/pull/223))
+
+### ❤️ Thank You
+
+- Aleksandr Lihih @sanshan
+
 ## 0.1.8 (2026-09-11)
 
 ### 🚀 Features

@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/event-schema-avro",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Render EDP runtime EventContract payloads as Apache Avro schemas.",
     "type": "module",
     "main": "./dist/index.js",
