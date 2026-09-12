@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/event-schema-protobuf",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Render EDP runtime EventContract payloads as Protocol Buffers schema source.",
     "type": "module",
     "main": "./dist/index.js",

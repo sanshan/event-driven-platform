@@ -1,3 +1,12 @@
+## 0.1.3 (2026-09-12)
+
+### 🧱 Updated Dependencies
+
+- Updated @event-driven-platform/operation-event-envelope-factory to 0.0.12
+- Updated @event-driven-platform/operation to 0.1.10
+- Updated @event-driven-platform/command to 0.0.11
+- Updated @event-driven-platform/event to 0.2.0
+
 ## 0.1.2 (2026-09-11)
 
 ### 🧱 Updated Dependencies
