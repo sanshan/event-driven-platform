@@ -1,12 +1,17 @@
 {
     "name": "@event-driven-platform/event-schema-protobuf",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Render EDP runtime EventContract payloads as Protocol Buffers schema source.",
     "type": "module",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
-    "files": ["dist/**/*.js", "dist/**/*.js.map", "dist/**/*.d.ts", "dist/**/*.d.ts.map"],
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.js.map",
+        "dist/**/*.d.ts",
+        "dist/**/*.d.ts.map"
+    ],
     "exports": {
         "./package.json": "./package.json",
         ".": {
@@ -21,7 +26,9 @@
         "url": "git+https://github.com/sanshan/event-driven-platform.git",
         "directory": "packages/event-schema-protobuf"
     },
-    "publishConfig": { "access": "public" },
+    "publishConfig": {
+        "access": "public"
+    },
     "dependencies": {
         "@event-driven-platform/event": "workspace:*",
         "tslib": "catalog:",

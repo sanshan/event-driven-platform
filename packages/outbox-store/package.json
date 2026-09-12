@@ -1,6 +1,6 @@
 {
     "name": "@event-driven-platform/outbox-store",
-    "version": "0.0.9",
+    "version": "0.0.10",
     "description": "Persistence port for atomically appending transactional Outbox records.",
     "type": "module",
     "main": "./dist/index.js",

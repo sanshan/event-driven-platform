@@ -1,3 +1,13 @@
+## 0.1.8 (2026-09-11)
+
+### 🚀 Features
+
+- Add Zod-backed runtime Event contracts with typed construction, validation, and Event/EventEnvelope inference helpers. ([b4ba3cc](https://github.com/sanshan/event-driven-platform/commit/b4ba3cc))
+
+### ❤️ Thank You
+
+- Aleksandr Lihih @sanshan
+
 ## 0.1.7 (2026-08-30)
 
 ### 🧱 Updated Dependencies

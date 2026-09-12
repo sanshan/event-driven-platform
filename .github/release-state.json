@@ -1,10 +1,22 @@
 {
   "schemaVersion": 1,
-  "preparedFrom": "c560af612c8b989aabae0825387173bc533143a0",
+  "preparedFrom": "ddfa4e264d098cf273448675cbfe2c7383db8c77",
   "tags": [
-    "@event-driven-platform/observability@0.2.0",
-    "@event-driven-platform/reader@0.0.10",
-    "@event-driven-platform/runner@0.0.13",
-    "@event-driven-platform/use-case-executor@0.1.1"
+    "@event-driven-platform/command@0.0.10",
+    "@event-driven-platform/event-schema-avro@0.0.2",
+    "@event-driven-platform/event-schema-json@0.0.2",
+    "@event-driven-platform/event-schema-protobuf@0.0.2",
+    "@event-driven-platform/event@0.1.8",
+    "@event-driven-platform/execution-log-store@0.0.10",
+    "@event-driven-platform/execution-log@0.0.10",
+    "@event-driven-platform/operation-event-envelope-factory@0.0.11",
+    "@event-driven-platform/operation-handler-resolver@0.0.10",
+    "@event-driven-platform/operation-handler@0.0.10",
+    "@event-driven-platform/operation-result@0.1.8",
+    "@event-driven-platform/operation@0.1.9",
+    "@event-driven-platform/outbox-store@0.0.10",
+    "@event-driven-platform/outbox@0.0.10",
+    "@event-driven-platform/runner@0.0.14",
+    "@event-driven-platform/use-case-executor@0.1.2"
   ]
 }
