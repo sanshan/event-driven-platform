@@ -56,7 +56,7 @@ describe('renderEventContractJsonSchema', () => {
                     enum: ['queued', 'ready'],
                 },
                 description: {
-                    anyOf: [{ type: 'string' }, { type: 'null' }],
+                    type: ['string', 'null'],
                 },
                 legacyReference: { type: 'string' },
             },
