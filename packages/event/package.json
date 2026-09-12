@@ -34,7 +34,12 @@
         "@event-driven-platform/tenant-reference": "workspace:*",
         "@event-driven-platform/types": "workspace:*",
         "tslib": "catalog:",
-        "uuid": "catalog:",
+        "uuid": "catalog:"
+    },
+    "peerDependencies": {
+        "zod": "^4.6.2"
+    },
+    "devDependencies": {
         "zod": "catalog:"
     }
 }

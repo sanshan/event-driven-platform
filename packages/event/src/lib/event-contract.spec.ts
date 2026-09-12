@@ -19,6 +19,11 @@ const documentRegistered = defineEventContract({
     }),
 });
 
+type DocumentRegisteredInput = {
+    documentId: string;
+    pageCount: string;
+};
+
 type DocumentRegisteredPayload = {
     documentId: string;
     pageCount: number;
@@ -89,6 +94,13 @@ describe('EventContract', () => {
                 },
             }),
         ).toThrow();
+    });
+
+    it('preserves schema input and output types while exposing a portable ZodType boundary', () => {
+        expectTypeOf(documentRegistered.payload).toEqualTypeOf<
+            z.ZodType<DocumentRegisteredPayload, DocumentRegisteredInput>
+        >();
+        expectTypeOf(documentRegistered.create).parameter(0).toEqualTypeOf<DocumentRegisteredInput>();
     });
 
     it('derives payload, Event, and EventEnvelope types from one contract', () => {
